@@ -8,7 +8,7 @@
     "controller": "node src/controller.js",
     "dataparser": "node src/dataparser.js",
     "create-locales": "node src/createLocales.js",
-    "create-pvp-tables": "node static/PvPRank.js",
+    "create-pvp-tables": "node static/data/PvPRank.js",
     "test": "npx eslint src/**/*.js",
     "test-fix": "npx eslint src/**/*.js --fix",
     "update": "npm install && npm update pogo-translations && npm run create-locales"
