@@ -13,9 +13,9 @@ Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDevi
 2.) Install dependencies `npm run update`  
 3.) Copy config `cp src/config.example.json src/config.json`  
 4.) Fill out config `vi src/config.json` (listening port, instances, db info, etc)  
-5.) Create PvP stat tables, run npm run create-pvp-tables
+5.) Create PvP stat tables, run npm run create-pvp-tables  
 6.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
-7.) Run `npm run controller` 
+7.) Run `npm run controller`  
 8.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
 9.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
 10.) Point `data_endpoint` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://dataparser_ip:9001`
