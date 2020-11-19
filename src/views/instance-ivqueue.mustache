@@ -1,0 +1,59 @@
+{{> navbar}}
+
+<script>
+    $(document).ready(function() {
+        const table = $('#table').DataTable( {
+            "ajax": {
+                "url": "/api/ivqueue/{{instance_name}}",
+                "dataSrc": "data.ivqueue"
+            },
+            "paging": false,
+            "columns": [
+                { "data": "id" },
+                { "data": "pokemon_image" },
+                { "data": "pokemon_name" },
+                { "data": "pokemon_id" },
+                { "data": "form_id" },
+                { "data": "costume_id" },
+                { "data": "pokemon_spawn_id" },
+                { "data": "location" }
+            ],
+            "info": true,
+            "order": [[ 0, "asc" ]],
+            "search.caseInsensitive": true,
+            "columnDefs": [ {
+                "targets": [1],
+                "orderable": false
+            }],
+            "responsive": true
+        });
+        setInterval( function () {
+            table.ajax.reload(null, false);
+        }, 5000)
+    });
+</script>
+
+<body class="{{body_class}}">
+    <br>
+    <h1 align="center">View {{instance_name}}'s IV Queue!</h1>
+    <br>
+    <div style="width:90%; margin-left:calc(5%);">
+        <table id="table" class="table {{table_class}} table-striped table-bordered dt-responsive nowrap" style="position: center; width:100%">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Image</th>
+                    <th>Pokemon Name</th>
+                    <th>Pokemon ID</th>
+                    <th>Form ID</th>
+                    <th>Costume ID</th>
+                    <th>Spawn ID</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <br>
+</body>

@@ -1,0 +1,85 @@
+{{> navbar}}
+
+<script>
+    $(document).ready(function() {
+        const table = $('#table').DataTable( {
+            "ajax": {
+                "url": "/api/devices",
+                "dataSrc": "data.devices",
+                "type": "POST",
+                "_csrf": "{{csrf}}"
+            },
+            //"dom": "Bfrtip",
+            // Reference: https://stackoverflow.com/a/43176143
+            /*
+            "dom": "<'row'<'col-sm-8'B><'col-sm-4'f>t>" +
+                   "<'row'<'col-sm-4'li><'col-sm-8'p>>",
+            */
+            "dom": "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" +
+                   "<'row'<'col-sm-12'tr>>" +
+                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            "fixedHeader": {
+                "header": true,
+                "headerOffset": $('.navbar').height() + 15
+            },
+            "buttons": [
+                "colvis",
+                "pageLength"
+            ],
+            "colReorder": true,
+            "stateSave": true,
+            "paging": true,
+            "lengthMenu": [[50, 100, 200, 300, -1], [50, 100, 200, 300, "All"]],
+            "pageLength": 100,
+            "columns": [
+                { "data": populateImage, width: '5%', className: 'details-control' },
+                { "data": "uuid" },
+                { "data": "account_username" },
+                { "data": "instance_name" },
+                { "data": "last_host" },
+                { data: {
+                    _:    "last_seen.formatted",
+                    sort: "last_seen.timestamp"
+                } },
+                { "data": "buttons" }
+            ],
+            "info": true,
+            "order": [[ 0, "asc" ]],
+            "search.caseInsensitive": true,
+            "columnDefs": [ {
+                "targets": [6],
+                "orderable": false
+            }],
+            "responsive": true
+        });
+        $('#table').on('draw.dt', function () {
+            setTimeout(function () {
+                table.ajax.reload(null, false);
+            }, 15 * 1000);
+        });
+    });
+</script>
+
+<body class="{{body_class}}">
+    <br>
+    <h1 align="center">Configure {{title}}'s Devices!</h1>
+    <br>
+    <div style="width:90%; margin-left:calc(5%);">
+        <table id="table" class="table {{table_class}} table-striped table-bordered dt-responsive nowrap" style="position: center; width:100%">
+            <thead>
+            <tr>
+                <th class="all">Status</th>
+                <th class="all">UUID</th>
+                <th class="min-desktop">Username</th>
+                <th class="all">Instance</th>
+                <th class="min-desktop">Host</th>
+                <th class="min-desktop">Last Seen</th>
+                <th class="all" width="5%"></th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <br>
+</body>

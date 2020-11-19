@@ -1,0 +1,92 @@
+{{> navbar}}
+
+<script>
+    $(document).ready(function() {
+        $('#table').DataTable( {
+            "ajax": {
+                "url": "/api/assignments",
+                "dataSrc": "data.assignments",
+                "type": "POST",
+                "_csrf": "{{csrf}}"
+            },
+            //"dom": "Bfrtip",
+            // Reference: https://stackoverflow.com/a/43176143
+            /*
+            "dom": "<'row'<'col-sm-8'B><'col-sm-4'f>t>" +
+                   "<'row'<'col-sm-4'li><'col-sm-8'p>>",
+            */
+            "dom": "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" +
+                   "<'row'<'col-sm-12'tr>>" +
+                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            "fixedHeader": {
+                "header": true,
+                "headerOffset": $('.navbar').height() + 15
+            },
+            "buttons": [
+                "colvis",
+                "pageLength"
+            ],
+            "colReorder": true,
+            "stateSave": true,
+            "paging":   true,
+            "lengthMenu": [[50, 100, 200, -1], [50, 100, 200, "All"]],
+            "pageLength": 100,
+            "columns": [
+                { "data": "source_instance_name" },
+                { "data": "instance_name" },
+                { "data": "device_uuid" },
+                { data: {
+                    _:    "time.formatted",
+                    sort: "time.timestamp"
+                } },
+                { data: {
+                    _:    "date.formatted",
+                    sort: "date.timestamp"
+                } },
+                { "data": "enabled" },
+                { "data": "buttons" }
+            ],
+            "info":     true,
+            "order": [[ 2, "asc" ]],
+            "columnDefs": [ {
+                "targets": [6],
+                "orderable": false
+            }],
+            "search.caseInsensitive": true,
+            "responsive": true
+        });
+        $('#table').on('draw.dt', function () {
+            setTimeout(function () {
+                table.ajax.reload(null, false);
+            }, 15 * 1000);
+        });
+    });
+</script>
+
+<body class="{{body_class}}">
+    <br>
+    <h1 align="center">Configure {{title}}'s Auto-Assignments!</h1>
+    <br>
+    <div style="width:90%; margin-left:calc(5%);">
+        <a href="/assignment/add" role="button" style="float: right;" class="btn btn-success">Add New Assignment</a>
+        <div style="width:50px; height:auto; display:inline;"></div>
+        <a href="/assignment/delete_all" role="button" style="float: right; margin-right:5px;" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete ALL of your auto-assignments? This action is irreversible and cannot be undone without backups.')">Delete All Assignments</a>
+        <br><br>
+        <table id="table" class="table {{table_class}} table-striped table-bordered dt-responsive nowrap" style="position: center; width:100%">
+            <thead>
+            <tr>
+                <th class="all">Source Instance</th>
+                <th class="all">Target Instance</th>
+                <th class="all">Device UUID</th>
+                <th class="min-desktop">Time</th>
+                <th class="min-desktop">Date</th>
+                <th class="min-desktop">Enabled</td>
+                <th class="all" width="5%"></th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <br>
+</body>

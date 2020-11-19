@@ -1,0 +1,211 @@
+{{> navbar}}
+
+<script>
+    $(document).ready(function() {
+        $('#table').DataTable({
+            "fixedHeader": {
+                "header": true
+            },
+            "stateSave": true,
+            "paging": false,
+            "info": false,
+            "order": [[ 0, "desc" ]],
+            "searching": false,
+            "responsive": true
+        });
+    })
+
+</script>
+<body class="{{body_class}}">
+    <h1 class="mt-3" align="center">Configure {{title}}'s Accounts!</h1>
+    <center>
+        <div class="p-1 w-75">
+            <a href="/accounts/add" role="button" class="btn btn-success" style="float: right;">Add Accounts</a>
+        </div>
+        <br>
+        <div class="card text-center m-3 w-75 mt-4">
+            <div class="card-header bg-dark text-light"><b>Accounts Overview</b></div>
+            <div class="card-body">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: dodgerblue;">{{stat_device_counts.new_count}}</h4>
+                                    <p class="list-group-item-text">New Accounts</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: limegreen;">{{stat_device_counts.in_use_count}}</h4>
+                                    <p class="list-group-item-text">Accounts in Use</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: teal;">{{stat_counts.good_iv_count}}</h4>
+                                    <p class="list-group-item-text">Clean Level 30 Accounts</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: dodgerblue;">{{stat_counts.iv_count}}</h4>
+                                    <p class="list-group-item-text">Total over Level 30</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: red;">{{stat_counts.failed_count}}</h4>
+                                    <p class="list-group-item-text">Failed Accounts</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: orange;">{{stat_counts.warned_count}}</h4>
+                                    <p class="list-group-item-text">Total with Warning</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: orange;">{{stat_counts.cooldown_count}}</h4>
+                                    <p class="list-group-item-text">Total in Cooldown</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 p-1">
+                            <div class="list-group">
+                                <a class="list-group-item">
+                                    <h4 class="list-group-item-heading" style="color: orange;">{{stat_counts.spin_limit_count}}</h4>
+                                    <p class="list-group-item-text">Over Spin Limit</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center m-3 w-75 mt-4"><!-- Start Row -->
+            <div class="col-lg-6">
+                <div class="card text-center">
+                    <div class="card-header bg-dark text-light"><b>Ban Statistics</b></div>
+                    <div class="card-body">
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-md-4 p-1">
+                                    <div class="list-group">
+                                        <a class="list-group-item">
+                                            <h4 class="list-group-item-heading" style="color: red;">{{stat_counts.banned_1day}}</h4>
+                                            <p class="list-group-item-text">Last 24 Hours</p>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 p-1">
+                                    <div class="list-group">
+                                        <a class="list-group-item">
+                                            <h4 class="list-group-item-heading" style="color: red;">{{stat_counts.banned_7days}}</h4>
+                                            <p class="list-group-item-text">Last 7 Days</p>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 p-1">
+                                    <div class="list-group">
+                                        <a class="list-group-item">
+                                            <h4 class="list-group-item-heading" style="color: red;">{{stat_counts.banned_total}}</h4>
+                                            <p class="list-group-item-text">Total</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card text-center">
+                    <div class="card-header bg-dark text-light"><b>Warning Statistics</b></div>
+                    <div class="card-body">
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-md-4 p-1">
+                                    <div class="list-group">
+                                        <a class="list-group-item">
+                                            <h4 class="list-group-item-heading" style="color: orange;">{{stat_counts.warning_1day}}</h4>
+                                            <p class="list-group-item-text">Last 24 Hours</p>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 p-1">
+                                    <div class="list-group">
+                                        <a class="list-group-item">
+                                            <h4 class="list-group-item-heading" style="color: orange;">{{stat_counts.warning_7days}}</h4>
+                                            <p class="list-group-item-text">Last 7 Days</p>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 p-1">
+                                    <div class="list-group">
+                                        <a class="list-group-item">
+                                            <h4 class="list-group-item-heading" style="color: orange;">{{stat_counts.warning_total}}</h4>
+                                            <p class="list-group-item-text">Total</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- End Row -->
+
+        <br>
+        <div class="w-75 text-center">
+            <table id="table" class="table {{table_class}} table-striped table-bordered dt-responsive nowrap" style="position: center; width: 100%; float: center; margin: 0 auto;">
+                <thead class="bg-dark text-light">
+                <tr>
+                    <th>Level</th>
+                    <th>Total</th>
+                    <th>In Use</th>
+                    <th>Good</th>
+                    <th>Banned</th>
+                    <th>Warning</th>
+                    <th>Invalid</th>
+                    <th>Other</th>
+                    <th>Cooldown</th>
+                    <th>Spin Limit</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {{#stats}}
+                    <tr>
+                        <td><b>{{level}}</b></td>
+                        <td><span class="badge badge-primary badge-pill">{{total}}</span></td>
+                        <td><span class="badge badge-success badge-pill">{{in_use}}</span></td>
+                        <td><span class="badge badge-success badge-pill">{{good}}</span></td>
+                        <td><span class="badge badge-danger badge-pill">{{banned}}</span></td>
+                        <td><span class="badge badge-warning badge-pill">{{warning}}</span></td>
+                        <td><span class="badge badge-warning badge-pill">{{invalid}}</span></td>
+                        <td><span class="badge badge-warning badge-pill">{{other}}</span></td>
+                        <td><span class="badge badge-warning badge-pill">{{cooldown}}</span></td>
+                        <td><span class="badge badge-warning badge-pill">{{spin_limit}}</span></td>
+                    </tr>
+                    {{/stats}}
+                </tbody>
+            </table>
+        </div>
+    </center>
+</body>

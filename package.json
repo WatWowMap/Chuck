@@ -1,0 +1,42 @@
+{
+  "name": "chuck",
+  "version": "1.0.0",
+  "description": "RDM Alternative Written in JS",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "controller": "node src/controller.js",
+    "dataparser": "node src/dataparser.js",
+    "create-locales": "node src/createLocales.js",
+    "create-pvp-tables": "node static/PvPRank.js",
+    "test": "npx eslint src/**/*.js",
+    "test-fix": "npx eslint src/**/*.js --fix",
+    "update": "npm install && npm update pogo-translations && npm run create-locales"
+  },
+  "author": "WWM",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wwm/Chuck/issues"
+  },
+  "homepage": "https://github.com/wwm/Chuck",
+  "dependencies": {
+    "@turf/turf": "^5.1.6",
+    "axios": "^0.20.0",
+    "better-logging": "^4.4.0",
+    "eslint": "^7.8.1",
+    "express": "^4.17.1",
+    "express-status-monitor": "^1.3.3",
+    "google-protobuf": "^3.13.0",
+    "helmet": "^4.1.0",
+    "i18n": "^0.9.1",
+    "mustache-express": "^1.3.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.2.5",
+    "nodes2ts": "^2.0.0",
+    "pogo-protos": "git+https://github.com/Furtif/pogo-protos.git",
+    "pogo-translations": "git+https://github.com/bschultz/pogo-translations.git",
+    "redis": "^3.0.2",
+    "s2-geometry": "^1.2.10",
+    "sequelize": "^6.3.5"
+  }
+}

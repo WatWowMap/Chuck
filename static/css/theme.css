@@ -1,0 +1,29 @@
+table.dataTable tbody td {
+    vertical-align: middle;
+}
+
+.sorting,
+.sorting_asc,
+.sorting_desc,
+.sorting_disabled,
+.theme-dark .card-body,
+.theme-dark .dropdown-menu,
+.theme-dark .dropdown-item,
+.theme-dark .list-group,
+.theme-dark .list-group-item,
+.theme-dark {
+    background-color: rgb(33, 37, 31);
+    color: white;
+}
+
+.theme-dark .list-group-item {
+    border-color: white;
+}
+
+/*
+.theme-dark .modal-body,
+.theme-dark .modal-content,
+.theme-dark .modal-footer {
+    background-color: rgb(33, 37, 31);
+}
+*/

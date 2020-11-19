@@ -1,0 +1,51 @@
+{{> header}}
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="navbar-header">
+        <a class="navbar-brand" href="/"><img class="align-middle" src="/favicons/js.png" border="0" height="32px"></a>
+        <a class="navbar-brand" href="/">{{title}}</a>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbar">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/"><i class="fa fa-fw fa-home" aria-hidden="true"></i>&nbsp;Home <span class="sr-only"></span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/devices"><i class="fa fa-fw fa-mobile-alt" aria-hidden="true"></i>&nbsp;Devices</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/instances"><i class="fa fa-fw fa-tasks" aria-hidden="true"></i>&nbsp;Instances</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/assignments"><i class="fa fa-fw fa-cog" aria-hidden="true"></i>&nbsp;Assignments</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/accounts"><i class="fa fa-fw fa-user" aria-hidden="true"></i>&nbsp;Accounts</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-fw fa-cogs" aria-hidden="true"></i>&nbsp;Options
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="/clearquests"><i class="fa fa-fw fa-trash" aria-hidden="true"></i>&nbsp;Clear Quests</a>
+                    <!--<a class="dropdown-item" href="/settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i>&nbsp;Settings</a>-->
+                </div>
+            </li>
+        </ul>
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+    </div>
+</nav>
+<br>
+<br>
+<script>
+    $(document).ready(function() {
+          // Get current URL path and assign 'active' class
+        const pathname = window.location.pathname;
+        $('#navbar > ul > li > a[href="'+pathname+'"]').parent().addClass('active');
+    });
+</script>

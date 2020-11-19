@@ -1,0 +1,35 @@
+{{> navbar}}
+
+<body class="{{body_class}}">
+    <br>
+    <div class="alert alert-danger w-75 {{^show_error}}d-none{{/show_error}}" style="float: none; margin: 0 auto;">
+        <strong>Error!</strong> {{error}}</a>
+    </div>
+    {{#show_error}}<br>{{/show_error}}
+
+    <h1 align="center">Add new Accounts to {{title}}!</h1>
+    <br>
+    <div class="w-75" style="float: none; margin: 0 auto;">
+        <form action="" method="post">
+            <div class="form-group">
+                Account Level
+                <input type="number" class="form-control" name="level" value="{{level}}" step=1 min="0" max="40" required>
+            </div>
+            <div class="form-group">
+                Accounts
+                <textarea class="form-control" rows="5" name="accounts" required>{{{accounts}}}</textarea>
+                <br>
+                <div class="alert alert-warning" role="alert">
+                    Set the default level for the accounts in the Account Level field if you only have usernames and passwords. Otherwise use the following format: username,password,level
+                    <br>
+                    Acceptable delimiters: <b>,</b> (comma) <b>:</b> (colon) or <b>;</b> (semicolon)
+                    <br>
+                    Note: Only use PTC accounts
+                </div>
+            </div>
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+    </div>
+    <br>
+</body>

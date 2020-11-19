@@ -1,0 +1,94 @@
+{{> navbar}}
+<body class="{{body_class}}">
+    <br>
+    <div class="alert alert-success w-75 {{^show_success}}d-none{{/show_success}}" style="float: none; margin: 0 auto;">
+        <strong>Success!</strong> The settings have been updated.</a>
+    </div>
+    {{#show_success}}<br>{{/show_success}}
+    <div class="alert alert-danger w-75 {{^show_error}}d-none{{/show_error}}" style="float: none; margin: 0 auto;">
+        <strong>Error!</strong> Please try again later.</a>
+    </div>
+    {{#show_error}}<br>{{/show_error}}
+
+    <h1 align="center">Configure {{title}}!</h1>
+    <div class="w-75" style="float: none; margin: 0 auto;">
+        <form action="" method="post">
+            <br>
+            <h4>General</h4>
+            <div class="form-group">
+                Page Name
+                <input type="text" class="form-control" name="title" value="{{title}}" required>
+            </div>
+            <div class="form-group">
+                Locale
+                <input type="text" class="form-control" name="locale_new" value="{{locale_new}}" required>
+            </div>
+            <br>
+            <h4>Pokemon</h4>
+            <div class="form-group">
+                Max Pokemon ID
+                <input type="number" class="form-control" name="max_pokemon_id" value="{{max_pokemon_id}}" step=1 min="1" max="999" required>
+            </div>
+            <div class="form-group">
+                Default time left on new pokemon (in seconds)
+                <input type="number" class="form-control" name="pokemon_time_new" value="{{pokemon_time_new}}" step=1 min="60" max="3600" required>
+            </div>
+            <div class="form-group">
+                Default time left on re-seen pokemon (in seconds)
+                <input type="number" class="form-control" name="pokemon_time_old" value="{{pokemon_time_old}}" step=1 min="60" max="3600" required>
+            </div>
+            <div class="form-group">
+                Ditto Disguises (separated by ",")
+                <input type="string" class="form-control" name="ditto_disguises" value="{{ditto_disguises}}">
+            </div>
+            <br>
+            <h4>Pokestops</h4>
+            <div class="form-group">
+                Lure Time
+                <input type="number" class="form-control" name="pokestop_lure_time" value="{{pokestop_lure_time}}" step=1 min="1800" max="604800" required>
+            </div>
+            <br>
+            <h4>Gyms</h4>
+            <div class="form-group">
+                EX-Raid Boss ID (0 = Off)
+                <input type="number" class="form-control" name="ex_raid_boss_id" value="{{ex_raid_boss_id}}" step=1 min="0" max="999" required>
+            </div>
+            <div class="form-group">
+                EX-Raid Boss Form
+                <input type="number" class="form-control" name="ex_raid_boss_form" value="{{ex_raid_boss_form}}" step=1 min="0" max="255" required>
+            </div>
+            <br>
+            <h4>Webhook</h4>
+            <div class="form-group">
+                URLs (separated by ";")
+                <input type="string" class="form-control" name="webhook_urls" value="{{webhook_urls}}">
+            </div>
+            <div class="form-group">
+                Send Delay
+                <input type="number" class="form-control" name="webhook_delay" value="{{webhook_delay}}" step=0.1 min="1.0" max="60.0" required>
+            </div>
+            <br>
+            <h4>Device API</h4>
+            <div class="form-group">
+                Device Endpoint Whitelist (separated by ";", empty=No Whitelist)
+                <input type="text" class="form-control" name="deviceapi_host_whitelist" value="{{deviceapi_host_whitelist}}">
+            </div>
+            <div class="checkbox">
+            <label><input type="checkbox" name="deviceapi_host_whitelist_uses_proxy" value="deviceapi_host_whitelist_uses_proxy" {{#deviceapi_host_whitelist_uses_proxy}}checked{{/deviceapi_host_whitelist_uses_proxy}}> Device Endpoint is behind proxy (Apache/NGINX/etc.)</label>
+            </div>
+            <div class="form-group">
+                Device Endpoint Secret (empty=No Secret)
+                <input type="text" class="form-control" name="deviceapi_secret" value="{{deviceapi_secret}}">
+            </div>
+            <br>
+            <h4>Misc</h4>
+            <div class="checkbox">
+                <label><input type="checkbox" name="enable_clearing" value="enable_clearing" {{#enable_clearing}}checked{{/enable_clearing}}> Enable Clearing of removed Pokestops/Gyms</label>
+            </div>
+            <br>
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+    </div>
+    <br>
+</body>
