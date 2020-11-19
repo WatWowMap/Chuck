@@ -116,8 +116,8 @@ class Pokemon {
                     this.expireTimestampVerified = true;
                 }
             } else {
-                spawnpoint = new Spawnpoint(this.spawnId, this.lat, this.lon, null, Math.round(data.timestampMs / 1000));
-                await spawnpoint.save(false);
+                spawnpoint = Spawnpoint.fromPokemon(this, null, Math.round(data.timestampMs / 1000));
+                await spawnpoint.upsert();
                 this.expireTimestamp = null;
             }
         }
@@ -284,8 +284,8 @@ class Pokemon {
                         this.expireTimestampVerified = true;
                     }
                 } else {
-                    spawnpoint = new Spawnpoint(this.spawnId, this.lat, this.lon, null, new Date().getTime() / 1000);
-                    await spawnpoint.save(true);
+                    spawnpoint = Spawnpoint.fromPokemon(this);
+                    await spawnpoint.upsert();
                 }
             }
         }
@@ -531,15 +531,9 @@ class Pokemon {
                 let second = date.getSeconds();
                 secondOfHour = second + minute * 60;
             }
-            spawnpoint = new Spawnpoint(
-                this.spawnId,
-                this.lat,
-                this.lon,
-                secondOfHour,
-                this.updated
-            );
+            spawnpoint = Spawnpoint.fromPokemon(this, secondOfHour, this.updated);
             try {
-                await spawnpoint.save(true);
+                await spawnpoint.upsert();
             } catch (err) {
                 console.error('[Spawnpoint] Error:', err);
             }

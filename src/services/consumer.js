@@ -749,8 +749,8 @@ class Consumer {
                     }
                     if (!pokemon.spawnId) {
                         pokemon.spawnId = parseInt(encounter.wild_pokemon.spawn_point_id, 16);
-                        let spawnpoint = new Spawnpoint(pokemon.spawnId, pokemon.lat, pokemon.lon, null, ts);
-                        await spawnpoint.save(false);
+                        const spawnpoint = Spawnpoint.fromPokemon(pokemon, null, ts);
+                        await spawnpoint.upsert();
                         //console.log('spawnpoint id is null:', pokemon);
                     }
                     await pokemon.update();
