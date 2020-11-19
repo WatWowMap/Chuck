@@ -23,7 +23,7 @@ Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDevi
 INSERT INTO bjsdb.instance (name, type, data)
 SELECT name, type, data FROM rdmdb.instance;
 ```
-9.) Visit `http://controllerip:9002` to add accounts, assign devices, or manage instances and auto-assignments  
+11.) Visit `http://controllerip:9002` to add accounts, assign devices, or manage instances and auto-assignments  
 
 ## Configuration
 ```js
