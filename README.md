@@ -13,10 +13,12 @@ Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDevi
 2.) Install dependencies `npm run update`  
 3.) Copy config `cp src/config.example.json src/config.json`  
 4.) Fill out config `vi src/config.json` (listening port, instances, db info, etc)  
-5.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
-6.) Run `npm run controller` 
-7.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
-8.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
+5.) Create PvP stat tables, run npm run create-pvp-tables
+6.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
+7.) Run `npm run controller` 
+8.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
+9.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
+10.) Point `data_endpoint` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://dataparser_ip:9001`
 ```
 INSERT INTO bjsdb.instance (name, type, data)
 SELECT name, type, data FROM rdmdb.instance;
@@ -28,38 +30,67 @@ SELECT name, type, data FROM rdmdb.instance;
 {
     // Listening host interface
     "host": "0.0.0.0",
-    // Listening port
-    "port": 9002,
-    "db": {
-        // Database host IP address/host
-        "host": "127.0.0.1",
-        // Database server listening port
-        "port": 3306,
-        // Database username for authentication
-        "username": "user123",
-        // Database password for authentication
-        "password": "pass123",
-        // Database name to write data to
-        "database": "bjsdb",
-        // Database character set to use
-        "charset": "utf8mb4"
+    // Locale Language
+    "locale": "en",
+    // Controller Settings
+    "controller": {
+        // Backend Controller IP to point devices to
+        "port": 9000,
+        // Title of your backend
+        "title": "BackendJS",
+        // Style
+        "style": "dark"
     },
-    // Redis server settings (used for pub/sub communication
-    // between ControllerJS and DataParser)
-    "redis": {
-        // Redis host IP address/host
+    // Parser Settings
+    "dataparser": {
+        // Data Endpoint for your devices
+        "port": 9001,
+        // Number of clusters to use for parsing
+        "clusters": 4,
+        // Protos to parse
+        "parse": {
+            "pokemon": true,
+            "encounters": true,
+            "gym": true,
+            "pokestops": true,
+            "quests": true,
+            "gymDefenders": true,
+            "weather": true
+        }
+    },
+    // Database Connection
+    "db": {
+        "type": "mysql",
         "host": "127.0.0.1",
-        // Redis server listening port
+        "port": 3306,
+        "username": "user",
+        "password": "userPassword",
+        "database": "databaseSchema",
+        "charset": "utf8mb4",
+        "connectionLimit": 1000
+    },
+    // Redis Connection
+    "redis": {
+        "host": "127.0.0.1",
         "port": 6379,
-        // Redis server optional password for authentication
         "password": ""
     },
+    // Webhooks (WhMgr, Poracle, WDR, etc)
+    "webhooks": {
+        "enabled": false,
+        "urls": ["http://127.0.0.1:9003"],
+        "delay": 5,
+        "retryCount": 5
+    },
+    "logs": {
+        "level": 4,
+        "file": false
+    }
 }
 ```
-
 ## Updating  
 1.) `git pull`  
-3.) `npm install`  
+3.) `npm run update`  
 
 ## Current Issues  
 - Auto-Assignments might not work correctly
