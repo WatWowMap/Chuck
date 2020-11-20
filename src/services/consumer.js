@@ -12,6 +12,7 @@ const Spawnpoint = require('../models/spawnpoint.js');
 
 const MySQLConnector = require('../services/mysql.js');
 const WebhookController = require('../services/webhook.js');
+const Cell = require('../models/cell');
 const Weather = require('../models/weather');
 const db = new MySQLConnector(config.db);
 
@@ -613,18 +614,21 @@ class Consumer {
 
     async updateCells(cells) {
         if (cells.length > 0) {
-            let cellsSQL = [];
+            let cells = [];
             let ts = new Date().getTime() / 1000;
             for (let i = 0; i < cells.length; i++) {
                 let cellId = BigInt(cells[i]).toString();
                 try {
                     let s2cell = new S2.S2Cell(new S2.S2CellId(cellId));
                     let center = s2cell.getRectBound().getCenter();
-                    let lat = center.latDegrees;
-                    let lon = center.lngDegrees;
                     //s2cell.capBound.rectBound.center.lng.degrees
-                    let level = s2cell.level;
-                    cellsSQL.push(`(${cellId}, ${level}, ${lat}, ${lon}, ${ts})`);
+                    cells.push(Cell.build({
+                        id: cellId,
+                        level: s2cell.level,
+                        centerLat: center.latDegrees,
+                        centerLon: center.lngDegrees,
+                        updated: ts,
+                    }));
                 } catch (err) {
                     console.error('[Cell] Error:', err);
                 }
@@ -636,17 +640,8 @@ class Consumer {
                     this.stopsIdsPerCell[cellId] = [];
                 } 
             }
-            let sqlUpdate = 'INSERT INTO s2cell (id, level, center_lat, center_lon, updated) VALUES';
-            sqlUpdate += cellsSQL.join(',');
-            sqlUpdate += ` 
-            ON DUPLICATE KEY UPDATE
-                level=VALUES(level),
-                center_lat=VALUES(center_lat),
-                center_lon=VALUES(center_lon),
-                updated=VALUES(updated)
-            `;
-            let result = await db.query(sqlUpdate);
-            //console.log('[Cell] Result:', result.affectedRows);
+            let result = await Cell.bulkCreate(cells);
+            //console.log('[Cell] Result:', result.length);
         }
     }
 
