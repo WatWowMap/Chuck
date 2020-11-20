@@ -225,7 +225,7 @@ class Consumer {
 
     async updateForts(forts) {
         if (forts.length > 0) {
-            let gymsSQL = [];
+            const updatedGyms = [];
             let pokestopsSQL = [];
             let gymArgs = [];
             let pokestopArgs = [];
@@ -233,24 +233,20 @@ class Consumer {
                 let fort = forts[i];
                 try {
                     switch (fort.data.type) {
-                        case POGOProtos.Map.Fort.FortType.GYM:
+                        case POGOProtos.Map.Fort.FortType.GYM: {
                             if (!config.dataparser.parse.gym) {
                                 continue;
                             }
-                            let gym = new Gym({
-                                cellId: fort.cell,
-                                fort: fort.data
-                            });
-                            await gym.update();
-                            let gymSQL = gym.toSql();
-                            gymsSQL.push(gymSQL.sql);
-                            gymSQL.args.forEach(x => gymArgs.push(x));
+                            const gym = Gym.fromFort(fort.cell, fort.data);
+                            await gym.triggerWebhook();
+                            updatedGyms.push(gym);
 
                             if (!this.gymIdsPerCell[fort.cell]) {
                                 this.gymIdsPerCell[fort.cell] = [];
                             }
                             this.gymIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
                             break;
+                        }
                         case POGOProtos.Map.Fort.FortType.CHECKPOINT:
                             if (!config.dataparser.parse.pokestops) {
                                 continue;
@@ -275,52 +271,12 @@ class Consumer {
                     console.error('[Forts] Error:', err);
                 }
             }
-            if (gymsSQL.length > 0) {
-                let sqlUpdate = `
-                INSERT INTO gym (
-                    id, lat, lon, name, url, last_modified_timestamp, raid_end_timestamp, raid_spawn_timestamp, raid_battle_timestamp, 
-                    updated, raid_pokemon_id, guarding_pokemon_id, availble_slots, team_id, raid_level, enabled, ex_raid_eligible, 
-                    in_battle, raid_pokemon_move_1, raid_pokemon_move_2, raid_pokemon_form, raid_pokemon_cp, raid_is_exclusive, 
-                    cell_id, deleted, total_cp, first_seen_timestamp, raid_pokemon_gender, sponsor_id, raid_pokemon_evolution
-                ) VALUES
-                `;
-                sqlUpdate += gymsSQL.join(',');
-                //console.log('sql:', sqlUpdate);
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                    lat=VALUES(lat),
-                    lon=VALUES(lon),
-                    name=VALUES(name),
-                    url=VALUES(url),
-                    last_modified_timestamp=VALUES(last_modified_timestamp),
-                    raid_end_timestamp=VALUES(raid_end_timestamp),
-                    raid_spawn_timestamp=VALUES(raid_spawn_timestamp),
-                    raid_battle_timestamp=VALUES(raid_battle_timestamp),
-                    updated=VALUES(updated),
-                    raid_pokemon_id=VALUES(raid_pokemon_id),
-                    guarding_pokemon_id=VALUES(guarding_pokemon_id),
-                    availble_slots=VALUES(availble_slots),
-                    team_id=VALUES(team_id),
-                    raid_level=VALUES(raid_level),
-                    enabled=VALUES(enabled),
-                    ex_raid_eligible=VALUES(ex_raid_eligible),
-                    in_battle=VALUES(in_battle),
-                    raid_pokemon_move_1=VALUES(raid_pokemon_move_1),
-                    raid_pokemon_move_2=VALUES(raid_pokemon_move_2),
-                    raid_pokemon_form=VALUES(raid_pokemon_form),
-                    raid_pokemon_cp=VALUES(raid_pokemon_cp),
-                    raid_is_exclusive=VALUES(raid_is_exclusive),
-                    cell_id=VALUES(cell_id),
-                    deleted=VALUES(deleted),
-                    total_cp=VALUES(total_cp),
-                    first_seen_timestamp=VALUES(first_seen_timestamp),
-                    raid_pokemon_gender=VALUES(raid_pokemon_gender),
-                    sponsor_id=VALUES(sponsor_id),
-                    raid_pokemon_evolution=VALUES(raid_pokemon_evolution)
-                `;
+            if (updatedGyms.length > 0) {
                 try {
-                    let result = await db.query(sqlUpdate, gymArgs);
-                    //console.log('[Gym] Result:', result.affectedRows);
+                    let result = await Gym.bulkCreate(updatedGyms, {
+                        fields: Gym.fromFortFields,
+                    });
+                    //console.log('[Gym] Result:', result.length);
                 } catch (err) {
                     console.error('[Gym] Error:', err.message);
                     //console.error('sql:', sqlUpdate);

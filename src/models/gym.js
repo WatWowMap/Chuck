@@ -1,9 +1,9 @@
 'use strict';
 
-const config = require('../config.json');
-const MySQLConnector = require('../services/mysql.js');
+const { DataTypes, Model } = require('sequelize');
+const sequelize = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
-const db = new MySQLConnector(config.db);
+const Cell = require('./cell.js');
 
 const PokemonEvolution = {
     Unset: 0,
@@ -15,109 +15,75 @@ const PokemonEvolution = {
 /**
  * Gym model class.
  */
-class Gym {
-
-    /**
-     * Initialize new Gym object.
-     * @param data 
-     */
-    constructor(data) {
-        if (data.fort) {
-            this.id = data.fort.id;
-            this.lat = data.fort.latitude;
-            this.lon = data.fort.longitude;
-            this.name = null;
-            this.enabled = data.fort.enabled;
-            this.guardingPokemonId = data.fort.guard_pokemon_id;
-            this.teamId = data.fort.owned_by_team;
-            if (data.fort.gym_display) {
-                this.availableSlots = data.fort.gym_display.slots_available; // TODO: No slots available?
-            } else {
-                this.availableSlots = 0;
-            }
-            this.lastModifiedTimestamp = data.fort.last_modified_timestamp_ms / 1000;
-            this.exRaidEligible = data.fort.is_ex_raid_eligible;
-            this.inBattle = data.fort.is_in_battle;
-            if (data.fort.sponsor > 0) {
-                this.sponsorId = data.fort.sponsor;
-            } else {
-                this.sponsorId = 0;
-            }
-            if (data.fort.image_url) {
-                this.url = data.fort.image_url;
-            } else {
-                this.url = null;
-            }
-            this.totalCp = data.fort.owned_by_team ? data.fort.gym_display.total_gym_cp : 0;
-            this.raidEndTimestamp = null;
-            this.raidSpawnTimestamp = null;
-            this.raidBattleTimestamp = null;
-            this.raidLevel = null;
-            this.raidIsExclusive = 0;
-            this.raidPokemonId = 0;
-            this.raidPokemonMove1 = 0;
-            this.raidPokemonMove2 = 0;
-            this.raidPokemonCp = 0;
-            this.raidPokemonForm = 0;
-            this.raidPokemonGender = 0;
-            this.raidPokemonCostume = 0;
-            this.raidPokemonEvolution = null;
-            if (data.fort.raid_info) {
-                this.raidEndTimestamp = data.fort.raid_info.raid_end_ms / 1000;
-                this.raidSpawnTimestamp = data.fort.raid_info.raid_spawn_ms / 1000;
-                this.raidBattleTimestamp = data.fort.raid_info.raid_battle_ms / 1000;
-                this.raidLevel = data.fort.raid_info.raid_level;
-                this.raidIsExclusive = data.fort.raid_info.is_exclusive;
-                if (data.fort.raid_info.raid_pokemon) {
-                    this.raidPokemonId = data.fort.raid_info.raid_pokemon.pokemon_id;
-                    this.raidPokemonMove1 = data.fort.raid_info.raid_pokemon.move_1;
-                    this.raidPokemonMove2 = data.fort.raid_info.raid_pokemon.move_2;
-                    this.raidPokemonCp = data.fort.raid_info.raid_pokemon.cp;
-                    this.raidPokemonForm = data.fort.raid_info.raid_pokemon.pokemon_display.form;
-                    this.raidPokemonGender = data.fort.raid_info.raid_pokemon.pokemon_display.gender;
-                    if (data.fort.raid_info.raid_pokemon.pokemon_display.pokemon_evolution) {
-                        this.raidPokemonEvolution = data.fort.raid_info.raid_pokemon.pokemon_display.pokemon_evolution;
-                    }
+class Gym extends Model {
+    static fromFortFields = [
+        'lat',
+        'lon',
+        'enabled',
+        'guarding_pokemon_id',
+        'team_id',
+        'available_slots',
+        'last_modified_timestamp',
+        'ex_raid_eligible',
+        'sponsor_id',
+        'url',
+        'total_cp',
+        'cell_id',
+        'deleted',
+        'first_seen_timestamp',
+        'updated',
+        'raid_end_timestamp',
+        'raid_spawn_timestamp',
+        'raid_battle_timestamp',
+        'raid_level',
+        'raid_is_exclusive',
+        'raid_pokemon_id',
+        'raid_pokemon_move_1',
+        'raid_pokemon_move_2',
+        'raid_pokemon_cp',
+        'raid_pokemon_form',
+        'raid_pokemon_gender',
+        'raid_pokemon_evolution',
+    ];
+    static fromFort(cellId, fort) {
+        const ts = new Date().getTime() / 1000;
+        const record = {
+            id: fort.id,
+            lat: fort.latitude,
+            lon: fort.longitude,
+            enabled: fort.enabled,
+            guardingPokemonId: fort.guard_pokemon_id,
+            teamId: fort.owned_by_team,
+            availableSlots: fort.gym_display ? fort.gym_display.slots_available : 0,    // TODO: No slots available?
+            lastModifiedTimestamp: fort.last_modified_timestamp_ms / 1000,
+            exRaidEligible: fort.is_ex_raid_eligible,
+            sponsorId: fort.sponsor > 0 ? fort.sponsor : 0,
+            url: fort.image_url ? fort.image_url : null,
+            totalCp: fort.owned_by_team ? fort.gym_display.total_gym_cp : 0,
+            cellId,
+            deleted: false,
+            firstSeenTimestamp: ts,
+            updated: ts,
+        };
+        if (fort.raid_info) {
+            record.raidEndTimestamp = fort.raid_info.raid_end_ms / 1000;
+            record.raidSpawnTimestamp = fort.raid_info.raid_spawn_ms / 1000;
+            record.raidBattleTimestamp = fort.raid_info.raid_battle_ms / 1000;
+            record.raidLevel = fort.raid_info.raid_level;
+            record.raidIsExclusive = fort.raid_info.is_exclusive;
+            if (fort.raid_info.raid_pokemon) {
+                record.raidPokemonId = fort.raid_info.raid_pokemon.pokemon_id;
+                record.raidPokemonMove1 = fort.raid_info.raid_pokemon.move_1;
+                record.raidPokemonMove2 = fort.raid_info.raid_pokemon.move_2;
+                record.raidPokemonCp = fort.raid_info.raid_pokemon.cp;
+                record.raidPokemonForm = fort.raid_info.raid_pokemon.pokemon_display.form;
+                record.raidPokemonGender = fort.raid_info.raid_pokemon.pokemon_display.gender;
+                if (fort.raid_info.raid_pokemon.pokemon_display.pokemon_evolution) {
+                    record.raidPokemonEvolution = fort.raid_info.raid_pokemon.pokemon_display.pokemon_evolution;
                 }
             }
-            let ts = new Date().getTime() / 1000;
-            this.cellId = data.cellId;
-            this.deleted = false;
-            this.firstSeenTimestamp = ts;
-            this.updated = ts;
-        } else {
-            this.id = data.id;
-            this.lat = data.lat;
-            this.lon = data.lon;
-            this.name = data.name || null;
-            this.url = data.url || null;
-            this.guardingPokemonId = data.guarding_pokemon_id || 0;
-            this.enabled = data.enabled || 0;
-            this.lastModifiedTimestamp = data.last_modified_timestamp || null;
-            this.teamId = data.team_id || 0;
-            this.raidEndTimestamp = data.raid_end_timestamp || null;
-            this.raidSpawnTimestamp = data.raid_spawn_timestamp || null;
-            this.raidBattleTimestamp = data.raid_battle_timestamp || null;
-            this.raidPokemonId = data.raid_pokemon_id || null;
-            this.raidLevel = data.raid_level || null;
-            this.availableSlots = data.available_slots || 0;
-            this.updated = data.updated;
-            this.exRaidEligible = data.ex_raid_eligible || 0;
-            this.inBattle = data.in_battle || 0;
-            this.raidPokemonMove1 = data.raid_pokemon_move_1 || null;
-            this.raidPokemonMove2 = data.raid_pokemon_move_2 || null;
-            this.raidPokemonForm = data.raid_pokemon_form || null;
-            this.raidPokemonCp = data.raidPokemon_cp || null;
-            this.raidPokemonGender = data.raid_pokemon_gender || null;
-            this.raidPokemonEvolution = data.raid_pokemon_evolution || null;
-            this.raidIsExclusive = data.raid_is_exclusive || null;
-            this.cellId = data.cell_id;
-            this.totalCp = data.total_cp || 0;
-            this.deleted = data.deleted || 0;
-            this.firstSeenTimestamp = data.first_seen_timestamp;
-            this.sponsorId = data.sponsor_id || null;
-            this.raidPokemonEvolution = data.raid_pokemon_evolution || null;
         }
+        return Gym.build(record);
     }
 
     /**
@@ -126,76 +92,37 @@ class Gym {
      * @param {*} withDeleted 
      */
     async getById(id, withDeleted = true) {
-        const withDeletedSQL = withDeleted ? '' : 'AND deleted = false';
-        const sql = `
-            SELECT id, lat, lon, name, url, guarding_pokemon_id, last_modified_timestamp, team_id, raid_end_timestamp,
-                   raid_spawn_timestamp, raid_battle_timestamp, raid_pokemon_id, enabled, availble_slots, updated,
-                   raid_level, ex_raid_eligible, in_battle, raid_pokemon_move_1, raid_pokemon_move_2, raid_pokemon_form,
-                   raid_pokemon_costume, raid_pokemon_cp, raid_pokemon_gender, raid_is_exclusive, cell_id, total_cp,
-                   sponsor_id, raid_pokemon_evolution
-            FROM gym
-            WHERE id = ? ${withDeletedSQL}
-        `;
-        const args = [id];
-        let results = await db.query(sql, args);
-        if (results && results > 0) {
-            const result = results[0];
-            return new Gym(result);
-        }
-        return null;
+        const result = await Gym.findByPk(id);
+        return withDeleted || !result.deleted ? result : null;
     }
 
     /**
-     * Update Gym values if changed from already found Gym
+     * trigger webhooks
      */
-    async update() {
-        let ts = new Date().getTime() / 1000;
-        let oldGym;
+    async triggerWebhook() {
+        let oldGym = null;
         try {
-            oldGym = await this.getById(this.id, true);
+            oldGym = await Gym.findByPk(this.id);
         } catch (err) {
-            oldGym = null;
         }
-        
-        if (this.raidIsExclusive && this.exRaidBossId) {
-            this.raidPokemonId = this.exRaidBossId;
-            this.raidPokemonForm = this.exRaidBossForm || 0;
-        }
-        
-        this.updated = ts;
-        
-        if (!oldGym) {
+
+        if (oldGym === null) {
             WebhookController.instance.addGymEvent(this.toJson('gym'));
             WebhookController.instance.addGymInfoEvent(this.toJson('gym-info'));
             let raidBattleTime = new Date((this.raidBattleTimestamp || 0) * 1000);
-            let raidEndTime = Date((this.raidEndTimestamp || 0) * 1000);
+            let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
             let now = new Date().getTime() / 1000;            
             
-            if (raidBattleTime > now && this.raidLevel || 0 > 0) {
+            if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
                 WebhookController.instance.addEggEvent(this.toJson('egg'));
-            } else if (raidEndTime > now && this.raidPokemonId || 0 > 0) {
+            } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {
                 WebhookController.instance.addRaidEvent(this.toJson('raid'));
             }
         } else {
-            if (oldGym.cellId && !this.cellId) {
-                this.cellId = oldGym.cellId;
-            }
-            if (oldGym.name && !this.name) {
-                this.name = oldGym.name;
-            }
-            if (oldGym.url && !this.url) {
-                this.url = oldGym.url;
-            }
-            if (oldGym.raidIsExclusive && !this.raidIsExclusive) {
-                this.raidIsExclusive = oldGym.raidIsExclusive;
-            }
             if (oldGym.availableSlots !== this.availableSlots ||
                 oldGym.teamId !== this.teamId ||
                 oldGym.inBattle !== this.inBattle) {
                 WebhookController.instance.addGymInfoEvent(this.toJson('gym-info'));
-            }
-            if (!this.raidEndTimestamp && oldGym.raidEndTimestamp) {
-                this.raidEndTimestamp = oldGym.raidEndTimestamp;
             }
             if (this.raidSpawnTimestamp > 0 && (
                 oldGym.raidLevel !== this.raidLevel ||
@@ -206,87 +133,13 @@ class Gym {
                 let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
                 let now = new Date().getTime() / 1000;
 
-                if (raidBattleTime > now && this.raidLevel || 0 > 0) {
+                if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
                     WebhookController.instance.addEggEvent(this.toJson('egg'));
-                } else if (raidEndTime > now && this.raidPokemonId || 0 > 0) {
+                } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {
                     WebhookController.instance.addRaidEvent(this.toJson('raid'));
                 }
             }
         }
-    }
-
-    /**
-     * Get Gym object as sql string
-     */
-    toSql() {
-        return {
-            sql: `
-            (
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
-            )
-            `,
-            args: [
-                this.id.toString(),
-                this.lat,
-                this.lon,
-                this.name,
-                this.url,
-                this.lastModifiedTimestamp,
-                this.raidEndTimestamp,
-                this.raidSpawnTimestamp,
-                this.raidBattleTimestamp,
-                this.updated,
-                this.raidPokemonId,
-                this.guardingPokemonId,
-                this.availableSlots,
-                this.teamId,
-                this.raidLevel,
-                this.enabled,
-                this.exRaidEligible,
-                this.inBattle,
-                this.raidPokemonMove1,
-                this.raidPokemonMove2,
-                this.raidPokemonForm,
-                this.raidPokemonCp,
-                this.raidIsExclusive,
-                this.cellId.toString(),
-                this.deleted,
-                this.totalCp,
-                this.firstSeenTimestamp,
-                this.raidPokemonGender,
-                this.sponsorId,
-                this.raidPokemonEvolution
-            ]
-        };
     }
 
     /**
@@ -360,5 +213,173 @@ class Gym {
         }
     }
 }
+Gym.init({
+    id: {
+        type: DataTypes.STRING(20),
+        primaryKey: true,
+        allowNull: false,
+    },
+    lat: {
+        type: DataTypes.DOUBLE(18, 14),
+        allowNull: false,
+    },
+    lon: {
+        type: DataTypes.DOUBLE(18, 14),
+        allowNull: false,
+    },
+    name: {
+        type: DataTypes.STRING(128),
+        defaultValue: null,
+    },
+    url: {
+        type: DataTypes.STRING(200),
+        defaultValue: null,
+    },
+    lastModifiedTimestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        defaultValue: null,
+    },
+    raidEndTimestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        defaultValue: null,
+    },
+    raidSpawnTimestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        defaultValue: null,
+    },
+    raidBattleTimestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        defaultValue: null,
+    },
+    updated: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        defaultValue: null,
+    },
+    raidPokemonId: {
+        type: DataTypes.SMALLINT(6).UNSIGNED,
+        defaultValue: null,
+    },
+    guardingPokemonId: {
+        type: DataTypes.SMALLINT(6).UNSIGNED,
+        defaultValue: null,
+    },
+    availableSlots: {
+        type: DataTypes.SMALLINT(6).UNSIGNED,
+        defaultValue: null,
+    },
+    teamId: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    raidLevel: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    enabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: null,
+    },
+    exRaidEligible: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: null,
+    },
+    inBattle: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: null,
+    },
+    raidPokemonMove1: {
+        type: DataTypes.SMALLINT(6).UNSIGNED,
+        defaultValue: null,
+    },
+    raidPokemonMove2: {
+        type: DataTypes.SMALLINT(6).UNSIGNED,
+        defaultValue: null,
+    },
+    raidPokemonForm: {
+        type: DataTypes.MEDIUMINT(5).UNSIGNED,
+        defaultValue: null,
+    },
+    raidPokemonCp: {
+        type: DataTypes.MEDIUMINT(5).UNSIGNED,
+        defaultValue: null,
+    },
+    raidIsExclusive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: null,
+    },
+    cellId: {
+        type: DataTypes.BIGINT(20).UNSIGNED,
+        defaultValue: null,
+    },
+    deleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    totalCp: {
+        type: DataTypes.INTEGER(11),
+        defaultValue: null,
+    },
+    firstSeenTimestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        defaultValue: null,
+    },
+    raidPokemonGender: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    sponsorId: {
+        type: DataTypes.SMALLINT(5).UNSIGNED,
+        defaultValue: null,
+    },
+    raidPokemonCostume: {
+        type: DataTypes.SMALLINT(4).UNSIGNED,
+        defaultValue: null,
+    },
+    raidPokemonEvolution: {
+        type: DataTypes.TINYINT(1).UNSIGNED,
+        defaultValue: null,
+    },
+}, {
+    sequelize,
+    timestamps: false,
+    underscored: true,
+    indexes: [
+        {
+            name: 'ix_coords',
+            fields: ['lat', 'lon'],
+        },
+        {
+            name: 'ix_raid_end_timestamp',
+            fields: ['raid_end_timestamp'],
+        },
+        {
+            name: 'ix_updated',
+            fields: ['updated'],
+        },
+        {
+            name: 'ix_raid_pokemon_id',
+            fields: ['raid_pokemon_id'],
+        },
+        {
+            name: 'ix_raid_pokemon_id',
+            fields: ['raid_pokemon_id'],
+        },
+        {
+            // TODO: ix?
+            name: 'fk_gym_cell_id',
+            fields: ['cell_id'],
+        },
+        {
+            name: 'ix_gym_deleted',
+            fields: ['deleted'],
+        },
+    ],
+    tableName: 'spawnpoint',
+});
+Cell.Gyms = Cell.hasMany(Gym, {
+    foreignKey: 'cell_id',
+});
+Gym.Cell = Gym.belongsTo(Cell);
 
 module.exports = Gym;
