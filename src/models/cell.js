@@ -4,27 +4,14 @@ const S2N = require('nodes2ts');
 const turf = require('@turf/turf');
 const S2 = require('s2-geometry').S2;
 
-const config = require('../config.json');
-const MySQLConnector = require('../services/mysql.js');
-const db = new MySQLConnector(config.db);
+const { DataTypes, Model, Op } = require('sequelize');
+const sequelize = require('../services/sequelize.js');
 
 /**
  * S2NCell model class.
  */
-class Cell {
-
-    /**
-     * Initialize new Cell object.
-     * @param data 
-     */
-    constructor(id, level, centerLat, centerLon, updated) {
-        this.id = id;
-        this.level = level;
-        this.centerLat = centerLat;
-        this.centerLon = centerLon;
-        this.updated = updated;
-    }
-
+class Cell extends Model {
+    // TODO: unused
     static getS2NCellIDs(minLevel, maxLevel, maxCells, polygon) {
         let bbox = turf.bbox(polygon);
         let regionCoverer = new S2N.S2NRegionCoverer();
@@ -60,7 +47,7 @@ class Cell {
                 cellIDs.push(id);
             }
         }
-        return cellIDs
+        return cellIDs;
     }
 
     static getCellIdFromLatLon(lat, lon, level = 15) {
@@ -70,52 +57,60 @@ class Cell {
     }
 
     static async getByIDs(ids) {
-        if (ids.length > 10000) {
-            let result = [];
-            let count = parseInt(Math.ceil(ids.length / 10000.0));
-            for (let i = 0; i < count; i++) {
-                let start = 10000 * i;
-                let end = Math.min(10000 * (i + 1) - 1, ids.length - 1);
-                let slice = ids.slice(start, end);
-                let sliceResult = await this.getByIDs(slice);
-                if (sliceResult.length > 0) {
-                    sliceResult.forEach(x => result.push(x));
-                }
-            }
-            return result;
-        }
-        if (ids.length === 0) {
-            return [];
-        }
-        let inSQL = '(';
-        for (let i = 0; i < ids.length; i++) {
-            inSQL += '?';
-            if (i !== ids.length - 1) {
-                inSQL += ',';
-            }
-        }
-        inSQL += ')';
-
-        let sql = `
-        SELECT id, level, center_lat, center_lon, updated
-        FROM S2Ncell
-        WHERE id IN ${inSQL}
-        `;
-        //WHERE id IN ${inSQL}
-        let cells = [];
         try {
-            let results = await db.query(sql, ids);
-            if (results && results.length > 0) {
-                for (let i = 0; i < results.length; i++) {
-                    let result = results[i];
-                    cells.push(new Cell(result.id, result.level, result.center_lat, result.center_lon, result.updated));
-                }
-            }
+            let results = await Cell.findAll({
+                where: {
+                    id: {
+                        [Op.in]: ids,
+                    },
+                },
+            });
+            return results;
         } catch (err) {
             console.error('[Cell] Error:', err);
+            return [];
         }
-        return cells;
     }
 }
+Cell.init({
+    id: {
+        type: DataTypes.BIGINT(20).UNSIGNED,
+        primaryKey: true,
+        allowNull: false,
+    },
+    level: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    centerLat: {
+        type: DataTypes.DOUBLE(18, 14),
+        allowNull: false,
+        defaultValue: 0.00000000000000,
+    },
+    centerLon: {
+        type: DataTypes.DOUBLE(18, 14),
+        allowNull: false,
+        defaultValue: 0.00000000000000,
+    },
+    updated: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        allowNull: false,
+    },
+}, {
+    sequelize,
+    timestamps: false,
+    underscored: true,
+    indexes: [
+        {
+            name: 'ix_coords',
+            fields: ['center_lat', 'center_lon'],
+        },
+        {
+            name: 'ix_updated',
+            fields: ['updated'],
+        },
+    ],
+    tableName: 's2cell',
+});
 
 module.exports = Cell;
