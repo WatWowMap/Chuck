@@ -603,61 +603,22 @@ class Consumer {
 
     async updateWeather(weather) {
         if (weather.length > 0) {
-            let weatherSQL = [];
+            let updatedWeather = [];
             let ts = new Date().getTime() / 1000;
             for (let i = 0; i < weather.length; i++) {
                 let conditions = weather[i];
                 try {
-                    let cellId = conditions.cell.toString();
-                    let s2cell = new S2.S2Cell(new S2.S2CellId(cellId));
-                    let center = s2cell.getRectBound().getCenter();
-                    let lat = center.latDegrees;
-                    let lon = center.lngDegrees;
-                    let level = s2cell.level;
-                    let gameplayCondition = conditions.data.gameplay_weather.gameplay_condition || 0;
-                    let windDirection = conditions.data.display_weather.wind_direction || 0;
-                    let cloudLevel = conditions.data.display_weather.cloud_level || 0;
-                    let rainLevel = conditions.data.display_weather.rain_level || 0;
-                    let windLevel = conditions.data.display_weather.wind_level || 0;
-                    let snowLevel = conditions.data.display_weather.snow_level || 0;
-                    let fogLevel = conditions.data.display_weather.fog_level || 0;
-                    let seLevel = conditions.data.display_weather.special_effect_level || 0;
-                    let severity = 0;
-                    let warnWeather = 0;
-                    for (let i = 0; i < conditions.data.alerts.length; i++) {
-                        let severityCondition = conditions.data.alerts[i];
-                        severity = severityCondition.severity;
-                        warnWeather = severityCondition.warn_weather;
-                    }
-                    const weather = new Weather(cellId, level, lat, lon, gameplayCondition, windDirection, cloudLevel, rainLevel, windLevel, snowLevel, fogLevel, seLevel, severity, warnWeather, ts);
-                    // TODO: Move weather webhook to Weather class
-                    WebhookController.instance.addWeatherEvent(weather.toJson());
-                    weatherSQL.push(weather.toSql());
+                    const weather = Weather.fromClientWeather(conditions.cell.toString(), conditions.data, ts);
+                    await weather.triggerWebhook();
+                    updatedWeather.push(weather.toJSON());
                 } catch (err) {
                     console.error('[Weather] Error:', err);
                 }
             }
-            let sqlUpdate = 'INSERT INTO weather (id, level, latitude, longitude, gameplay_condition, wind_direction, cloud_level, rain_level, wind_level, snow_level, fog_level, special_effect_level, severity, warn_weather, updated) VALUES ';
-            sqlUpdate += weatherSQL.join(',');
-            sqlUpdate += `
-            ON DUPLICATE KEY UPDATE
-                level=VALUES(level),
-                latitude=VALUES(latitude),
-                longitude=VALUES(longitude),
-                gameplay_condition=VALUES(gameplay_condition),
-                wind_direction=VALUES(wind_direction),
-                cloud_level=VALUES(cloud_level),
-                rain_level=VALUES(rain_level),
-                wind_level=VALUES(wind_level),
-                snow_level=VALUES(snow_level),
-                fog_level=VALUES(fog_level),
-                special_effect_level=VALUES(special_effect_level),
-                severity=VALUES(severity),
-                warn_weather=VALUES(warn_weather),
-                updated=VALUES(updated)
-            `;
-            let result = await db.query(sqlUpdate);
-            //console.log('[Weather] Result:', result.affectedRows);
+            let result = await Weather.bulkCreate(updatedWeather, {
+                updateOnDuplicate: Weather.fromClientWeatherFields,
+            });
+            //console.log('[Weather] Result:', result.length);
         }
     }
 
