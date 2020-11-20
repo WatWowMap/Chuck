@@ -5,13 +5,6 @@ const sequelize = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
 const Cell = require('./cell.js');
 
-const PokemonEvolution = {
-    Unset: 0,
-    Mega: 1,
-    MegaX: 2,
-    MegaY: 3
-};
-
 /**
  * Gym model class.
  */
@@ -85,16 +78,6 @@ class Gym extends Model {
             }
         }
         return Gym.build(record);
-    }
-
-    /**
-     * Get Gym by unique id
-     * @param {*} id 
-     * @param {*} withDeleted 
-     */
-    async getById(id, withDeleted = true) {
-        const result = await Gym.findByPk(id);
-        return withDeleted || !result.deleted ? result : null;
     }
 
     /**
