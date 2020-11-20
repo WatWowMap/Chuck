@@ -596,7 +596,14 @@ class Consumer {
                     this.stopsIdsPerCell[cellId] = [];
                 } 
             }
-            let result = await Cell.bulkCreate(cells);
+            let result = await Cell.bulkCreate(cells, {
+                updateOnDuplicate: [
+                    'level',
+                    'centerLat',
+                    'centerLon',
+                    'updated',
+                ],
+            });
             //console.log('[Cell] Result:', result.length);
         }
     }
