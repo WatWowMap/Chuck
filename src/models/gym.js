@@ -380,7 +380,7 @@ Gym.init({
     tableName: 'gym',
 });
 Cell.Gyms = Cell.hasMany(Gym, {
-    foreignKey: 'cell_id',
+    foreignKey: 'cellId',
 });
 Gym.Cell = Gym.belongsTo(Cell);
 
