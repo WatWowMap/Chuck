@@ -25,6 +25,7 @@ class Gym extends Model {
         'availableSlots',
         'lastModifiedTimestamp',
         'exRaidEligible',
+        'inBattle',
         'sponsorId',
         'url',
         'totalCp',
@@ -56,6 +57,7 @@ class Gym extends Model {
             availableSlots: fort.gym_display ? fort.gym_display.slots_available : 0,    // TODO: No slots available?
             lastModifiedTimestamp: fort.last_modified_timestamp_ms / 1000,
             exRaidEligible: fort.is_ex_raid_eligible,
+            inBattle: fort.is_in_battle,
             sponsorId: fort.sponsor > 0 ? fort.sponsor : 0,
             url: fort.image_url ? fort.image_url : null,
             totalCp: fort.owned_by_team ? fort.gym_display.total_gym_cp : 0,
