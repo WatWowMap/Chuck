@@ -239,7 +239,7 @@ class Consumer {
                             }
                             const gym = Gym.fromFort(fort.cell, fort.data);
                             await gym.triggerWebhook();
-                            updatedGyms.push(gym);
+                            updatedGyms.push(gym.toJSON());
 
                             if (!this.gymIdsPerCell[fort.cell]) {
                                 this.gymIdsPerCell[fort.cell] = [];
@@ -274,11 +274,11 @@ class Consumer {
             if (updatedGyms.length > 0) {
                 try {
                     let result = await Gym.bulkCreate(updatedGyms, {
-                        fields: Gym.fromFortFields,
+                        updateOnDuplicate: Gym.fromFortFields,
                     });
                     //console.log('[Gym] Result:', result.length);
                 } catch (err) {
-                    console.error('[Gym] Error:', err.message);
+                    console.error('[Gym] Error:', err);
                     //console.error('sql:', sqlUpdate);
                     //console.error('args:', args);
                 }
@@ -578,13 +578,13 @@ class Consumer {
                     let s2cell = new S2.S2Cell(new S2.S2CellId(cellId));
                     let center = s2cell.getRectBound().getCenter();
                     //s2cell.capBound.rectBound.center.lng.degrees
-                    cells.push(Cell.build({
+                    cells.push({
                         id: cellId,
                         level: s2cell.level,
                         centerLat: center.latDegrees,
                         centerLon: center.lngDegrees,
                         updated: ts,
-                    }));
+                    });
                 } catch (err) {
                     console.error('[Cell] Error:', err);
                 }

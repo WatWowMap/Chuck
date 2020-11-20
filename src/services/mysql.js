@@ -22,7 +22,7 @@ const getConnection = (config) => {
     });
 
     conn.on('enqueue', () => {
-        console.log('[MySQL] Waiting for available connection slot');
+        // console.log('[MySQL] Waiting for available connection slot');
     });
 
     conn.on('error', (err) => {
