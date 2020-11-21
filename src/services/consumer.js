@@ -506,7 +506,7 @@ class Consumer {
 
     async updateCells(cells) {
         if (cells.length > 0) {
-            let cells = [];
+            let updatedCells = [];
             let ts = new Date().getTime() / 1000;
             for (let i = 0; i < cells.length; i++) {
                 let cellId = BigInt(cells[i]).toString();
@@ -514,7 +514,7 @@ class Consumer {
                     let s2cell = new S2.S2Cell(new S2.S2CellId(cellId));
                     let center = s2cell.getRectBound().getCenter();
                     //s2cell.capBound.rectBound.center.lng.degrees
-                    cells.push({
+                    updatedCells.push({
                         id: cellId,
                         level: s2cell.level,
                         centerLat: center.latDegrees,
@@ -532,7 +532,7 @@ class Consumer {
                     this.stopsIdsPerCell[cellId] = [];
                 } 
             }
-            let result = await Cell.bulkCreate(cells, {
+            let result = await Cell.bulkCreate(updatedCells, {
                 updateOnDuplicate: [
                     'level',
                     'centerLat',
