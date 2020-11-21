@@ -3,7 +3,7 @@
 const POGOProtos = require('pogo-protos');
 
 const { DataTypes, Model, Op, Sequelize } = require('sequelize');
-const { JsonTextDataType, sequelize } = require('../services/sequelize.js');
+const sequelize = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
 const Cell = require('./cell');
 
@@ -284,6 +284,7 @@ class Pokestop extends Model {
             rewardData['info'] = infoData;
             rewards.push(rewardData);
         }
+        const ts = new Date().getTime() / 1000;
         return Pokestop.build({
             id: quest.fort_id,
             questType: quest.quest_type,
@@ -292,7 +293,8 @@ class Pokestop extends Model {
             questTimestamp: quest.last_update_timestamp_ms / 1000,
             questConditions: conditions,
             questRewards: rewards,
-            updated: new Date().getTime() / 1000,
+            firstSeenTimestamp: ts,
+            updated: ts,
             deleted: false,
         });
     }
@@ -340,6 +342,11 @@ class Pokestop extends Model {
             oldPokestop = {};
         }
         if (updateQuest) {
+            if (!oldPokestop) {
+                return true;
+            }
+            this.lat = oldPokestop.lat;
+            this.lon = oldPokestop.lon;
             if (updateQuest && (this.questTimestamp || 0) > (oldPokestop.questTimestamp || 0)) {
                 WebhookController.instance.addQuestEvent(this.toJson('quest'));
             }
@@ -351,6 +358,7 @@ class Pokestop extends Model {
                 WebhookController.instance.addInvasionEvent(this.toJson('invasion'));
             }
         }
+        return false;
     }
 
     /**
@@ -534,11 +542,11 @@ Pokestop.init({
         defaultValue: null,
     },
     questConditions: {
-        type: JsonTextDataType,
+        type: DataTypes.JSONTEXT,
         defaultValue: null,
     },
     questRewards: {
-        type: JsonTextDataType,
+        type: DataTypes.JSONTEXT,
         defaultValue: null,
     },
     questTemplate: {

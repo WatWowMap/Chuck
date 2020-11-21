@@ -5,7 +5,7 @@ const turf = require('@turf/turf');
 const S2 = require('s2-geometry').S2;
 
 const { DataTypes, Model, Op } = require('sequelize');
-const { sequelize } = require('../services/sequelize.js');
+const sequelize = require('../services/sequelize.js');
 
 /**
  * S2NCell model class.

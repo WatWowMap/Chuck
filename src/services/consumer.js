@@ -328,22 +328,22 @@ class Consumer {
             if (updatedGyms.length > 0) {
                 try {
                     const result = await Gym.bulkCreate(updatedGyms, {
-                        updateOnDuplicate: fortColumns,
+                        updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
-                    console.error('[FortDetails] Error:', err);
+                    console.error('[FortDetails] Error:', err.stack);
                 }
             }
 
             if (updatedPokestops.length > 0) {
                 try {
                     const result = await Pokestop.bulkCreate(updatedGyms, {
-                        updateOnDuplicate: fortColumns,
+                        updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
-                    console.error('[FortDetails] Error:', err);
+                    console.error('[FortDetails] Error:', err.stack);
                 }
             }
         }
@@ -676,7 +676,10 @@ class Consumer {
             for (let i = 0; i < quests.length; i++) {
                 let quest = quests[i];
                 let pokestop = Pokestop.fromQuest(quest);
-                await pokestop.triggerWebhook(true);
+                if (await pokestop.triggerWebhook(true)) {
+                    console.warn('[Quest] Found a quest belonging to a new stop, skipping...');
+                    continue;
+                }
                 updatedPokestops.push(pokestop.toJSON());
             }
             if (updatedPokestops.length > 0) {
@@ -686,7 +689,7 @@ class Consumer {
                     });
                     //console.log('[Quest] Result:', result.length);
                 } catch (err) {
-                    console.error('[Quest] Error:', err);
+                    console.error('[Quest] Error:', err.stack);
                 }
             }
         }
