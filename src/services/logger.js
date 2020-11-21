@@ -2,7 +2,7 @@
 
 const betterLogging = require('better-logging');
 const { Theme } = betterLogging;
-const config = require('../config.json');
+const config = require('./config.js');
 
 const fileName = new Date().toLocaleDateString().replace(/\//g, '-');
 betterLogging(console, {

@@ -11,8 +11,8 @@ Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDevi
 ## Installation  
 1.) Clone repository `git clone https://github.com/vwwm/chuck`  
 2.) Install dependencies `npm run update`  
-3.) Copy config `cp src/config.example.json src/config.json`  
-4.) Fill out config `vi src/config.json` (listening port, instances, db info, etc)  
+3.) Copy config `cp src/configs/config.example.json src/configs/config.json`  
+4.) Fill out config `vi src/configs/config.json` (listening port, instances, db info, etc)  
 5.) Create PvP stat tables, run npm run create-pvp-tables  
 6.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
 7.) Run `npm run controller`  
