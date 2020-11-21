@@ -3,7 +3,7 @@
 const { DataTypes, Sequelize, ValidationError, Utils } = require('sequelize');
 const config = require('../config.json');
 
-class JSONTEXT extends DataTypes.TEXT().constructor {
+class JSONTEXT extends DataTypes.TEXT.prototype.constructor {
     _stringify(value) {
         if (value === null) {
             return null;
@@ -18,7 +18,7 @@ class JSONTEXT extends DataTypes.TEXT().constructor {
 
     validate(value) {
         try {
-            this._sanitize(value);
+            JSON.parse(value);
         } catch (err) {
             throw ValidationError(err.message);
         }
@@ -26,7 +26,7 @@ class JSONTEXT extends DataTypes.TEXT().constructor {
     }
 
     static parse(value) {
-        return this.options.reviver ? JSON.parse(value, this.options.reviver) : JSON.parse(value);
+        return JSON.parse(value);
     }
 }
 JSONTEXT.prototype.key = JSONTEXT.key = 'JSONTEXT';
