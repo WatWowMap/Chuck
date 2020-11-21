@@ -289,19 +289,20 @@ class Consumer {
         }
     }
 
+    static fortColumns = [
+        'lat',
+        'lon',
+        'name',
+        'url',
+        'updated',
+    ];
+
     async updateFortDetails(fortDetails) {
         // Update Forts
         if (fortDetails.length > 0) {
             let ts = new Date().getTime() / 1000;
             const updatedGyms = [];
             const updatedPokestops = [];
-            const columns = [
-                'lat',
-                'lon',
-                'name',
-                'url',
-                'updated',
-            ];
 
             for (let i = 0; i < fortDetails.length; i++) {
                 let details = fortDetails[i];
@@ -327,7 +328,7 @@ class Consumer {
             if (updatedGyms.length > 0) {
                 try {
                     const result = await Gym.bulkCreate(updatedGyms, {
-                        updateOnDuplicate: columns,
+                        updateOnDuplicate: fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
@@ -338,7 +339,7 @@ class Consumer {
             if (updatedPokestops.length > 0) {
                 try {
                     const result = await Pokestop.bulkCreate(updatedGyms, {
-                        updateOnDuplicate: columns,
+                        updateOnDuplicate: fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
@@ -350,22 +351,18 @@ class Consumer {
 
     async updateGymInfos(gymInfos) {
         if (gymInfos.length > 0) {
-            let gymInfosSQL = [];
+            const ts = new Date().getTime() / 1000;
+            const updatedGyms = [];
             let trainersSQL = [];
             let defendersSQL = [];
-            let args = [];
             for (let i = 0; i < gymInfos.length; i++) {
                 let info = gymInfos[i];
                 try {
-                    let name = info.name ? info.name : '';
-                    let url = info.url ? info.url : '';
                     if (!info.gym_status_and_defenders) {
                         console.error('[GymInfos] Invalid gym_status_and_defenders provided, skipping...', info);
                         continue;
                     }
                     let id = info.gym_status_and_defenders.pokemon_fort_proto.id;
-                    let lat = info.gym_status_and_defenders.pokemon_fort_proto.latitude;
-                    let lon = info.gym_status_and_defenders.pokemon_fort_proto.longitude;
                     let gymDefenders = info.gym_status_and_defenders.gym_defender;
                     if (config.dataparser.parse.gymDefenders && gymDefenders) {
                         for (let i = 0; i < gymDefenders.length; i++) {
@@ -418,28 +415,25 @@ class Consumer {
                             `);
                         }
                     }
-                    gymInfosSQL.push('(?, ?, ?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())');
-                    args.push(id, lat, lon, name, url);
-                    //gymInfosSQL.push(`('${id}', ${lat}, ${lon}, \`${name}\`, "${url}", UNIX_TIMESTAMP(), UNIX_TIMESTAMP())`);
+                    updatedGyms.push({
+                        id,
+                        lat: info.gym_status_and_defenders.pokemon_fort_proto.latitude,
+                        lon: info.gym_status_and_defenders.pokemon_fort_proto.longitude,
+                        name: info.name ? info.name : '',
+                        url: info.url ? info.url : '',
+                        updated: ts,
+                        firstSeenTimestamp: ts,
+                    });
                 } catch (err) {
                     console.error('[GymInfos] Error:', err);
                 }
             }
-            if (gymInfosSQL.length > 0) {
-                let sqlUpdate = 'INSERT INTO gym (id, lat, lon, name, url, updated, first_seen_timestamp) VALUES';
-                sqlUpdate += gymInfosSQL.join(',');
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                    lat=VALUES(lat),
-                    lon=VALUES(lon),
-                    name=VALUES(name),
-                    url=VALUES(url),
-                    updated=VALUES(updated),
-                    first_seen_timestamp=VALUES(first_seen_timestamp)
-                `;
+            if (updatedGyms.length > 0) {
                 try {
-                    let result = await db.query(sqlUpdate, args);
-                    //console.log('[GymInfos] Result:', result.affectedRows);
+                    const result = await Gym.bulkCreate(updatedGyms, {
+                        updateOnDuplicate: fortColumns,
+                    });
+                    //console.log('[GymInfos] Result:', result.length);
                 } catch (err) {
                     console.error('[GymInfos] Error:', err);
                 }
