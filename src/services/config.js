@@ -12,6 +12,4 @@ const target = {};
 */
 extend(true, target, eConfig, uConfig);
 
-console.log(target);
-
 module.exports = target;
