@@ -3,6 +3,7 @@
 const { DataTypes, Sequelize, ValidationError, Utils } = require('sequelize');
 const config = require('../config.json');
 
+// stupid sequelize bug: https://github.com/sequelize/sequelize/issues/11177#issuecomment-596244206
 class JSONTEXT extends DataTypes.TEXT.prototype.constructor {
     _stringify(value) {
         if (value === null) {
