@@ -51,5 +51,6 @@ module.exports = {
         pool: {
             max: config.db.connectionLimit,
         },
+        logging: false,
     }),
 };
