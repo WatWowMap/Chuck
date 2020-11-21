@@ -226,9 +226,7 @@ class Consumer {
     async updateForts(forts) {
         if (forts.length > 0) {
             const updatedGyms = [];
-            let pokestopsSQL = [];
-            let gymArgs = [];
-            let pokestopArgs = [];
+            const updatedPokestops = [];
             for (let i = 0; i < forts.length; i++) {
                 let fort = forts[i];
                 try {
@@ -247,25 +245,20 @@ class Consumer {
                             this.gymIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
                             break;
                         }
-                        case POGOProtos.Map.Fort.FortType.CHECKPOINT:
+                        case POGOProtos.Map.Fort.FortType.CHECKPOINT: {
                             if (!config.dataparser.parse.pokestops) {
                                 continue;
                             }
-                            let pokestop = new Pokestop({
-                                cellId: fort.cell,
-                                fort: fort.data
-                            });
-                            await pokestop.update(false);
-                            let pokestopSQL = pokestop.toSql('pokestop');
-                            pokestopsSQL.push(pokestopSQL.sql);
-                            pokestopSQL.args.forEach(x => pokestopArgs.push(x));
-                            //pokestopsSQL.push(pokestop.toSql('pokestop'));
+                            const pokestop = Pokestop.fromFort(fort.cell, fort.data);
+                            await pokestop.triggerWebhook(false);
+                            updatedPokestops.push(pokestop.toJSON());
 
                             if (!this.stopsIdsPerCell[fort.cell]) {
                                 this.stopsIdsPerCell[fort.cell] = [];
                             }
                             this.stopsIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
                             break;
+                        }
                     }
                 } catch (err) {
                     console.error('[Forts] Error:', err);
@@ -283,45 +276,12 @@ class Consumer {
                     //console.error('args:', args);
                 }
             }
-            if (pokestopsSQL.length > 0) {
-                let sqlUpdate = `INSERT INTO pokestop (
-                    id, lat, lon, name, url, lure_expire_timestamp, last_modified_timestamp, updated,
-                    enabled, cell_id, deleted, lure_id, pokestop_display, incident_expire_timestamp,
-                    first_seen_timestamp, grunt_type, sponsor_id
-                ) VALUES
-                `;
-                sqlUpdate += pokestopsSQL.join(',');
-                //console.log('sql:', sqlUpdate);
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                    lat=VALUES(lat),
-                    lon=VALUES(lon),
-                    name=VALUES(name),
-                    url=VALUES(url),
-                    lure_expire_timestamp=VALUES(lure_expire_timestamp),
-                    last_modified_timestamp=VALUES(last_modified_timestamp),
-                    updated=VALUES(updated),
-                    enabled=VALUES(enabled),
-                    cell_id=VALUES(cell_id),
-                    deleted=VALUES(deleted),
-                    lure_id=VALUES(lure_id),
-                    pokestop_display=VALUES(pokestop_display),
-                    incident_expire_timestamp=VALUES(incident_expire_timestamp),
-                    first_seen_timestamp=VALUES(first_seen_timestamp),
-                    grunt_type=VALUES(grunt_type),
-                    sponsor_id=VALUES(sponsor_id)
-                `;
-                /*
-                    quest_type=VALUES(quest_type),
-                    quest_timestamp=VALUES(quest_timestamp),
-                    quest_target=VALUES(quest_target),
-                    quest_conditions=VALUES(quest_conditions),
-                    quest_rewards=VALUES(quest_rewards),
-                    quest_template=VALUES(quest_template),
-                */
+            if (updatedPokestops.length > 0) {
                 try {
-                    let result = await db.query(sqlUpdate, pokestopArgs);
-                    //console.log('[Pokestop] Result:', result.affectedRows);
+                    let result = await Pokestop.bulkCreate(updatedPokestops, {
+                        updateOnDuplicate: Pokestop.fromFortFields,
+                    });
+                    //console.log('[Pokestop] Result:', result.length);
                 } catch (err) {
                     console.error('[Pokestop] Error:', err);
                 }
@@ -736,69 +696,21 @@ class Consumer {
 
     async updateQuests(quests) {
         if (quests.length > 0) {
-            let questsSQL = [];
-            let args = [];
+            let updatedPokestops = [];
             for (let i = 0; i < quests.length; i++) {
                 let quest = quests[i];
-                let pokestop;
-                try {
-                    pokestop = await Pokestop.getById(quest.fort_id);
-                } catch (err) {
-                    console.error('[Quest] Error:', err);
-                    pokestop = null;
-                }
-                if (pokestop instanceof Pokestop) {
-                    // Add quest data to pokestop object
-                    pokestop.addQuest(quest);
-                    // Check if we need to send any webhooks
-                    await pokestop.update(true);
-                    let sql = pokestop.toSql('quest');
-                    questsSQL.push(sql.sql);
-                    sql.args.forEach(x => args.push(x));
-                    //questsSQL.push(pokestop.toSql('quest'));
-                }
+                let pokestop = Pokestop.fromQuest(quest);
+                await pokestop.triggerWebhook(true);
+                updatedPokestops.push(pokestop.toJSON());
             }
-            if (questsSQL.length > 0) {
-                let sqlUpdate = `INSERT INTO pokestop (
-                    id, lat, lon, name, url, lure_expire_timestamp, last_modified_timestamp, updated,
-                    enabled, quest_type, quest_timestamp, quest_target, quest_conditions, quest_rewards,
-                    quest_template, cell_id, deleted, lure_id, pokestop_display, incident_expire_timestamp,
-                    first_seen_timestamp, grunt_type, sponsor_id
-                ) VALUES
-                `;
-                sqlUpdate += questsSQL.join(',');
-                //console.log('sql:', sqlUpdate);
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                    lat=VALUES(lat),
-                    lon=VALUES(lon),
-                    name=VALUES(name),
-                    url=VALUES(url),
-                    lure_expire_timestamp=VALUES(lure_expire_timestamp),
-                    last_modified_timestamp=VALUES(last_modified_timestamp),
-                    updated=VALUES(updated),
-                    enabled=VALUES(enabled),
-                    quest_type=VALUES(quest_type),
-                    quest_timestamp=VALUES(quest_timestamp),
-                    quest_target=VALUES(quest_target),
-                    quest_conditions=VALUES(quest_conditions),
-                    quest_rewards=VALUES(quest_rewards),
-                    quest_template=VALUES(quest_template),
-                    cell_id=VALUES(cell_id),
-                    deleted=VALUES(deleted),
-                    lure_id=VALUES(lure_id),
-                    pokestop_display=VALUES(pokestop_display),
-                    incident_expire_timestamp=VALUES(incident_expire_timestamp),
-                    first_seen_timestamp=VALUES(first_seen_timestamp),
-                    grunt_type=VALUES(grunt_type),
-                    sponsor_id=VALUES(sponsor_id)
-                `;
+            if (updatedPokestops.length > 0) {
                 try {
-                    let result = await db.query(sqlUpdate, args);
-                    //console.log('[Quest] Result:', result.affectedRows);
+                    let result = await Pokestop.bulkCreate(updatedPokestops, {
+                        updateOnDuplicate: Pokestop.fromQuestFields,
+                    });
+                    //console.log('[Quest] Result:', result.length);
                 } catch (err) {
                     console.error('[Quest] Error:', err);
-                    console.error('sql:', sqlUpdate);
                 }
             }
         }

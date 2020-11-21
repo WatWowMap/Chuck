@@ -5,7 +5,7 @@ const turf = require('@turf/turf');
 const S2 = require('s2-geometry').S2;
 
 const { DataTypes, Model, Op } = require('sequelize');
-const sequelize = require('../services/sequelize.js');
+const { sequelize } = require('../services/sequelize.js');
 
 /**
  * S2NCell model class.
@@ -59,11 +59,7 @@ class Cell extends Model {
     static async getByIDs(ids) {
         try {
             let results = await Cell.findAll({
-                where: {
-                    id: {
-                        [Op.in]: ids,
-                    },
-                },
+                where: { id: ids },
             });
             return results;
         } catch (err) {
@@ -103,7 +99,7 @@ Cell.init({
     indexes: [
         {
             name: 'ix_coords',
-            fields: ['center_lat', 'center_lon'],
+            fields: ['centerLat', 'centerLon'],
         },
         {
             name: 'ix_updated',

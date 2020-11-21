@@ -1,7 +1,7 @@
 'use strict';
 
 const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../services/sequelize.js');
+const { sequelize } = require('../services/sequelize.js');
 
 /**
  * Spawnpoint model class.

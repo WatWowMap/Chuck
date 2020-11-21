@@ -1,7 +1,7 @@
 'use strict';
 
 const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../services/sequelize.js');
+const { sequelize } = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
 const Cell = require('./cell.js');
 
@@ -338,7 +338,7 @@ Gym.init({
         },
         {
             name: 'ix_raid_end_timestamp',
-            fields: ['raid_end_timestamp'],
+            fields: ['raidEndTimestamp'],
         },
         {
             name: 'ix_updated',
@@ -346,16 +346,11 @@ Gym.init({
         },
         {
             name: 'ix_raid_pokemon_id',
-            fields: ['raid_pokemon_id'],
+            fields: ['raidPokemonId'],
         },
         {
-            name: 'ix_raid_pokemon_id',
-            fields: ['raid_pokemon_id'],
-        },
-        {
-            // TODO: ix?
-            name: 'fk_gym_cell_id',
-            fields: ['cell_id'],
+            name: 'fk_gym_cell_id', // TODO: ix?
+            fields: ['cellId'],
         },
         {
             name: 'ix_gym_deleted',

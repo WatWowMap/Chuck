@@ -2,7 +2,7 @@
 
 const S2 = require('nodes2ts');
 const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../services/sequelize.js');
+const { sequelize } = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
 
 /**
