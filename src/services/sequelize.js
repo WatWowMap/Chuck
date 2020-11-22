@@ -4,7 +4,21 @@ const { DataTypes, Sequelize, ValidationError, Utils } = require('sequelize');
 const config = require('../config.json');
 
 // stupid sequelize bug: https://github.com/sequelize/sequelize/issues/11177#issuecomment-596244206
-class JSONTEXT extends DataTypes.TEXT.prototype.constructor {
+class JSONTEXT extends DataTypes.ABSTRACT.prototype.constructor {
+    /**
+     * @param {string} [length=''] could be tiny, medium, long.
+     */
+    constructor(length) {
+        super();
+        const options = (typeof length === 'object' && length) || { length };
+        this.options = options;
+        this._length = options.length || '';
+    }
+
+    toSql() {
+        return DataTypes.TEXT.prototype.toSql.call(this);
+    }
+
     _stringify(value) {
         if (value === null) {
             return null;
