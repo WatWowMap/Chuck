@@ -25,7 +25,6 @@ class Consumer {
         this.stopsIdsPerCell = {};
     }
 
-    // TODO: Get fort id
     async updatePokemon(wildPokemon, nearbyPokemon) {
         if (wildPokemon.length > 0) {
             for (let i = 0; i < wildPokemon.length; i++) {
