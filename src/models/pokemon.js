@@ -199,6 +199,9 @@ class Pokemon extends Model {
             }
             if (this.pokestopId === null) {
                 this.pokestopId = nearby.fort_id;
+                if (!this.isNewRecord) {
+                    return false;               // skip trying to locate the Pokemon
+                }
                 if (this.pokestopId === '') {   // found a super wild Pokemon, why are you here?
                     return true;
                 }
