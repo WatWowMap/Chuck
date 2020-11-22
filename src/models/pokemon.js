@@ -131,14 +131,14 @@ class Pokemon extends Model {
         for (;;) {
             const transaction = await sequelize.transaction();
             try {
-                pokemon = await Pokemon.getOrCreate(id);    // TODO: , transaction);
+                pokemon = await Pokemon.getOrCreate(id, transaction);
                 oldAtkIv = pokemon.atkIv;
                 if (await work.call(pokemon, transaction) === true) {
                     await transaction.commit();
                     return pokemon;
                 }
                 pokemon._ensureExpireTimestamp();
-                await pokemon.save();
+                await pokemon.save({ transaction });
                 await transaction.commit();
                 break;
             } catch (error) {
