@@ -199,9 +199,6 @@ class Pokemon extends Model {
             }
             if (this.pokestopId === null) {
                 this.pokestopId = nearby.fort_id;
-                if (!this.isNewRecord) {
-                    return false;               // skip trying to locate the Pokemon
-                }
                 if (this.pokestopId === '') {   // found a super wild Pokemon, why are you here?
                     return true;
                 }
@@ -211,16 +208,18 @@ class Pokemon extends Model {
                 } catch (err) {
                     console.error('[Pokemon] InitNearby Error:', err);
                 }
-                if (pokestop !== null) {
+                if (pokestop === null) {
+                    console.warn('[Pokemon] Unable to locate its nearby Pokestop', this.pokestopId);
+                    this.pokestopId = null;
+                    return this.isNewRecord;    // skip this if it is a new record
+                }
+                if (this.isNewRecord) {
                     const randomPoint = geolib.computeDestinationPoint({
                         latitude: pokestop.lat,
                         longitude: pokestop.lon,
                     }, nearby.distance_in_meters, Math.random() * 360);
                     this.lat = randomPoint.latitude;
                     this.lon = randomPoint.longitude;
-                } else {
-                    console.warn('[Pokemon] Unable to locate its nearby Pokestop', this.pokestopId);
-                    return true;
                 }
             } else if (this.pokestopId !== nearby.fort_id) {
                 console.log('[Pokemon] Unhandled - found same spawn from two different Pokestop');
