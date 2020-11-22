@@ -244,7 +244,8 @@ class RouteController {
                                     nearbyNew.forEach(nearbyPokemon => {
                                         nearbyPokemons.push({
                                             cell: mapCell.s2_cell_id,
-                                            data: nearbyPokemon
+                                            data: nearbyPokemon,
+                                            timestampMs: timestampMs,
                                         });
                                     });
                                 }

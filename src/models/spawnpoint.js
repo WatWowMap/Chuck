@@ -7,28 +7,20 @@ const sequelize = require('../services/sequelize.js');
  * Spawnpoint model class.
  */
 class Spawnpoint extends Model {
-    static fromPokemon(pokemon, despawnSecond = null, updated = new Date().getTime() / 1000) {
-        return Spawnpoint.build({
+    static upsertFromPokemon(pokemon) {
+        let despawnSecond = null;
+        if (pokemon.expireTimestampVerified && pokemon.expireTimestamp !== null) {
+            const date = new Date(pokemon.expireTimestamp * 1000);
+            despawnSecond = date.getSeconds() + date.getMinutes() * 60;
+        }
+        return Spawnpoint.upsert({
             id: pokemon.spawnId,
             lat: pokemon.lat,
             lon: pokemon.lon,
-            updated,
+            updated: pokemon.updated,
             despawnSecond,
-        });
-    }
-
-    /**
-     * Get Spawnpoint by spawnpoint id.
-     * @param spawnpointId
-     * @deprecated Use Spawnpoint.findByPk.
-     */
-    static getById(spawnpointId) {
-        return Spawnpoint.findByPk(spawnpointId);
-    }
-
-    upsert() {
-        return Spawnpoint.upsert(this.toJSON(), {
-            fields: this.despawnSecond === null ? ['lat', 'lon', 'updated'] : undefined,
+        }, {
+            fields: despawnSecond === null ? ['lat', 'lon', 'updated'] : undefined,
         });
     }
 }

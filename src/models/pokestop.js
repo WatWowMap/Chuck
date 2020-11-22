@@ -308,15 +308,6 @@ class Pokestop extends Model {
         });
     }
 
-    /**
-     * Get Pokestop by Pokestop id.
-     * @param id
-     * @deprecated Use findByPk.
-     */
-    static getById(id) {
-        return Pokestop.findByPk(id);
-    }
-
     static async getByIds(ids) {
         try {
             return await Pokestop.findAll({

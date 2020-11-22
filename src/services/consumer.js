@@ -8,10 +8,8 @@ const Account = require('../models/account.js');
 const Gym = require('../models/gym.js');
 const Pokemon = require('../models/pokemon.js');
 const Pokestop = require('../models/pokestop.js');
-const Spawnpoint = require('../models/spawnpoint.js');
 
 const MySQLConnector = require('../services/mysql.js');
-const WebhookController = require('../services/webhook.js');
 const Cell = require('../models/cell');
 const Weather = require('../models/weather');
 const db = new MySQLConnector(config.db);
@@ -30,192 +28,21 @@ class Consumer {
     // TODO: Get fort id
     async updatePokemon(wildPokemon, nearbyPokemon) {
         if (wildPokemon.length > 0) {
-            let wildSQL = [];
-            let ts = new Date().getTime() / 1000;
             for (let i = 0; i < wildPokemon.length; i++) {
                 let wild = wildPokemon[i];
                 try {
-                    let pokemon = new Pokemon({
-                        username: this.username,
-                        cellId: wild.cell,
-                        timestampMs: wild.timestampMs,
-                        wild: wild.data
-                    });
-                    if (!pokemon.lat && pokemon.pokestopId) {
-                        if (!pokemon.pokestopId) {
-                            continue;
-                        }
-                        let pokestop;
-                        try {
-                            pokestop = await Pokestop.getById(pokemon.pokestopId);
-                        } catch (err) {
-                            console.error('[Wild] Error:', err);
-                        }
-                        if (!pokestop) {
-                            continue;
-                        }
-                        pokemon.lat = pokestop.lat;
-                        pokemon.lon = pokestop.lon;
-                    }
-                    pokemon.changed = ts;
-                    if (!pokemon.firstSeenTimestamp) {
-                        pokemon.firstSeenTimestamp = new Date().getTime() / 1000;
-                    }
-                    await pokemon.update();
-
-                    wildSQL.push(pokemon.toSql());
+                    await Pokemon.updateFromWild(wild.cell, wild.timestampMs, wild.data);
                 } catch (err) {
                     console.error('[Wild] Error:', err);
-                }
-            }
-            if (wildSQL.length > 0) {
-                let sqlUpdate = `
-                INSERT INTO pokemon (
-                    id, pokemon_id, lat, lon, spawn_id, expire_timestamp, atk_iv, def_iv, sta_iv,
-                    move_1, move_2, gender, form, cp, level, weather, costume, weight, size,
-                    display_pokemon_id, pokestop_id, updated, first_seen_timestamp, changed, cell_id,
-                    expire_timestamp_verified, shiny, username, capture_1, capture_2, capture_3,
-                    pvp_rankings_great_league, pvp_rankings_ultra_league
-                ) VALUES
-                `;
-                sqlUpdate += wildSQL.join(',');
-                //console.log('sql:', sqlUpdate);
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                    pokemon_id=VALUES(pokemon_id),
-                    lat=VALUES(lat),
-                    lon=VALUES(lon),
-                    spawn_id=VALUES(spawn_id),
-                    expire_timestamp=VALUES(expire_timestamp),
-                    atk_iv=VALUES(atk_iv),
-                    def_iv=VALUES(def_iv),
-                    sta_iv=VALUES(sta_iv),
-                    move_1=VALUES(move_1),
-                    move_2=VALUES(move_2),
-                    gender=VALUES(gender),
-                    form=VALUES(form),
-                    cp=VALUES(cp),
-                    level=VALUES(level),
-                    weather=VALUES(weather),
-                    costume=VALUES(costume),
-                    weight=VALUES(weight),
-                    size=VALUES(size),
-                    display_pokemon_id=VALUES(display_pokemon_id),
-                    pokestop_id=VALUES(pokestop_id),
-                    updated=VALUES(updated),
-                    first_seen_timestamp=VALUES(first_seen_timestamp),
-                    changed=VALUES(changed),
-                    cell_id=VALUES(cell_id),
-                    expire_timestamp_verified=VALUES(expire_timestamp_verified),
-                    shiny=VALUES(shiny),
-                    username=VALUES(username),
-                    capture_1=VALUES(capture_1),
-                    capture_2=VALUES(capture_2),
-                    capture_3=VALUES(capture_3),
-                    pvp_rankings_great_league=VALUES(pvp_rankings_great_league),
-                    pvp_rankings_ultra_league=VALUES(pvp_rankings_ultra_league)                    
-                `;
-                try {
-                    let result = await db.query(sqlUpdate);
-                    //console.log('[Wild] Result:', result.affectedRows);
-                } catch (err) {
-                    console.error('[Wild] Error:', err);
-                    console.error('[Wild] sql:', sqlUpdate);
                 }
             }
         }
         if (nearbyPokemon.length > 0) {
-            let nearbySQL = [];
-            let ts = new Date().getTime() / 1000;
+            let nearby = [];
             for (let i = 0; i < nearbyPokemon.length; i++) {
                 let nearby = nearbyPokemon[i];
                 try {
-                    let pokemon = new Pokemon({
-                        username: this.username,
-                        cellId: nearby.cell,
-                        //timestampMs: nearbyPokemon.timestamp_ms,
-                        nearby: nearby.data
-                    });
-                    if (!pokemon.lat && pokemon.pokestopId) {
-                        if (!pokemon.pokestopId) {
-                            continue;
-                        }
-                        let pokestop;
-                        try {
-                            pokestop = await Pokestop.getById(pokemon.pokestopId);
-                        } catch (err) {
-                            console.error('[Nearby] Error:', err.message);
-                        }
-                        if (!pokestop) {
-                            continue;
-                        }
-                        pokemon.lat = pokestop.lat;
-                        pokemon.lon = pokestop.lon;
-                    }
-                    if (!pokemon.lat) {
-                        continue;
-                    }
-                    pokemon.changed = ts;
-                    if (!pokemon.firstSeenTimestamp) {
-                        pokemon.firstSeenTimestamp = new Date().getTime() / 1000;
-                    }
-                    await pokemon.update();
-
-                    nearbySQL.push(pokemon.toSql());
-                } catch (err) {
-                    console.error('[Nearby] Error:', err.message);
-                }
-            }
-            if (nearbySQL.length > 0) {
-                let sqlUpdate = `
-                INSERT INTO pokemon (
-                    id, pokemon_id, lat, lon, spawn_id, expire_timestamp, atk_iv, def_iv, sta_iv,
-                    move_1, move_2, gender, form, cp, level, weather, costume, weight, size,
-                    display_pokemon_id, pokestop_id, updated, first_seen_timestamp, changed, cell_id,
-                    expire_timestamp_verified, shiny, username, capture_1, capture_2, capture_3,
-                    pvp_rankings_great_league, pvp_rankings_ultra_league
-                ) VALUES
-                `;
-                sqlUpdate += nearbySQL.join(',');
-                //console.log('sql:', sqlUpdate);
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                pokemon_id=VALUES(pokemon_id),
-                lat=VALUES(lat),
-                lon=VALUES(lon),
-                spawn_id=VALUES(spawn_id),
-                expire_timestamp=VALUES(expire_timestamp),
-                atk_iv=VALUES(atk_iv),
-                def_iv=VALUES(def_iv),
-                sta_iv=VALUES(sta_iv),
-                move_1=VALUES(move_1),
-                move_2=VALUES(move_2),
-                gender=VALUES(gender),
-                form=VALUES(form),
-                cp=VALUES(cp),
-                level=VALUES(level),
-                weather=VALUES(weather),
-                costume=VALUES(costume),
-                weight=VALUES(weight),
-                size=VALUES(size),
-                display_pokemon_id=VALUES(display_pokemon_id),
-                pokestop_id=VALUES(pokestop_id),
-                updated=VALUES(updated),
-                first_seen_timestamp=VALUES(first_seen_timestamp),
-                changed=VALUES(changed),
-                cell_id=VALUES(cell_id),
-                expire_timestamp_verified=VALUES(expire_timestamp_verified),
-                shiny=VALUES(shiny),
-                username=VALUES(username),
-                capture_1=VALUES(capture_1),
-                capture_2=VALUES(capture_2),
-                capture_3=VALUES(capture_3),
-                pvp_rankings_great_league=VALUES(pvp_rankings_great_league),
-                pvp_rankings_ultra_league=VALUES(pvp_rankings_ultra_league)
-                `;
-                try {
-                    let result = await db.query(sqlUpdate);
-                //console.log('[Nearby] Result:', result.affectedRows);
+                    await Pokemon.updateFromNearby(this.username, nearby.timestampMs, nearby.cell, nearby.data);
                 } catch (err) {
                     console.error('[Nearby] Error:', err.message);
                 }
@@ -567,105 +394,13 @@ class Consumer {
 
     async updateEncounters(encounters) {
         if (encounters.length > 0) {
-            let encountersSQL = [];
-            let ts = new Date().getTime() / 1000;
             for (let i = 0; i < encounters.length; i++) {
                 let encounter = encounters[i];
                 try {
-                    let pokemon;
-                    try {
-                        pokemon = await Pokemon.getById(encounter.wild_pokemon.encounter_id);
-                    } catch (err) {
-                        pokemon = null;
-                    }
-                    if (pokemon) {
-                        await pokemon.addEncounter(encounter, this.username);
-                    } else {
-                        let centerCoord = new S2.S2Point(encounter.wild_pokemon.latitude, encounter.wild_pokemon.longitude, 0);
-                        let center = S2.S2LatLng.fromPoint(centerCoord);
-                        let centerNormalized = center.normalized();
-                        let centerNormalizedPoint = centerNormalized.toPoint();
-                        let circle = new S2.S2Cap(centerNormalizedPoint, 0.0);
-                        let coverer = new S2.S2RegionCoverer();
-                        coverer.setMaxCells(1);
-                        coverer.setMinLevel(15);
-                        coverer.setMaxLevel(15);
-                        let cellIds = coverer.getCoveringCells(circle);
-                        let cellId = cellIds.pop();
-                        if (cellId) {
-                            pokemon = new Pokemon({
-                                wild: encounter.wild_pokemon,
-                                username: this.username,
-                                cellId: cellId,
-                                timestampMs: parseInt(BigInt(encounter.wild_pokemon.last_modified_timestamp_ms).toString()) //last_modified_timestamp_ms / timestamp_ms
-                            });
-                            await pokemon.addEncounter(encounter, this.username);
-                        }
-                    }
-                    if (!pokemon.spawnId) {
-                        pokemon.spawnId = parseInt(encounter.wild_pokemon.spawn_point_id, 16);
-                        const spawnpoint = Spawnpoint.fromPokemon(pokemon, null, ts);
-                        await spawnpoint.upsert();
-                        //console.log('spawnpoint id is null:', pokemon);
-                    }
-                    await pokemon.update();
-
-                    encountersSQL.push(pokemon.toSql());
+                    await Pokemon.updateFromEncounter(encounter, this.username);
                 } catch (err) {
                     console.error('[Encounter] Error:', err);
                 }
-            }
-            let sqlUpdate = `
-            INSERT INTO pokemon (
-                id, pokemon_id, lat, lon, spawn_id, expire_timestamp, atk_iv, def_iv, sta_iv,
-                move_1, move_2, gender, form, cp, level, weather, costume, weight, size,
-                display_pokemon_id, pokestop_id, updated, first_seen_timestamp, changed, cell_id,
-                expire_timestamp_verified, shiny, username, capture_1, capture_2, capture_3,
-                pvp_rankings_great_league, pvp_rankings_ultra_league
-            ) VALUES
-            `;
-            sqlUpdate += encountersSQL.join(',');
-            //console.log('sql:', encountersSQL);
-            sqlUpdate += ` 
-            ON DUPLICATE KEY UPDATE
-                pokemon_id=VALUES(pokemon_id),
-                lat=VALUES(lat),
-                lon=VALUES(lon),
-                spawn_id=VALUES(spawn_id),
-                expire_timestamp=VALUES(expire_timestamp),
-                atk_iv=VALUES(atk_iv),
-                def_iv=VALUES(def_iv),
-                sta_iv=VALUES(sta_iv),
-                move_1=VALUES(move_1),
-                move_2=VALUES(move_2),
-                gender=VALUES(gender),
-                form=VALUES(form),
-                cp=VALUES(cp),
-                level=VALUES(level),
-                weather=VALUES(weather),
-                costume=VALUES(costume),
-                weight=VALUES(weight),
-                size=VALUES(size),
-                display_pokemon_id=VALUES(display_pokemon_id),
-                pokestop_id=VALUES(pokestop_id),
-                updated=VALUES(updated),
-                first_seen_timestamp=VALUES(first_seen_timestamp),
-                changed=VALUES(changed),
-                cell_id=VALUES(cell_id),
-                expire_timestamp_verified=VALUES(expire_timestamp_verified),
-                shiny=VALUES(shiny),
-                username=VALUES(username),
-                capture_1=VALUES(capture_1),
-                capture_2=VALUES(capture_2),
-                capture_3=VALUES(capture_3),
-                pvp_rankings_great_league=VALUES(pvp_rankings_great_league),
-                pvp_rankings_ultra_league=VALUES(pvp_rankings_ultra_league)
-            `;
-            try {
-                let result = await db.query(sqlUpdate);
-                //console.log('[Encounter] Result:', result.affectedRows);
-            } catch (err) {
-                console.error('[Encounter] Error:', err.message);
             }
         }
     }
