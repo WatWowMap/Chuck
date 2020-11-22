@@ -37,7 +37,6 @@ class Consumer {
             }
         }
         if (nearbyPokemon.length > 0) {
-            let nearby = [];
             for (let i = 0; i < nearbyPokemon.length; i++) {
                 let nearby = nearbyPokemon[i];
                 try {

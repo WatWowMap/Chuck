@@ -193,38 +193,41 @@ class Pokemon extends Model {
             this._setPokemonDisplay(nearby.pokemon_id, nearby.pokemon_display, username);
             this.username = username;
             this.cellId = cellId;
-            if (this.isNewRecord) {
-                this.changedTimestamp = this.firstSeenTimestamp = this.updated;
-                this.expireTimestampVerified = false;
-            }
-            if (this.pokestopId === null) {
-                this.pokestopId = nearby.fort_id;
-                if (this.pokestopId === '') {   // found a super wild Pokemon, why are you here?
-                    return true;
-                }
+            const locatePokestop = async () => {
                 let pokestop = null;
                 try {
                     pokestop = await Pokestop.findByPk(nearby.fort_id);
                 } catch (err) {
                     console.error('[Pokemon] InitNearby Error:', err);
                 }
+                return pokestop;
+            };
+            if (this.isNewRecord) {
+                this.changedTimestamp = this.firstSeenTimestamp = this.updated;
+                this.expireTimestampVerified = false;
+                if (nearby.fort_id === '') {    // found a super wild Pokemon, why are you here?
+                    return true;
+                }
+                const pokestop = await locatePokestop();
                 if (pokestop === null) {
-                    console.warn('[Pokemon] Unable to locate its nearby Pokestop', this.pokestopId);
-                    this.pokestopId = null;
-                    return this.isNewRecord;    // skip this if it is a new record
+                    console.warn('[Pokemon] Unable to locate its nearby Pokestop', nearby.fort_id);
+                    return true;
                 }
-                if (this.isNewRecord) {
-                    const randomPoint = geolib.computeDestinationPoint({
-                        latitude: pokestop.lat,
-                        longitude: pokestop.lon,
-                    }, nearby.distance_in_meters, Math.random() * 360);
-                    this.lat = randomPoint.latitude;
-                    this.lon = randomPoint.longitude;
-                }
+                this.lat = pokestop.lat;
+                this.lon = pokestop.lon;
+            } else if (this.spawnId !== null || nearby.fort_id === '') {
+                return;
             } else if (this.pokestopId !== nearby.fort_id) {
-                console.log('[Pokemon] Unhandled - found same spawn from two different Pokestop');
-                // TODO: triangulate the Pokemon?
+                const pokestop = await locatePokestop();
+                if (pokestop === null) {
+                    console.warn('[Pokemon] Unable to locate its nearby Pokestop', nearby.fort_id);
+                    return;
+                }
+                // TODO: remember previously found Pokestop too to prevent overcounting
+                this.lat = (this.lat + pokestop.lat) / 2;
+                this.lon = (this.lon + pokestop.lon) / 2;
             }
+            this.pokestopId = nearby.fort_id;
         });
     }
 
