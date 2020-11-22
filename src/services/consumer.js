@@ -32,7 +32,7 @@ class Consumer {
                 try {
                     await Pokemon.updateFromWild(wild.cell, wild.timestampMs, wild.data);
                 } catch (err) {
-                    console.error('[Wild] Error:', err);
+                    console.error('[Wild] Error:', err.stack);
                 }
             }
         }
