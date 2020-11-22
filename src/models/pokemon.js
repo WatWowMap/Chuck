@@ -98,7 +98,7 @@ class Pokemon extends Model {
             this.expireTimestampVerified = false;
         }
         if (wild.time_till_hidden_ms > 0 && wild.time_till_hidden_ms <= 90000) {
-            this.expireTimestamp = Math.round((this.updated + wild.time_till_hidden_ms) / 1000);
+            this.expireTimestamp = Math.round(this.updated + wild.time_till_hidden_ms / 1000);
             this.expireTimestampVerified = true;
             await Spawnpoint.upsertFromPokemon(this);
             return;
@@ -375,7 +375,7 @@ class Pokemon extends Model {
         let despawnSecond = spawnpoint.despawnSecond;
         if (despawnSecond) {
             let currentDate = new Date(this.updated);
-            let ts = Math.floor(this.updated / 1000);
+            let ts = Math.floor(this.updated);
             let minute = currentDate.getMinutes();
             let second = currentDate.getSeconds();
             let secondOfHour = second + minute * 60;
