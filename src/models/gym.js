@@ -139,15 +139,15 @@ class Gym extends Model {
                         gym_name: this.name || 'Unknown',
                         latitude: this.lat,
                         longitude: this.lon,
-                        url: this.url || '',
-                        enabled: this.enabled || true,
-                        team_id: this.teamId || 0,
-                        last_modified: this.lastModifiedTimestamp || 0,
-                        guard_pokemon_id: this.guardPokemonId || 0,
-                        slots_available: this.availableSlots || 6,
-                        raid_active_until: this.raidEndTimestamp || 0,
-                        ex_raid_eligible: this.exRaidEligible || 0,
-                        sponsor_id: this.sponsorId || 0
+                        url: this.url,
+                        enabled: this.enabled,
+                        team_id: this.teamId,
+                        last_modified: this.lastModifiedTimestamp,
+                        guard_pokemon_id: this.guardPokemonId,
+                        slots_available: this.availableSlots,
+                        raid_active_until: this.raidEndTimestamp,
+                        ex_raid_eligible: this.exRaidEligible,
+                        sponsor_id: this.sponsorId,
                     }
                 };
             case 'gym-info':
@@ -156,14 +156,14 @@ class Gym extends Model {
                     message: {
                         id: this.id,
                         name: this.name || 'Unknown',
-                        url: this.url || '',
+                        url: this.url,
                         latitude: this.lat,
                         longitude: this.lon,
-                        team: this.teamId || 0,
-                        slots_available: this.availableSlots || 6,
-                        ex_raid_eligible: this.exRaidEligible || 0,
-                        in_battle: this.inBattle || false,
-                        sponsor_id: this.sponsorId || 0
+                        team: this.teamId,
+                        slots_available: this.availableSlots,
+                        ex_raid_eligible: this.exRaidEligible,
+                        in_battle: this.inBattle,
+                        sponsor_id: this.sponsorId,
                     }
                 };
             case 'egg':
@@ -173,25 +173,25 @@ class Gym extends Model {
                     message: {
                         gym_id: this.id,
                         gym_name: this.name || 'Unknown',
-                        gym_url: this.url || '',
+                        gym_url: this.url,
                         latitude: this.lat,
                         longitude: this.lon,
-                        team_id: this.teamId || 0,
-                        spawn: Math.round(this.raidSpawnTimestamp || 0),
-                        start: Math.round(this.raidBattleTimestamp || 0),
-                        end: Math.round(this.raidEndTimestamp || 0),
-                        level: this.raidLevel || 0,
-                        pokemon_id: this.raidPokemonId || 0,
-                        cp: this.raidPokemonCp || 0,
-                        gender: this.raidPokemonGender || 0,
-                        form: this.raidPokemonForm || 0,
-                        move_1: this.raidPokemonMove1 || 0,
-                        move_2: this.raidPokemonMove2 || 0,
-                        ex_raid_eligible: this.exRaidEligible || 0,
-                        is_exclusive: this.raidIsExclusive || false,
-                        sponsor_id: this.sponsorId || 0,
-                        evolution: this.raidPokemonEvolution || 0,
-                        costume: this.raidPokemonCostume || 0,
+                        team_id: this.teamId,
+                        spawn: Math.round(this.raidSpawnTimestamp),
+                        start: Math.round(this.raidBattleTimestamp),
+                        end: Math.round(this.raidEndTimestamp),
+                        level: this.raidLevel,
+                        pokemon_id: this.raidPokemonId,
+                        cp: this.raidPokemonCp,
+                        gender: this.raidPokemonGender,
+                        form: this.raidPokemonForm,
+                        move_1: this.raidPokemonMove1,
+                        move_2: this.raidPokemonMove2,
+                        ex_raid_eligible: this.exRaidEligible,
+                        is_exclusive: this.raidIsExclusive,
+                        sponsor_id: this.sponsorId,
+                        evolution: this.raidPokemonEvolution,
+                        costume: this.raidPokemonCostume,
                     }
                 };
         }
@@ -359,9 +359,7 @@ Gym.init({
     ],
     tableName: 'gym',
 });
-Cell.Gyms = Cell.hasMany(Gym, {
-    foreignKey: 'cellId',
-});
-Gym.Cell = Gym.belongsTo(Cell);
+Cell.Gyms = Cell.hasMany(Gym, { foreignKey: 'cellId' });
+Gym.Cell = Gym.belongsTo(Cell, { foreignKey: 'cellId' });
 
 module.exports = Gym;
