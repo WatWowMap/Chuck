@@ -46,6 +46,7 @@ const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
             highest = mid - .5;
         }
     }
+    // TODO: currently we assume lv1 cp is always below cpCap. If this is not the case, we need to add a check here
     return { value: calculateStatProduct(stats, attack, defense, stamina, lowest), level: lowest, cp: bestCP };
 };
 
