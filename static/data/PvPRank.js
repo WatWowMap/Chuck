@@ -47,7 +47,7 @@ const calculateAllRanks = async () => {
     process.exit();
 };
 
-const calculateTopRanks = (pokemonId, formId, cap) => {
+const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
     console.log('[PvP] Calculating Top Ranks for:', masterfile.pokemon[pokemonId].name, '(' + pokemonId + ')', 'with form id:', formId);
     let currentPokemon = initializeBlankPokemon();
     let arrayToSort = [];
@@ -59,7 +59,7 @@ const calculateTopRanks = (pokemonId, formId, cap) => {
     for (let a = 0; a <= 15; a++) {
         for (let d = 0; d <= 15; d++) {
             for (let s = 0; s <= 15; s++) {
-                let currentStat = calculateBestPvPStat(pokemonId, formId, a, d, s, cap);
+                let currentStat = calculateBestPvPStat(pokemonId, formId, a, d, s, cap, lvCap);
                 currentPokemon[a][d][s] = { value: currentStat.value, level: currentStat.level, cp: currentStat.cp };
                 arrayToSort.push({ attack: a, defense: d, stamina: s, value: currentStat.value });
             }
@@ -86,11 +86,11 @@ const calculateTopRanks = (pokemonId, formId, cap) => {
     return currentPokemon;
 };
 
-const calculateBestPvPStat = (pokemonId, formId, attack, defense, stamina, cap) => {
+const calculateBestPvPStat = (pokemonId, formId, attack, defense, stamina, cap, lvCap) => {
     let bestStat = 0;
     let level = 0;
     let bestCP = 0;
-    for (let i = 1; i <= 40; i += 0.5) {
+    for (let i = 1; i <= lvCap; i += 0.5) {
         let cp = calculateCP(pokemonId, formId, attack, defense, stamina, i);
         if(cp <= cap) {
             let stat = calculatePvPStat(pokemonId, formId, i, attack, defense, stamina);
