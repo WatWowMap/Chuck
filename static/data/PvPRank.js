@@ -70,11 +70,15 @@ const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
 
     arrayToSort.sort((a, b) => b.value - a.value);
     const best = arrayToSort[0].value;
-    for (let i = 0; i < arrayToSort.length; i++) {
+    for (let i = 0, j = 0; i < arrayToSort.length; i++) {
         let percent = Number(((arrayToSort[i].value / best) * 100).toPrecision(4));
         arrayToSort[i].percent = percent;
-        currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].percent = percent;
-        currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].rank = i + 1;
+        const entry = currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina];
+        entry.percent = percent;
+        if (entry.value < arrayToSort[j].value) {
+            j = i;
+        }
+        entry.rank = j + 1;
     }
 
     if (formId >= 0) {
