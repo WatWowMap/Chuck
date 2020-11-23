@@ -97,6 +97,9 @@ const calculateAllRanks = (stats) => {
 const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, gender) => {
     const result = {};
     const masterPokemon = masterfile.pokemon[pokemonId];
+    if (!masterPokemon || !masterPokemon.attack) {
+        return result;
+    }
     const masterForm = masterPokemon.forms[formId] || masterPokemon;
     const baseEntry = { pokemon: pokemonId };
     if (formId) {
