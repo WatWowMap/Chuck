@@ -97,12 +97,16 @@ const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, 
     const result = {};
     const masterPokemon = masterfile.pokemon[pokemonId];
     const masterForm = masterPokemon.forms[formId] || masterPokemon;
+    const baseEntry = { pokemon: pokemonId };
+    if (formId) {
+        baseEntry.form = formId;
+    }
     const allRanks = calculateAllRanks(masterForm.attack ? masterForm : masterPokemon);
     for (const [leagueName, combinations] of Object.entries(allRanks)) {
         if (!result[leagueName]) {
             result[leagueName] = [];
         }
-        result[leagueName].push({ pokemon: pokemonId, form: formId, ...combinations[attack][defense][stamina] });
+        result[leagueName].push({ ...baseEntry, ...combinations[attack][defense][stamina] });
     }
     if (masterForm.evolutions) {
         for (const [evoId, evolution] of Object.entries(masterForm.evolutions)) {
@@ -123,7 +127,7 @@ const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, 
                 if (!result[leagueName]) {
                     result[leagueName] = [];
                 }
-                result[leagueName].push({ pokemon: pokemonId, form: formId, evolution: tempEvoId, ...combinations[attack][defense][stamina] });
+                result[leagueName].push({ ...baseEntry, evolution: tempEvoId, ...combinations[attack][defense][stamina] });
             }
         }
     }
