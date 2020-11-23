@@ -102,7 +102,7 @@ const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
     return { value: calculateStatProduct(stats, attack, defense, stamina, lowest), level: lowest, cp: bestCP };
 };
 
-const calculateStatProduct = (stats, level, attack, defense, stamina) => {
+const calculateStatProduct = (stats, attack, defense, stamina, level) => {
     const multiplier = cpMultiplier[level];
     let hp = Math.floor((stamina + stats.stamina) * multiplier);
     if (hp < 10) {
