@@ -1,7 +1,7 @@
 'use strict';
 
 const { DataTypes, Sequelize, ValidationError, Utils } = require('sequelize');
-const config = require('../config.json');
+const config = require('../configs/config.json');
 
 // stupid sequelize bug: https://github.com/sequelize/sequelize/issues/11177#issuecomment-596244206
 class JSONTEXT extends DataTypes.ABSTRACT.prototype.constructor {

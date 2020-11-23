@@ -7,7 +7,7 @@ const path = require('path');
 const app = express();
 const helmet = require('helmet');
 
-const config = require('./config.json');
+const config = require('./services/config.js');
 const AssignmentController = require('./controllers/assignment-controller.js');
 const DeviceController = require('./routes/devicecontroller.js');
 const apiRoutes = require('./routes/api.js');

@@ -13,7 +13,6 @@ const Device = require('../models/device.js');
 const Instance = require('../models/instance.js');
 const Pokestop = require('../models/pokestop.js');
 const utils = require('../services/utils.js');
-const { nearest } = require('@turf/turf');
 
 // Main dashboard route
 router.get(['/', '/index'], async (req, res) => {

@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const config = require('../config.json');
+const config = require('./config.js');
 const MySQLConnector = require('./mysql.js');
 const db = new MySQLConnector(config.db);
 const utils = require('./utils.js');

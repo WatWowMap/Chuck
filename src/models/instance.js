@@ -1,6 +1,6 @@
 'use strict';
 
-const config = require('../config.json');
+const config = require('../services/config.js');
 const InstanceType = require('../data/instance-type.js');
 const MySQLConnector = require('../services/mysql.js');
 const db = new MySQLConnector(config.db);

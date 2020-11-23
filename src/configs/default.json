@@ -1,0 +1,47 @@
+{
+    "host": "0.0.0.0",
+    "locale": "en",
+    "controller": {
+        "port": 9000,
+        "title": "Chuck",
+        "style": "dark"
+    },
+    "dataparser": {
+        "port": 9001,
+        "clusters": 4,
+        "parse": {
+            "pokemon": true,
+            "encounters": true,
+            "gym": true,
+            "pokestops": true,
+            "quests": true,
+            "gymDefenders": true,
+            "weather": true
+        }
+    },
+    "db": {
+        "type": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "username": "user",
+        "password": "userPassword",
+        "database": "databaseSchema",
+        "charset": "utf8mb4",
+        "connectionLimit": 1000
+    },
+    "redis": {
+        "host": "127.0.0.1",
+        "port": 6379,
+        "password": ""
+    },
+    "webhooks": {
+        "enabled": false,
+        "urls": ["http://127.0.0.1:9003"],
+        "delay": 5,
+        "retryCount": 5
+    },
+    "logs": {
+        "level": 4,
+        "file": false
+    }
+}

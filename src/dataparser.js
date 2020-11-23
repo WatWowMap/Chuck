@@ -5,7 +5,7 @@ const express = require('express');
 const helmet = require('helmet');
 const app = express();
 
-const config = require('./config.json');
+const config = require('./services/config.js');
 const ipcMaster = require('./ipc/master.js');
 const Migrator = require('./services/migrator.js');
 const utils = require('./services/utils.js');
