@@ -1,6 +1,6 @@
 'use strict';
 
-const config = require('../config.json');
+const config = require('../services/config.js');
 const data = require('../../static/locales/' + config.locale + '.json');
 data.started = new Date().toLocaleString();
 data.title = config.controller.title;

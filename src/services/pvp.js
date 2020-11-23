@@ -1,7 +1,7 @@
 'use strict';
 
 const masterfile = require('../../static/data/masterfile.json');
-const redisClient = require('../services/redis.js');
+const redisClient = require('./redis.js');
 
 /*
 function calculateCP(pokemonId, formId, attack , defense, stamina, level) {

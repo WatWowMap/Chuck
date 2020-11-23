@@ -3,7 +3,7 @@
 const POGOProtos = require('pogo-protos');
 //const POGOProtos = require('../POGOProtos.Rpc_pb.js');
 
-const config = require('../config.json');
+const config = require('../services/config.js');
 const Account = require('../models/account.js');
 const Device = require('../models/device.js');
 const { sendResponse, base64_decode } = require('../services/utils.js');

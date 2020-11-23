@@ -3,7 +3,7 @@
 const S2 = require('nodes2ts');
 const POGOProtos = require('pogo-protos');
 
-const config = require('../config.json');
+const config = require('./config.js');
 const Account = require('../models/account.js');
 const Gym = require('../models/gym.js');
 const Pokemon = require('../models/pokemon.js');
