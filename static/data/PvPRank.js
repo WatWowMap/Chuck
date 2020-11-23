@@ -94,7 +94,7 @@ const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
 
 const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
     let bestCP = cap, lowest = 1, highest = lvCap + .5;
-    for (let mid = Math.floor(lowest + highest) / 2; lowest < highest; mid = Math.ceil(lowest + highest) / 2) {
+    for (let mid = Math.ceil(lowest + highest) / 2; lowest < highest; mid = Math.ceil(lowest + highest) / 2) {
         const cp = calculateCP(stats, attack, defense, stamina, mid);
         if (cp <= cap) {
             lowest = mid;
