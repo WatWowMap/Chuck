@@ -56,6 +56,7 @@ const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
         pokemon[pokemonId] = {};
     }
 
+    currentPokemon.trivial = calculateCP(pokemonId, formId, 15, 15, 15, lvCap) <= cap;
     for (let a = 0; a <= 15; a++) {
         for (let d = 0; d <= 15; d++) {
             for (let s = 0; s <= 15; s++) {
