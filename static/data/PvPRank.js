@@ -70,7 +70,7 @@ const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
     arrayToSort.sort((a, b) => b.value - a.value);
     const best = arrayToSort[0].value;
     for (let i = 0; i < arrayToSort.length; i++) {
-        let percent = precisionRound((arrayToSort[i].value / best) * 100, 2);
+        let percent = Number(((arrayToSort[i].value / best) * 100).toPrecision(4));
         arrayToSort[i].percent = percent;
         currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].percent = percent;
         currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].rank = i + 1;
@@ -145,11 +145,6 @@ const initializeBlankPokemon = () => {
         }
     }
     return newPokemon;
-};
-
-const precisionRound = (number, precision) => {
-    const factor = Math.pow(10, precision);
-    return Math.round(number * factor) / factor;
 };
 
 const writePvPData = async (data, league) => {
