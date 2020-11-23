@@ -2,7 +2,7 @@
 
 const masterfile = require('./masterfile.json');
 const cpMultiplier = require('./cp_multiplier.json');
-const redisClient = require('../src/services/redis.js');
+const redisClient = require('../../src/services/redis.js');
 //const fs = require('fs-extra');
 
 let pokemon = {};
