@@ -61,7 +61,7 @@ const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
     for (let a = 0; a <= 15; a++) {
         for (let d = 0; d <= 15; d++) {
             for (let s = 0; s <= 15; s++) {
-                let currentStat = calculateBestPvPStat(stats, a, d, s, cap, lvCap);
+                let currentStat = calculatePvPStat(stats, a, d, s, cap, lvCap);
                 currentPokemon[a][d][s] = { value: currentStat.value, level: currentStat.level, cp: currentStat.cp };
                 arrayToSort.push({ attack: a, defense: d, stamina: s, value: currentStat.value });
             }
@@ -88,25 +88,21 @@ const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
     return currentPokemon;
 };
 
-const calculateBestPvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
-    let bestStat = 0;
-    let level = 0;
-    let bestCP = 0;
-    for (let i = 1; i <= lvCap; i += 0.5) {
-        let cp = calculateCP(stats, attack, defense, stamina, i);
-        if(cp <= cap) {
-            let stat = calculatePvPStat(stats, i, attack, defense, stamina);
-            if (stat > bestStat) {
-                bestStat = stat;
-                level = i;
-                bestCP = cp;
-            }
+const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
+    let bestCP = cap, lowest = 1, highest = lvCap + .5;
+    for (let mid = Math.floor(lowest + highest) / 2; lowest < highest; mid = Math.ceil(lowest + highest) / 2) {
+        const cp = calculateCP(stats, attack, defense, stamina, mid);
+        if (cp <= cap) {
+            lowest = mid;
+            bestCP = cp;
+        } else {
+            highest = mid - .5;
         }
     }
-    return { value: bestStat, level: level, cp: bestCP };
+    return { value: calculateStatProduct(stats, attack, defense, stamina, lowest), level: lowest, cp: bestCP };
 };
 
-const calculatePvPStat = (stats, level, attack, defense, stamina) => {
+const calculateStatProduct = (stats, level, attack, defense, stamina) => {
     const multiplier = cpMultiplier[level];
     let hp = Math.floor((stamina + stats.stamina) * multiplier);
     if (hp < 10) {
