@@ -85,6 +85,7 @@ const calculateAllRanks = (stats) => {
                     j = i;
                 }
                 entry.rank = j + 1;
+                entry.value = Math.floor(entry.value);
             }
             value[leagueName] = combinations;
         }
