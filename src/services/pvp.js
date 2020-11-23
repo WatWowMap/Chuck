@@ -117,7 +117,7 @@ const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, 
             if (evolution.gender_requirement && gender !== evolution.gender_requirement) {
                 continue;
             }
-            const evolvedRanks = await queryPvPRank(evoId, evolution.form || 0, attack, defense, stamina, level, gender);
+            const evolvedRanks = await queryPvPRank(parseInt(evoId), evolution.form || 0, attack, defense, stamina, level, gender);
             for (const [leagueName, results] of Object.entries(evolvedRanks)) {
                 result[leagueName] = result[leagueName] ? result[leagueName].concat(results) : results;
             }
@@ -131,7 +131,7 @@ const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, 
                 if (!result[leagueName]) {
                     result[leagueName] = [];
                 }
-                result[leagueName].push({ ...baseEntry, evolution: tempEvoId, ...combinations[attack][defense][stamina] });
+                result[leagueName].push({ ...baseEntry, evolution: parseInt(tempEvoId), ...combinations[attack][defense][stamina] });
             }
         }
     }
