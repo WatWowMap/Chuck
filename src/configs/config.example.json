@@ -3,7 +3,7 @@
     "locale": "en",
     "controller": {
         "port": 9000,
-        "title": "BackendJS",
+        "title": "Chuck",
         "style": "dark"
     },
     "dataparser": {
@@ -39,9 +39,5 @@
         "urls": ["http://127.0.0.1:9003"],
         "delay": 5,
         "retryCount": 5
-    },
-    "logs": {
-        "level": 4,
-        "file": false
     }
 }

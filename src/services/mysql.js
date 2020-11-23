@@ -1,7 +1,7 @@
 'use strict';
 
 const mysql = require('mysql');
-const config = require('../config.json');
+const config = require('./config.js');
 
 // Create a mysql connection pool with the specified options
 const pool  = mysql.createPool({
