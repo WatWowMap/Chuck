@@ -12,7 +12,7 @@ let pokemonObject = masterfile.pokemon;
 const calculateAllRanks = async () => {
     for (let pokemonId in pokemonObject) {
         if (pokemonObject[pokemonId].attack) {
-            calculateTopRanks(pokemonId, -1, 1500);
+            calculateTopRanks(pokemonId, 0, 1500);
         }
         for (let formId in pokemonObject[pokemonId].forms) {
             if (pokemonObject[pokemonId].forms[formId].attack) {
@@ -29,7 +29,7 @@ const calculateAllRanks = async () => {
 
     for (let pokemonId in pokemonObject) {
         if (pokemonObject[pokemonId].attack) {
-            calculateTopRanks(pokemonId, -1, 2500);
+            calculateTopRanks(pokemonId, 0, 2500);
         }
         for (let formId in pokemonObject[pokemonId].forms) {
             if (pokemonObject[pokemonId].forms[formId].attack) {
