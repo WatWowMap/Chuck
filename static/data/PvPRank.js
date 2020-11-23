@@ -107,10 +107,14 @@ const calculateBestPvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
 };
 
 const calculatePvPStat = (stats, level, attack, defense, stamina) => {
-    return Math.round(
-        (attack + stats.attack) * cpMultiplier[level] *
-        (defense + stats.defense) * cpMultiplier[level] *
-        (stamina + stats.stamina) * cpMultiplier[level]);
+    const multiplier = cpMultiplier[level];
+    let hp = Math.floor((stamina + stats.stamina) * multiplier);
+    if (hp < 10) {
+        hp = 10;
+    }
+    return (attack + stats.attack) * multiplier *
+        (defense + stats.defense) * multiplier *
+        hp;
 };
 
 const calculateCP = (stats, attack, defense, stamina, level) => {
