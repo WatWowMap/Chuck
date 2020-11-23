@@ -9,7 +9,7 @@ const config = require('./services/config.js');
 const Migrator = require('./services/migrator.js');
 const utils = require('./services/utils.js');
 const WebhookController = require('./services/webhook.js');
-const instances = config.clusters || 4;
+const instances = config.dataparser.clusters || 4;
 require('./services/logger.js');
 
 // TODO: Add webhooks to redis instead of internally cached
