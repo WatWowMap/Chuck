@@ -50,7 +50,7 @@ const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
 };
 
 const calculateAllRanks = (stats) => {
-    const key = [stats.attack, stats.defense, stats.stamina];
+    const key = `${stats.attack},${stats.defense},${stats.stamina}`;
     let value = rankCache.get(key);
     if (value === undefined) {
         value = {};
