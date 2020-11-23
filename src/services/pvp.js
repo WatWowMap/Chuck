@@ -123,9 +123,9 @@ const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, 
             }
         }
     }
-    if (masterForm.temporary_evolutions) {
-        for (const [tempEvoId, tempEvo] of Object.entries(masterForm.temporary_evolutions)) {
-            const overrideStats = tempEvo.attack ? tempEvo : masterPokemon.temporary_evolutions[tempEvoId];
+    if (masterForm.temp_evolutions) {
+        for (const [tempEvoId, tempEvo] of Object.entries(masterForm.temp_evolutions)) {
+            const overrideStats = tempEvo.attack ? tempEvo : masterPokemon.temp_evolutions[tempEvoId];
             const tempRanks = calculateAllRanks(overrideStats);
             for (const [leagueName, combinations] of Object.entries(tempRanks)) {
                 if (!result[leagueName]) {
