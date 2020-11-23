@@ -144,7 +144,7 @@ class Pokemon extends Model {
                 if (retry-- <= 0) {
                     throw error;
                 }
-                console.warn('[Pokemon] Encountered error, retrying', error.stack);
+                console.warn('[Pokemon] Encountered error, retrying,', retry, 'attempts left:', error.stack);
             }
         }
         if (pokemon.isNewRecord) {
