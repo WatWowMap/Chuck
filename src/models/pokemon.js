@@ -6,10 +6,9 @@ const sequelize = require('../services/sequelize.js');
 const Cell = require('./cell.js');
 const Pokestop = require('./pokestop.js');
 const Spawnpoint = require('./spawnpoint.js');
-//const { PvPStatsManager, IV, League } = require('../services/pvp.js');
-const pvp = require('../services/pvp.js');
 const RedisClient = require('../services/redis.js');
 const WebhookController = require('../services/webhook.js');
+const ipcWorker = require('../ipc/worker.js');
 
 /**
  * Pokemon model class.
@@ -141,7 +140,7 @@ class Pokemon extends Model {
                 await transaction.commit();
                 break;
             } catch (error) {
-                await transaction.rollback();
+                if (!transaction.finished) await transaction.rollback();
                 if (retry-- <= 0) {
                     throw error;
                 }
@@ -274,53 +273,9 @@ class Pokemon extends Model {
                 this.setDittoAttributes(this.pokemonId);
             }
 
-            /*
-            let pvpGreat = PvPStatsManager.instance.getPVPStatsWithEvolutions(
-                encounter.wild_pokemon.pokemon_data.pokemon_id,
-                this.form ? this.form : null,
-                encounter.wild_pokemon.pokemon_data.pokemon_display.costume,
-                new IV(parseInt(this.atkIv), parseInt(this.defIv), parseInt(this.staIv)),
-                parseFloat(this.level),
-                League.Great
-            );
-            */
-            let pvpGreat = await pvp.calculatePossibleCPs(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level, this.gender, 'great');
-            if (pvpGreat && pvpGreat.length > 0) {
-                this.pvpRankingsGreatLeague = pvpGreat.map(ranking => {
-                    return {
-                        "pokemon": ranking.pokemon_id,
-                        "form": ranking.form_id || 0,
-                        "rank": ranking.rank,
-                        "percentage": ranking.percent,
-                        "cp": ranking.cp,
-                        "level": ranking.level
-                    };
-                });
-            }
-
-            /*
-            let pvpUltra = PvPStatsManager.instance.getPVPStatsWithEvolutions(
-                encounter.wild_pokemon.pokemon_data.pokemon_id,
-                this.form ? this.form : null,
-                encounter.wild_pokemon.pokemon_data.pokemon_display.costume,
-                new IV(parseInt(this.atkIv), parseInt(this.defIv), parseInt(this.staIv)),
-                parseFloat(this.level),
-                League.Ultra
-            );
-            */
-            let pvpUltra = await pvp.calculatePossibleCPs(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level, this.gender, 'ultra');
-            if (pvpUltra && pvpUltra.length > 0) {
-                this.pvpRankingsUltraLeague = pvpUltra.map(ranking => {
-                    return {
-                        "pokemon": ranking.pokemon_id,
-                        "form": ranking.form_id || 0,
-                        "rank": ranking.rank,
-                        "percentage": ranking.percent,
-                        "cp": ranking.cp,
-                        "level": ranking.level
-                    };
-                });
-            }
+            const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
+            this.pvpRankingsGreatLeague = pvp.great || null;
+            this.pvpRankingsUltraLeague = pvp.ultra || null;
         });
     }
 

@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const app = express();
 
 const config = require('./config.json');
+const ipcMaster = require('./ipc/master.js');
 const Migrator = require('./services/migrator.js');
 const utils = require('./services/utils.js');
 const WebhookController = require('./services/webhook.js');
@@ -30,16 +31,19 @@ require('./services/logger.js');
         while (!dbMigrator.done) {
             await utils.snooze(1000);
         }
+
+        require('./services/pvp.js')(ipcMaster);
         
         // Fork workers
         for (let i = 0; i < instances; i++) {
-            cluster.fork();
+            ipcMaster.setup(cluster.fork());
         }
 
         // If worker gets disconnected, start new one. 
         cluster.on('disconnect', function (worker) {
             console.error(`[Cluster] Worker disconnected with id ${worker.id}`);
             let newWorker = cluster.fork();
+            ipcMaster.setup(newWorker);
             console.log('[Cluster] New worker started with process id %s', newWorker.process.pid);
         });
     

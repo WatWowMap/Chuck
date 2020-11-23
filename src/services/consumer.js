@@ -42,7 +42,7 @@ class Consumer {
                 try {
                     await Pokemon.updateFromNearby(this.username, nearby.timestampMs, nearby.cell, nearby.data);
                 } catch (err) {
-                    console.error('[Nearby] Error:', err.message);
+                    console.error('[Nearby] Error:', err.stack);
                 }
             }
         }
