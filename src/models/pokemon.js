@@ -273,7 +273,7 @@ class Pokemon extends Model {
                 this.setDittoAttributes(this.pokemonId);
             }
 
-            const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
+            const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
             this.pvpRankingsGreatLeague = pvp.great || null;
             this.pvpRankingsUltraLeague = pvp.ultra || null;
         });

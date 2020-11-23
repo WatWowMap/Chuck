@@ -12,6 +12,7 @@ const leagues = {
     great: [1500, 40],
     ultra: [2500, 40],
 };
+let rpc;
 
 const calculateStatProduct = (stats, attack, defense, stamina, level) => {
     const multiplier = cpMultipliers[level];
@@ -93,7 +94,7 @@ const calculateAllRanks = (stats) => {
     return value;
 };
 
-const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, gender) => {
+const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stamina, level, gender) => {
     const result = {};
     const masterPokemon = masterfile.pokemon[pokemonId];
     if (!masterPokemon || !masterPokemon.attack) {
@@ -111,12 +112,22 @@ const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, 
         }
         result[leagueName].push({ ...baseEntry, ...combinations[attack][defense][stamina] });
     }
-    if (masterForm.evolutions) {
+    let canEvolve = true;
+    if (costumeId) {
+        if (rpc === undefined) {
+            rpc = await require('purified-protos')();
+        }
+        const costumeName = rpc.PokemonDisplayProto.Costume[costumeId];
+        canEvolve = costumeName.endsWith('_NOEVOLVE') || costumeName.endsWith('_NO_EVOLVE');
+    }
+    if (canEvolve && masterForm.evolutions) {
         for (const [evoId, evolution] of Object.entries(masterForm.evolutions)) {
             if (evolution.gender_requirement && gender !== evolution.gender_requirement) {
                 continue;
             }
-            const evolvedRanks = await queryPvPRank(parseInt(evoId), evolution.form || 0, attack, defense, stamina, level, gender);
+            // reset costume since we know it can evolve
+            const evolvedRanks = await queryPvPRank(parseInt(evoId), evolution.form || 0, 0,
+                attack, defense, stamina, level, gender);
             for (const [leagueName, results] of Object.entries(evolvedRanks)) {
                 result[leagueName] = result[leagueName] ? result[leagueName].concat(results) : results;
             }
@@ -130,7 +141,11 @@ const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, 
                 if (!result[leagueName]) {
                     result[leagueName] = [];
                 }
-                result[leagueName].push({ ...baseEntry, evolution: parseInt(tempEvoId), ...combinations[attack][defense][stamina] });
+                result[leagueName].push({
+                    ...baseEntry,
+                    evolution: parseInt(tempEvoId),
+                    ...combinations[attack][defense][stamina],
+                });
             }
         }
     }
