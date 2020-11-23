@@ -2,7 +2,7 @@
 
 const masterfile = require('./masterfile.json');
 const cpMultiplier = require('./cp_multiplier.json');
-const redisClient = require('../src/services/redis.js');
+const redisClient = require('../../src/services/redis.js');
 //const fs = require('fs-extra');
 
 let pokemon = {};
@@ -12,7 +12,7 @@ let pokemonObject = masterfile.pokemon;
 const calculateAllRanks = async () => {
     for (let pokemonId in pokemonObject) {
         if (pokemonObject[pokemonId].attack) {
-            calculateTopRanks(pokemonId, -1, 1500);
+            calculateTopRanks(pokemonId, 0, 1500);
         }
         for (let formId in pokemonObject[pokemonId].forms) {
             if (pokemonObject[pokemonId].forms[formId].attack) {
@@ -29,7 +29,7 @@ const calculateAllRanks = async () => {
 
     for (let pokemonId in pokemonObject) {
         if (pokemonObject[pokemonId].attack) {
-            calculateTopRanks(pokemonId, -1, 2500);
+            calculateTopRanks(pokemonId, 0, 2500);
         }
         for (let formId in pokemonObject[pokemonId].forms) {
             if (pokemonObject[pokemonId].forms[formId].attack) {
@@ -47,23 +47,21 @@ const calculateAllRanks = async () => {
     process.exit();
 };
 
-const calculateTopRanks = (pokemonId, formId, cap) => {
+const calculateTopRanks = (pokemonId, formId, cap, lvCap = 40) => {
     console.log('[PvP] Calculating Top Ranks for:', masterfile.pokemon[pokemonId].name, '(' + pokemonId + ')', 'with form id:', formId);
     let currentPokemon = initializeBlankPokemon();
-    let bestStat = { attack: 0, defense: 0, stamina: 0, value: 0 };
     let arrayToSort = [];
 
     if (!pokemon[pokemonId]) {
         pokemon[pokemonId] = {};
     }
 
+    const stats = formId > 0 && pokemonObject[pokemonId].forms[formId].attack ? pokemonObject[pokemonId].forms[formId] : pokemonObject[pokemonId];
+    currentPokemon.trivial = calculateCP(stats, 15, 15, 15, lvCap) <= cap;
     for (let a = 0; a <= 15; a++) {
         for (let d = 0; d <= 15; d++) {
             for (let s = 0; s <= 15; s++) {
-                let currentStat = calculateBestPvPStat(pokemonId, formId, a, d, s, cap);
-                if(currentStat > bestStat.value) {
-                    bestStat = { attack: a, defense: d, stamina: s, value: currentStat.value, level: currentStat.level };
-                }
+                let currentStat = calculatePvPStat(stats, a, d, s, cap, lvCap);
                 currentPokemon[a][d][s] = { value: currentStat.value, level: currentStat.level, cp: currentStat.cp };
                 arrayToSort.push({ attack: a, defense: d, stamina: s, value: currentStat.value });
             }
@@ -72,11 +70,15 @@ const calculateTopRanks = (pokemonId, formId, cap) => {
 
     arrayToSort.sort((a, b) => b.value - a.value);
     const best = arrayToSort[0].value;
-    for (let i = 0; i < arrayToSort.length; i++) {
-        let percent = precisionRound((arrayToSort[i].value / best) * 100, 2);
+    for (let i = 0, j = 0; i < arrayToSort.length; i++) {
+        let percent = Number(((arrayToSort[i].value / best) * 100).toPrecision(4));
         arrayToSort[i].percent = percent;
-        currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].percent = percent;
-        currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].rank = i + 1;
+        const entry = currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina];
+        entry.percent = percent;
+        if (entry.value < arrayToSort[j].value) {
+            j = i;
+        }
+        entry.rank = j + 1;
     }
 
     if (formId >= 0) {
@@ -90,50 +92,37 @@ const calculateTopRanks = (pokemonId, formId, cap) => {
     return currentPokemon;
 };
 
-const calculateBestPvPStat = (pokemonId, formId, attack, defense, stamina, cap) => {
-    let bestStat = 0;
-    let level = 0;
-    let bestCP = 0;
-    for (let i = 1; i <= 40; i += 0.5) {
-        let cp = calculateCP(pokemonId, formId, attack, defense, stamina, i);
-        if(cp <= cap) {
-            let stat = calculatePvPStat(pokemonId, formId, i, attack, defense, stamina);
-            if (stat > bestStat) {
-                bestStat = stat;
-                level = i;
-                bestCP = cp;
-            }
+const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
+    let bestCP = cap, lowest = 1, highest = lvCap + .5;
+    for (let mid = Math.ceil(lowest + highest) / 2; lowest < highest; mid = Math.ceil(lowest + highest) / 2) {
+        const cp = calculateCP(stats, attack, defense, stamina, mid);
+        if (cp <= cap) {
+            lowest = mid;
+            bestCP = cp;
+        } else {
+            highest = mid - .5;
         }
     }
-    return { value: bestStat, level: level, cp: bestCP };
+    return { value: calculateStatProduct(stats, attack, defense, stamina, lowest), level: lowest, cp: bestCP };
 };
 
-const calculatePvPStat = (pokemonId, formId, level, attack, defense, stamina) => {
-    const pokemonAttack = formId >= 0 && pokemonObject[pokemonId].forms[formId].attack
-        ? pokemonObject[pokemonId].forms[formId].attack
-        : pokemonObject[pokemonId].attack;
-    const pokemonDefense = formId >= 0 && pokemonObject[pokemonId].forms[formId].defense
-        ? pokemonObject[pokemonId].forms[formId].defense
-        : pokemonObject[pokemonId].defense;
-    const pokemonStamina = formId >= 0 && pokemonObject[pokemonId].forms[formId].stamina
-        ? pokemonObject[pokemonId].forms[formId].stamina
-        : pokemonObject[pokemonId].stamina;
-    return Math.round(
-        (attack + pokemonAttack) * cpMultiplier[level] *
-        (defense + pokemonDefense) * cpMultiplier[level] *
-        (stamina + pokemonStamina) * cpMultiplier[level]);
+const calculateStatProduct = (stats, attack, defense, stamina, level) => {
+    const multiplier = cpMultiplier[level];
+    let hp = Math.floor((stamina + stats.stamina) * multiplier);
+    if (hp < 10) {
+        hp = 10;
+    }
+    return (attack + stats.attack) * multiplier *
+        (defense + stats.defense) * multiplier *
+        hp;
 };
 
-const calculateCP = (pokemonId, formId, attack , defense, stamina, level) => {
+const calculateCP = (stats, attack, defense, stamina, level) => {
     const multiplier = Math.pow(cpMultiplier[level], 2);
 
-    const pokemonAttack = (formId >= 0 && pokemonObject[pokemonId].forms[formId].attack) ? pokemonObject[pokemonId].forms[formId].attack : pokemonObject[pokemonId].attack;
-    const pokemonDefense = (formId >= 0 && pokemonObject[pokemonId].forms[formId].defense) ? pokemonObject[pokemonId].forms[formId].defense : pokemonObject[pokemonId].defense;
-    const pokemonStamina = (formId >= 0 && pokemonObject[pokemonId].forms[formId].stamina) ? pokemonObject[pokemonId].forms[formId].stamina : pokemonObject[pokemonId].stamina;
-
-    const attackMultiplier = pokemonAttack + parseInt(attack);
-    const defenseMultiplier = Math.pow(pokemonDefense + parseInt(defense), 0.5);
-    const staminaMultiplier = Math.pow(pokemonStamina + parseInt(stamina), 0.5);
+    const attackMultiplier = stats.attack + attack;
+    const defenseMultiplier = Math.pow(stats.defense + defense, 0.5);
+    const staminaMultiplier = Math.pow(stats.stamina + stamina, 0.5);
 
     const cp = Math.floor((attackMultiplier * defenseMultiplier * staminaMultiplier * multiplier) / 10);
     return cp < 10 ? 10 : cp;
@@ -151,11 +140,6 @@ const initializeBlankPokemon = () => {
         }
     }
     return newPokemon;
-};
-
-const precisionRound = (number, precision) => {
-    const factor = Math.pow(10, precision);
-    return Math.round(number * factor) / factor;
 };
 
 const writePvPData = async (data, league) => {
