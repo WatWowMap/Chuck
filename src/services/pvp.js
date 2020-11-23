@@ -80,7 +80,7 @@ const calculateAllRanks = (stats) => {
             const best = arrayToSort[0].value;
             for (let i = 0, j = 0; i < arrayToSort.length; i++) {
                 const entry = combinations[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina];
-                entry.percentage = Number((arrayToSort[i].value / best).toFixed(4));
+                entry.percentage = Number((arrayToSort[i].value / best).toFixed(5));
                 if (entry.value < arrayToSort[j].value) {
                     j = i;
                 }
