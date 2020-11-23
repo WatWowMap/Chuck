@@ -43,6 +43,9 @@ class Pokemon extends Model {
     _setPokemonDisplay(pokemonId, display, username) {
         if (!this.isNewRecord && (this.pokemonId !== pokemonId || this.gender !== display.gender ||
             this.form !== display.form || this.costume !== display.costume)) {
+            if (this.pokemonId === Pokemon.DittoPokemonId) {
+                return; // prevent trying to reset ditto
+            }
             console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
                 'to', pokemonId, 'by', username, '- unhandled');
             // TODO: handle A/B spawn?
