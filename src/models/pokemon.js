@@ -10,7 +10,6 @@ const Spawnpoint = require('./spawnpoint.js');
 const pvp = require('../services/pvp.js');
 const RedisClient = require('../services/redis.js');
 const WebhookController = require('../services/webhook.js');
-const geolib = require('geolib');
 
 /**
  * Pokemon model class.
