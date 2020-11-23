@@ -121,16 +121,13 @@ const calculatePvPStat = (pokemonId, formId, level, attack, defense, stamina) =>
         (stamina + pokemonStamina) * cpMultiplier[level]);
 };
 
-const calculateCP = (pokemonId, formId, attack , defense, stamina, level) => {
+const calculateCP = (pokemonId, formId, attack, defense, stamina, level) => {
     const multiplier = Math.pow(cpMultiplier[level], 2);
 
-    const pokemonAttack = (formId >= 0 && pokemonObject[pokemonId].forms[formId].attack) ? pokemonObject[pokemonId].forms[formId].attack : pokemonObject[pokemonId].attack;
-    const pokemonDefense = (formId >= 0 && pokemonObject[pokemonId].forms[formId].defense) ? pokemonObject[pokemonId].forms[formId].defense : pokemonObject[pokemonId].defense;
-    const pokemonStamina = (formId >= 0 && pokemonObject[pokemonId].forms[formId].stamina) ? pokemonObject[pokemonId].forms[formId].stamina : pokemonObject[pokemonId].stamina;
-
-    const attackMultiplier = pokemonAttack + parseInt(attack);
-    const defenseMultiplier = Math.pow(pokemonDefense + parseInt(defense), 0.5);
-    const staminaMultiplier = Math.pow(pokemonStamina + parseInt(stamina), 0.5);
+    const stats = formId > 0 && pokemonObject[pokemonId].forms[formId].attack ? pokemonObject[pokemonId].forms[formId] : pokemonObject[pokemonId];
+    const attackMultiplier = stats.attack + attack;
+    const defenseMultiplier = Math.pow(stats.defense + defense, 0.5);
+    const staminaMultiplier = Math.pow(stats.stamina + stamina, 0.5);
 
     const cp = Math.floor((attackMultiplier * defenseMultiplier * staminaMultiplier * multiplier) / 10);
     return cp < 10 ? 10 : cp;
