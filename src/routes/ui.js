@@ -594,7 +594,11 @@ const addInstancePost = async (req, res) => {
         }
         
         try {
-            let instance = new Instance(name, type, instanceData);
+            const instance = Instance.build({
+                name,
+                type,
+                data: instanceData,
+            });
             await instance.save();
             InstanceController.instance.addInstance(instance);
         } catch (err) {
