@@ -107,10 +107,14 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     }
     const allRanks = calculateAllRanks(masterForm.attack ? masterForm : masterPokemon);
     for (const [leagueName, combinations] of Object.entries(allRanks)) {
+        const ivEntry = combinations[attack][defense][stamina];
+        if (level > ivEntry.level) {
+            continue;   // over leveled, cannot get into cap
+        }
         if (!result[leagueName]) {
             result[leagueName] = [];
         }
-        result[leagueName].push({ ...baseEntry, ...combinations[attack][defense][stamina] });
+        result[leagueName].push({ ...baseEntry, ...ivEntry });
     }
     let canEvolve = true;
     if (costumeId) {
