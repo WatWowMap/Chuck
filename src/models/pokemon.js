@@ -6,10 +6,9 @@ const sequelize = require('../services/sequelize.js');
 const Cell = require('./cell.js');
 const Pokestop = require('./pokestop.js');
 const Spawnpoint = require('./spawnpoint.js');
-//const { PvPStatsManager, IV, League } = require('../services/pvp.js');
-const pvp = require('../services/pvp.js');
 const RedisClient = require('../services/redis.js');
 const WebhookController = require('../services/webhook.js');
+const ipcWorker = require('../ipc/worker.js');
 
 /**
  * Pokemon model class.
@@ -44,6 +43,9 @@ class Pokemon extends Model {
     _setPokemonDisplay(pokemonId, display, username) {
         if (!this.isNewRecord && (this.pokemonId !== pokemonId || this.gender !== display.gender ||
             this.form !== display.form || this.costume !== display.costume)) {
+            if (this.pokemonId === Pokemon.DittoPokemonId) {
+                return; // prevent trying to reset ditto
+            }
             console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
                 'to', pokemonId, 'by', username, '- unhandled');
             // TODO: handle A/B spawn?
@@ -120,8 +122,10 @@ class Pokemon extends Model {
 
     _ensureExpireTimestamp() {
         // First time seeing pokemon, check if expire timestamp set
-        if (this.isNewRecord && !this.expireTimestamp) {
+        if (this.isNewRecord || !this.expireTimestamp) {
             this.expireTimestamp = this.firstSeenTimestamp + Pokemon.PokemonTimeUnseen;
+        } else if (!this.expireTimestampVerified) {
+            this.expireTimestamp = Math.max(this.expireTimestamp, this.updated + Pokemon.PokemonTimeReseen);
         }
     }
 
@@ -141,11 +145,11 @@ class Pokemon extends Model {
                 await transaction.commit();
                 break;
             } catch (error) {
-                await transaction.rollback();
+                if (!transaction.finished) await transaction.rollback();
                 if (retry-- <= 0) {
                     throw error;
                 }
-                console.warn('[Pokemon] Encountered error, retrying', error.stack);
+                console.warn('[Pokemon] Encountered error, retrying,', retry, 'attempts left:', error.stack);
             }
         }
         if (pokemon.isNewRecord) {
@@ -262,65 +266,15 @@ class Pokemon extends Model {
                 level = Math.round(171.0112688 * cpMultiplier - 95.20425243);
             }
             this.level = level;
-            this.isDitto = Pokemon.isDittoDisguised(this.pokemonId,
-                this.level,
-                this.weather,
-                this.atkIv,
-                this.defIv,
-                this.staIv,
-            );
+            this.isDitto = this.isDittoDisguised();
             if (this.isDitto) {
                 console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
                 this.setDittoAttributes(this.pokemonId);
             }
 
-            /*
-            let pvpGreat = PvPStatsManager.instance.getPVPStatsWithEvolutions(
-                encounter.wild_pokemon.pokemon_data.pokemon_id,
-                this.form ? this.form : null,
-                encounter.wild_pokemon.pokemon_data.pokemon_display.costume,
-                new IV(parseInt(this.atkIv), parseInt(this.defIv), parseInt(this.staIv)),
-                parseFloat(this.level),
-                League.Great
-            );
-            */
-            let pvpGreat = await pvp.calculatePossibleCPs(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level, this.gender, 'great');
-            if (pvpGreat && pvpGreat.length > 0) {
-                this.pvpRankingsGreatLeague = pvpGreat.map(ranking => {
-                    return {
-                        "pokemon": ranking.pokemon_id,
-                        "form": ranking.form_id || 0,
-                        "rank": ranking.rank,
-                        "percentage": ranking.percent,
-                        "cp": ranking.cp,
-                        "level": ranking.level
-                    };
-                });
-            }
-
-            /*
-            let pvpUltra = PvPStatsManager.instance.getPVPStatsWithEvolutions(
-                encounter.wild_pokemon.pokemon_data.pokemon_id,
-                this.form ? this.form : null,
-                encounter.wild_pokemon.pokemon_data.pokemon_display.costume,
-                new IV(parseInt(this.atkIv), parseInt(this.defIv), parseInt(this.staIv)),
-                parseFloat(this.level),
-                League.Ultra
-            );
-            */
-            let pvpUltra = await pvp.calculatePossibleCPs(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level, this.gender, 'ultra');
-            if (pvpUltra && pvpUltra.length > 0) {
-                this.pvpRankingsUltraLeague = pvpUltra.map(ranking => {
-                    return {
-                        "pokemon": ranking.pokemon_id,
-                        "form": ranking.form_id || 0,
-                        "rank": ranking.rank,
-                        "percentage": ranking.percent,
-                        "cp": ranking.cp,
-                        "level": ranking.level
-                    };
-                });
-            }
+            const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
+            this.pvpRankingsGreatLeague = pvp.great || null;
+            this.pvpRankingsUltraLeague = pvp.ultra || null;
         });
     }
 
@@ -336,36 +290,18 @@ class Pokemon extends Model {
         this.move2 = Pokemon.DittoMove2Struggle;
         this.gender = 3;
         this.costume = 0;
-        // this.size = 0;
-        // this.weight = 0;
     }
 
     /**
      * Check if Pokemon is Ditto disguised.
-     * @param pokemon 
      */
-    static isDittoDisguisedFromPokemon(pokemon) {
-        let isDisguised = (pokemon.pokemonId == Pokemon.DittoPokemonId) || (Pokemon.DittoDisguises.includes(pokemon.pokemonId) || false);
-        let isUnderLevelBoosted = pokemon.level > 0 && pokemon.level < Pokemon.WeatherBoostMinLevel;
-        let isUnderIvStatBoosted = pokemon.level > 0 && (pokemon.atkIv < Pokemon.WeatherBoostMinIvStat || pokemon.defIv < Pokemon.WeatherBoostMinIvStat || pokemon.staIv < Pokemon.WeatherBoostMinIvStat);
-        let isWeatherBoosted = pokemon.weather > 0;
-        return isDisguised && (isUnderLevelBoosted || isUnderIvStatBoosted) && isWeatherBoosted;
-    }
-
-    /**
-     * Check if Pokemon is Ditto disguised.
-     * @param pokemonId 
-     * @param level 
-     * @param weather 
-     * @param atkIv 
-     * @param defIv 
-     * @param staIv 
-     */
-    static isDittoDisguised(pokemonId, level, weather, atkIv, defIv, staIv) {
-        let isDisguised = (pokemonId == Pokemon.DittoPokemonId) || (Pokemon.DittoDisguises.includes(pokemonId) || false);
-        let isUnderLevelBoosted = level > 0 && level < Pokemon.WeatherBoostMinLevel;
-        let isUnderIvStatBoosted = level > 0 && (atkIv < Pokemon.WeatherBoostMinIvStat || defIv < Pokemon.WeatherBoostMinIvStat || staIv < Pokemon.WeatherBoostMinIvStat);
-        let isWeatherBoosted = weather > 0;
+    isDittoDisguised() {
+        let isDisguised = this.pokemonId === Pokemon.DittoPokemonId || Pokemon.DittoDisguises.includes(this.pokemonId);
+        let isUnderLevelBoosted = this.level > 0 && this.level < Pokemon.WeatherBoostMinLevel;
+        let isUnderIvStatBoosted = this.level > 0 && (this.atkIv < Pokemon.WeatherBoostMinIvStat ||
+            this.defIv < Pokemon.WeatherBoostMinIvStat ||
+            this.staIv < Pokemon.WeatherBoostMinIvStat);
+        let isWeatherBoosted = this.weather > 0;
         return isDisguised && (isUnderLevelBoosted || isUnderIvStatBoosted) && isWeatherBoosted;
     }
 

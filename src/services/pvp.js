@@ -1,246 +1,154 @@
 'use strict';
 
+const LRU = require('lru-cache');
+const rpc = require('purified-protos');
+const cpMultipliers = require('../../static/data/cp_multiplier.json');
 const masterfile = require('../../static/data/masterfile.json');
-const redisClient = require('./redis.js');
 
-/*
-function calculateCP(pokemonId, formId, attack , defense, stamina, level) {
-    let cp = 0;
-    let pokemonAttack = 0, pokemonDefense = 0, pokemonStamina = 0;
-    let cpMultiplier = cpMultipliers[level];
+const rankCache = new LRU({
+    maxAge: 1000 * 60 * 60 * 24,
+    updateAgeOnGet: true,
+});
+const leagues = {
+    great: [1500, 40],
+    ultra: [2500, 40],
+};
 
-    if (!masterfile.pokemon[pokemonId]) {
-        console.log(`Can't find Pokemon ID: ${pokemonId} Form: ${formId}`);
-        return null;
+const calculateStatProduct = (stats, attack, defense, stamina, level) => {
+    const multiplier = cpMultipliers[level];
+    let hp = Math.floor((stamina + stats.stamina) * multiplier);
+    if (hp < 10) {
+        hp = 10;
     }
-    if (!masterfile.pokemon[pokemonId].attack){
-        if (!masterfile.pokemon[pokemonId].forms[formId] || !masterfile.pokemon[pokemonId].forms[formId].attack) {
-            console.log(`Can't find attack of Pokemon ID: ${pokemonId} Form: ${formId}`);
-            return null;
-        }
-        pokemonAttack = masterfile.pokemon[pokemonId].forms[formId].attack;
-        pokemonDefense = masterfile.pokemon[pokemonId].forms[formId].defense;
-        pokemonStamina = masterfile.pokemon[pokemonId].forms[formId].stamina;
-    } else {
-        pokemonAttack = masterfile.pokemon[pokemonId].attack;
-        pokemonDefense = masterfile.pokemon[pokemonId].defense;
-        pokemonStamina = masterfile.pokemon[pokemonId].stamina;
-    }
+    return (attack + stats.attack) * multiplier *
+        (defense + stats.defense) * multiplier *
+        hp;
+};
 
-    let attackMultiplier = pokemonAttack + parseInt(attack);
-    let defenseMultiplier = Math.pow(pokemonDefense + parseInt(defense), 0.5);
-    let staminaMultiplier = Math.pow(pokemonStamina + parseInt(stamina), 0.5);
-    cpMultiplier = Math.pow(cpMultiplier, 2);
+const calculateCP = (stats, attack, defense, stamina, level) => {
+    const multiplier = Math.pow(cpMultipliers[level], 2);
 
-    cp = Math.floor((attackMultiplier * defenseMultiplier * staminaMultiplier * cpMultiplier) / 10);
+    const attackMultiplier = stats.attack + attack;
+    const defenseMultiplier = Math.pow(stats.defense + defense, 0.5);
+    const staminaMultiplier = Math.pow(stats.stamina + stamina, 0.5);
+
+    const cp = Math.floor((attackMultiplier * defenseMultiplier * staminaMultiplier * multiplier) / 10);
     return cp < 10 ? 10 : cp;
-}
+};
 
-function calculateTopRanks(pokemonId, formId, cap) {
-    let currentPokemon = initializeBlankPokemon();
-    let bestStat = { attack: 0, defense: 0, stamina: 0, value: 0 };
-    let arrayToSort = [];
-
-    for(let a = 0; a <= 15; a++) {
-        for(let d = 0; d <= 15; d++) {
-            for(let s = 0; s <= 15; s++) {
-                let currentStat = calculateBestPvPStat(pokemonId, formId, a, d, s, cap);
-                if(currentStat > bestStat.value) {
-                    bestStat = { attack: a, defense: d, stamina: s, value: currentStat.value, level: currentStat.level };
-                }
-                currentPokemon[a][d][s] = { value: currentStat.value, level: currentStat.level };
-                arrayToSort.push({attack:a, defense:d, stamina:s, value:currentStat.value});
-            }
-        }
-    }
-
-    arrayToSort.sort((a,b) => b.value - a.value);
-    let best = arrayToSort[0].value;
-    for (let i = 0; i < arrayToSort.length; i++) {
-        let percent = precisionRound((arrayToSort[i].value / best) * 100, 2);
-        arrayToSort[i].percent = percent;
-        currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].percent = percent;
-        currentPokemon[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina].rank = i + 1;
-    }
-    return currentPokemon;
-}
-
-function calculateBestPvPStat(pokemonId, formId, attack, defense, stamina, cap) {
-    let bestStat = 0;
-    let level = 0;
-    for (let i = 1; i <= 40; i += 0.5) {
-        let cp = calculateCP(pokemonId, formId, attack, defense, stamina, i);
+const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
+    let bestCP = cap, lowest = 1, highest = lvCap;
+    for (let mid = Math.ceil(lowest + highest) / 2; lowest < highest; mid = Math.ceil(lowest + highest) / 2) {
+        const cp = calculateCP(stats, attack, defense, stamina, mid);
         if (cp <= cap) {
-            let stat = calculatePvPStat(pokemonId, formId, i, attack, defense, stamina);
-            if (stat > bestStat) {
-                bestStat = stat;
-                level = i;
+            lowest = mid;
+            bestCP = cp;
+        } else {
+            highest = mid - .5;
+        }
+    }
+    // TODO: currently we assume lv1 cp is always below cpCap. If this is not the case, we need to add a check here
+    return { value: calculateStatProduct(stats, attack, defense, stamina, lowest), level: lowest, cp: bestCP };
+};
+
+const calculateAllRanks = (stats) => {
+    const key = `${stats.attack},${stats.defense},${stats.stamina}`;
+    let value = rankCache.get(key);
+    if (value === undefined) {
+        value = {};
+        for (const [leagueName, [cpCap, lvCap]] of Object.entries(leagues)) {
+            if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
+                continue;   // not viable
             }
-        }
-        else if (cp > cap) {
-          i = 41;
-        }
-    }
-    return { value: bestStat, level: level };
-}
-
-function calculatePvPStat(pokemonId, formId, level, attack, defense, stamina) {
-    let cpMultiplier = cpMultipliers[level];
-    if (!masterfile.pokemon[pokemonId].attack) {
-        attack = (attack + masterfile.pokemon[pokemonId].forms[formId].attack) * cpMultiplier;
-        defense = (defense + masterfile.pokemon[pokemonId].forms[formId].defense) * cpMultiplier;
-        stamina = (stamina + masterfile.pokemon[pokemonId].forms[formId].stamina) * cpMultiplier;
-    } else {
-        attack = (attack + masterfile.pokemon[pokemonId].attack) * cpMultipliers[level];
-        defense = (defense + masterfile.pokemon[pokemonId].defense) * cpMultiplier;
-        stamina = (stamina + masterfile.pokemon[pokemonId].stamina) * cpMultiplier;
-    }
-    return Math.round(attack * defense * Math.floor(stamina));
-}
-
-function initializeBlankPokemon() {
-    let newPokemon = {};
-    for (let a = 0; a <= 15; a++) {
-        newPokemon[a] = {};
-        for (let d = 0; d <= 15; d++) {
-            newPokemon[a][d] = {};
-            for (let s = 0; s <= 15; s++) {
-                newPokemon[a][d][s] = {};
-            }
-        }
-    }
-    return newPokemon;
-}
-
-function precisionRound(number, precision) {
-    let factor = Math.pow(10, precision);
-    return Math.round(number * factor) / factor;
-}
-
-function filterPossibleCPsByRank(possibleCPs, minRank = 4096){
-    let returnCPs = {};
-    for (let pokemon in possibleCPs) {
-        if (possibleCPs[pokemon].rank <= minRank) {
-            returnCPs[pokemon] = possibleCPs[pokemon];
-        }
-    }
-    return returnCPs;
-}
-
-function filterPossibleCPsByPercent(possibleCPs, minPercent = 0) {
-    let returnCPs = {};
-    for (let pokemon in possibleCPs){
-        if (possibleCPs[pokemon].percent >= minPercent) {
-            returnCPs[pokemon] = possibleCPs[pokemon];
-        }
-    }
-    return returnCPs;
-}
-
-function searchTopRank(search, filter) {
-    // RUN CALCULATIONS
-    let possible_cps = calculatePossibleCPs(search.pokemon.pokemon_id, search.pokemon.form, search.stats.atk, search.stats.def, search.stats.sta, 1, 'Male', filter.min_cp_range, filter.max_cp_range);
-    let unique_cps = {}, ranks = {};
-
-    for (let i = possible_cps.length - 1; i >= 0; i--) {
-        if (!unique_cps[possible_cps[i].pokemonId]) {
-            unique_cps[possible_cps[i].pokemonId] = {};
-            pvpRanks = calculateTopRanks(possible_cps[i].pokemonId, possible_cps[i].formId, filter.max_cp_range);
-            ranks = pvpRanks[search.stats.atk][search.stats.def][search.stats.sta];
+            const arrayToSort = [];
+            const combinations = [];
             for (let a = 0; a <= 15; a++) {
+                const arrA = [];
                 for (let d = 0; d <= 15; d++) {
+                    const arrD = [];
                     for (let s = 0; s <= 15; s++) {
-                        let ads = pvpRanks[a][d][s];
-                        if (ads.rank == '1' && calculateCP(search.pokemon.pokemon_id, search.pokemon.form, a, d, s, ads.level) <= filter.max_cp_range) {
-                            ranks.topRank = pvpRanks[a][d][s];
-                            ranks.topRank.atk = a;
-                            ranks.topRank.def = d;
-                            ranks.topRank.sta = s;
-                        }
+                        const currentStat = calculatePvPStat(stats, a, d, s, cpCap, lvCap);
+                        arrD.push(currentStat);
+                        arrayToSort.push({ attack: a, defense: d, stamina: s, value: currentStat.value });
                     }
+                    arrA.push(arrD);
                 }
+                combinations.push(arrA);
+            }
+
+            arrayToSort.sort((a, b) => b.value - a.value);
+            const best = arrayToSort[0].value;
+            for (let i = 0, j = 0; i < arrayToSort.length; i++) {
+                const entry = combinations[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina];
+                entry.percentage = Number((arrayToSort[i].value / best).toFixed(5));
+                if (entry.value < arrayToSort[j].value) {
+                    j = i;
+                }
+                entry.rank = j + 1;
+                entry.value = Math.floor(entry.value);
+            }
+            value[leagueName] = combinations;
+        }
+        rankCache.set(key, value);
+    }
+    return value;
+};
+
+const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stamina, level, gender) => {
+    const result = {};
+    const masterPokemon = masterfile.pokemon[pokemonId];
+    if (!masterPokemon || !masterPokemon.attack) {
+        return result;
+    }
+    const masterForm = masterPokemon.forms[formId] || masterPokemon;
+    const baseEntry = { pokemon: pokemonId };
+    if (formId) {
+        baseEntry.form = formId;
+    }
+    const allRanks = calculateAllRanks(masterForm.attack ? masterForm : masterPokemon);
+    for (const [leagueName, combinations] of Object.entries(allRanks)) {
+        if (!result[leagueName]) {
+            result[leagueName] = [];
+        }
+        result[leagueName].push({ ...baseEntry, ...combinations[attack][defense][stamina] });
+    }
+    let canEvolve = true;
+    if (costumeId) {
+        const costumeName = (await rpc()).PokemonDisplayProto.Costume[costumeId];
+        canEvolve = costumeName.endsWith('_NOEVOLVE') || costumeName.endsWith('_NO_EVOLVE');
+    }
+    if (canEvolve && masterForm.evolutions) {
+        for (const [evoId, evolution] of Object.entries(masterForm.evolutions)) {
+            if (evolution.gender_requirement && gender !== evolution.gender_requirement) {
+                continue;
+            }
+            // reset costume since we know it can evolve
+            const evolvedRanks = await queryPvPRank(parseInt(evoId), evolution.form || 0, 0,
+                attack, defense, stamina, level, gender);
+            for (const [leagueName, results] of Object.entries(evolvedRanks)) {
+                result[leagueName] = result[leagueName] ? result[leagueName].concat(results) : results;
             }
         }
     }
-    return ranks;
-}
-*/
-
-const calculatePossibleCPs = async (pokemonId, formId, attack, defense, stamina, level, gender, league) => {
-    return new Promise(async (resolve) => {
-        let possibleCPs = [];
-        if (isNaN(attack) || isNaN(defense) || isNaN(stamina) || isNaN(level)) {
-            return resolve(possibleCPs);
-        }
-
-        // Check for required gender on evolution
-        if (masterfile.pokemon[pokemonId].gender_requirement &&
-            masterfile.pokemon[pokemonId].gender_requirement !== gender) {
-            return resolve(possibleCPs);
-        }
-
-        let pokemonPvPValue = await queryPvPRank(pokemonId, formId, attack, defense, stamina, level, league);
-        if (pokemonPvPValue) {
-            possibleCPs.push(pokemonPvPValue);
-        }
-
-        // If no data about possible evolutions just return now rather than moving on
-        if (!masterfile.pokemon[pokemonId].evolutions) {
-            return possibleCPs;
-        }
-
-        let evolvedForm;
-        for (let i = 0; i < masterfile.pokemon[pokemonId].evolutions.length; i++) {
-            // Check for Evolution Form
-            if (formId > 0) {
-                if (!masterfile.pokemon[pokemonId].forms[formId]) {
-                    evolvedForm = masterfile.pokemon[masterfile.pokemon[pokemonId].evolutions[i]].default_form;
-                } else {
-                    evolvedForm = masterfile.pokemon[pokemonId].forms[formId].evolved_form;
+    if (masterForm.temp_evolutions) {
+        for (const [tempEvoId, tempEvo] of Object.entries(masterForm.temp_evolutions)) {
+            const overrideStats = tempEvo.attack ? tempEvo : masterPokemon.temp_evolutions[tempEvoId];
+            const tempRanks = calculateAllRanks(overrideStats);
+            for (const [leagueName, combinations] of Object.entries(tempRanks)) {
+                if (!result[leagueName]) {
+                    result[leagueName] = [];
                 }
-            } else if (masterfile.pokemon[pokemonId].evolved_form) {
-                evolvedForm = masterfile.pokemon[pokemonId].evolved_form;
-            } else {
-                evolvedForm = formId;
+                result[leagueName].push({
+                    ...baseEntry,
+                    evolution: parseInt(tempEvoId),
+                    ...combinations[attack][defense][stamina],
+                });
             }
-
-            let evolvedCPs =  await calculatePossibleCPs(masterfile.pokemon[pokemonId].evolutions_ids[i], evolvedForm, attack, defense, stamina, level, gender, league);
-            possibleCPs = possibleCPs.concat(evolvedCPs);
         }
-        return resolve(possibleCPs);
-    });
-};
-
-const queryPvPRank = async (pokemonId, formId, attack, defense, stamina, level, league) => {
-    let form = formId;
-    if (!masterfile.pokemon[pokemonId].forms[formId] ||
-        !masterfile.pokemon[pokemonId].forms[formId].attack) {
-        form = 0;
     }
-    const key = league + '_league';
-    const field = `${pokemonId}-${form}-${attack}-${defense}-${stamina}`;
-    const stats = await redisClient.hget(key, field);
-    if (stats && stats.level > level) {
-        return stats;
-    }
-    return null;
+    return result;
 };
 
-module.exports = {
-    calculatePossibleCPs
+module.exports = (ipcMaster) => {
+    ipcMaster.registerCallback('queryPvPRank', queryPvPRank);
 };
-
-/*
-//227
-calculatePossibleCPs(1, 0, 0, 15, 15, 1, null, 'great').then(x => {
-    console.log('Great league pvp result:', x);
-}).catch(err => {
-    console.error('pvp error:', err);
-});
-
-calculatePossibleCPs(1, 0, 0, 15, 15, 1, null, 'ultra').then(x => {
-    console.log('Ultra league pvp result:', x);
-}).catch(err => {
-    console.error('pvp error:', err);
-});
-*/
