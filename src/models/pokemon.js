@@ -122,7 +122,7 @@ class Pokemon extends Model {
 
     _ensureExpireTimestamp() {
         // First time seeing pokemon, check if expire timestamp set
-        if (this.isNewRecord && !this.expireTimestamp) {
+        if (this.isNewRecord || !this.expireTimestamp) {
             this.expireTimestamp = this.firstSeenTimestamp + Pokemon.PokemonTimeUnseen;
         } else if (!this.expireTimestampVerified) {
             this.expireTimestamp = Math.max(this.expireTimestamp, this.updated + Pokemon.PokemonTimeReseen);
