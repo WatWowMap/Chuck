@@ -184,7 +184,7 @@ class DeviceController {
 
         device.accountUsername = account.username;
         device.deviceLevel = account.level;
-        await device.save(device.uuid);
+        await device.save();
         sendResponse(res, 'ok', {
             username: account.username.trim(),
             password: account.password.trim(),

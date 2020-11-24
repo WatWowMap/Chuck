@@ -10,24 +10,19 @@ class Device extends Model {
 
     /**
      * Get all available devices.
+     * @deprecated Use findAll.
      */
     static getAll() {
-        return Device.findAll({});
+        return Device.findAll();
     }
 
     /**
      * Get device based on uuid.
-     * @param uuid 
+     * @param uuid
+     * @deprecated Use findByPk.
      */
-    static async getById(uuid) {
-        try {
-            return await Device.findOne({
-                where: { uuid: uuid },
-            });
-        } catch (err) {
-            console.error('[Device] Error:', err);
-            return [];
-        }
+    static getById(uuid) {
+        return Device.findByPk(uuid);
     }
 
     /**
@@ -57,7 +52,7 @@ class Device extends Model {
             lastHost: host,
         };
         if (updateLastSeen) {
-            updateParams['lastSeen'] = Date.now() / 1000;
+            updateParams.lastSeen = Date.now() / 1000;
         }
         const results = await Device.update(updateParams, {
             where: { uuid: uuid },
@@ -67,37 +62,11 @@ class Device extends Model {
 
     /**
      * Create device.
+     * @deprecated Use save.
      */
     async create() {
-        const results = await Device.create({
-            uuid: this.uuid,
-            instanceName: this.instanceName,
-            accountUsername: this.accountUsername,
-            lastHost: this.lastHost,
-            lastSeen: this.lastSeen,
-            lastLat: this.lastLat,
-            lastLon: this.lastLon,
-        });
+        const results = await this.save();
         console.log('[Device] Insert:', results);
-    }
-
-    /**
-     * Save device.
-     * @param oldUUID 
-     */
-    async save(oldUUID = '') {
-        const results = await Device.update({
-            uuid: this.uuid,
-            instanceName: this.instanceName,
-            accountUsername: this.accountUsername,
-            lastHost: this.lastHost,
-            lastSeen: this.lastSeen,
-            lastLat: this.lastLat,
-            lastLon: this.lastLon,
-        }, {
-            where: { uuid: oldUUID },
-        });
-        //console.log('[Device] Save:', results);
     }
 }
 
