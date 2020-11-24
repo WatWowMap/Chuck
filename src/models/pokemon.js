@@ -20,7 +20,7 @@ class Pokemon extends Model {
     static WeatherBoostMinIvStat = 4;
     static PokemonTimeUnseen = config.dataparser.pokemonTimeUnseen * 60;
     static PokemonTimeReseen = config.dataparser.pokemonTimeReseen * 60;
-    static DittoDisguises = config.dataparser.dittoDiguises;
+    static DittoDisguises = config.dataparser.dittoDisguises;
     static DittoMove1Transform = 242;
     static DittoMove2Struggle = 133;
 
