@@ -1,0 +1,13 @@
+{
+    "unset": 0,
+    "experience": 1,
+    "item": 2,
+    "stardust": 3,
+    "candy": 4,
+    "avatarClothing": 5,
+    "quest": 6,
+    "pokemonEncounter": 7,
+    "pokecoin": 8,
+    "sticker": 11,
+    "megaResource": 12
+}
