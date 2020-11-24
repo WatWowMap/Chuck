@@ -139,14 +139,14 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
             const overrideStats = tempEvo.attack ? tempEvo : masterPokemon.temp_evolutions[tempEvoId];
             const tempRanks = calculateAllRanks(overrideStats);
             for (const [leagueName, combinations] of Object.entries(tempRanks)) {
+                const ivEntry = combinations[attack][defense][stamina];
+                if (level > ivEntry.level) {
+                    continue;   // over leveled, cannot get into cap
+                }
                 if (!result[leagueName]) {
                     result[leagueName] = [];
                 }
-                result[leagueName].push({
-                    ...baseEntry,
-                    evolution: parseInt(tempEvoId),
-                    ...combinations[attack][defense][stamina],
-                });
+                result[leagueName].push({ ...baseEntry, evolution: parseInt(tempEvoId), ...ivEntry });
             }
         }
     }
