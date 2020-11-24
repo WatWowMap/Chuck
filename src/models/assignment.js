@@ -15,6 +15,10 @@ class Assignment extends Model {
         return Assignment.findAll({});
     }
 
+    /**
+     * Get all available assignments.
+     * @param id
+     */
     static async getById(id) {
         try {
             return await Assignment.findOne({
@@ -26,6 +30,10 @@ class Assignment extends Model {
         }
     }
 
+     /**
+     * Delete an instance by ID.
+     * @param id
+     */
     static async deleteById(id) {
         const results = await Assignment.destroy({
             where: { id: id },
@@ -34,6 +42,9 @@ class Assignment extends Model {
         //console.error('[Assignment] Error:', results);
     }
 
+     /**
+     * Delete everything.
+     */
     static async deleteAll() {
         const results = await Assignment.destroy({});
 

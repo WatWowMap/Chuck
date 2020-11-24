@@ -15,12 +15,17 @@ class Instance extends Model {
 
     /**
      * Get instance by name.
+     * @param name
      * @deprecated Use findByPk.
      */
     static getByName(name) {
         return Instance.findByPk(name);
     }
 
+    /**
+     * Delete an instance by its name.
+     * @param name
+     */
     static async deleteByName(name) {
         const results = await Instance.destroy({
             where: { name: name },
