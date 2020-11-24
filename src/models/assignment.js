@@ -2,6 +2,8 @@
 
 const { DataTypes, Model } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
+const Device = require('./device.js');
+const Instance = require('./instance.js');
 
 /**
  * Assignment model class.
@@ -22,28 +24,24 @@ class Assignment extends Model {
      * @deprecated Use findByPk.
      */
     static getById(id) {
-        return Instance.findByPk(id);
+        return Assignment.findByPk(id);
     }
 
-     /**
+    /**
      * Delete an instance by ID.
      * @param id
      */
-    static async deleteById(id) {
-        const results = await Assignment.destroy({
-            where: { id: id },
+    static deleteById(id) {
+        return Assignment.destroy({
+            where: { id },
         });
-
-        //console.error('[Assignment] Error:', results);
     }
 
-     /**
+    /**
      * Delete everything.
      */
-    static async deleteAll() {
-        const results = await Assignment.destroy({});
-
-        //console.error('[Assignment] Error:', results);
+    static deleteAll() {
+        return Assignment.destroy();
     }
 }
 
@@ -65,7 +63,7 @@ Assignment.init({
     enabled: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: 1,
+        defaultValue: true,
     },
     id: {
         type: DataTypes.INTEGER,
@@ -95,19 +93,13 @@ Assignment.init({
     tableName: 'assignment',
 });
 
-Device.Assignments = Device.hasMany(Assignment, {
-    foreignKey: 'deviceUuid',
-});
-Assignment.Device = Assignment.belongsTo(Device);
+Device.Assignments = Device.hasMany(Assignment, { foreignKey: 'deviceUuid' });
+Assignment.Device = Assignment.belongsTo(Device, { foreignKey: 'deviceUuid' });
 
-Instance.Assignments = Instance.hasMany(Assignment, {
-    foreignKey: 'instanceName',
-});
-Assignment.Instance = Assignment.belongsTo(Instance);
+Instance.Assignments = Instance.hasMany(Assignment, { foreignKey: 'instanceName' });
+Assignment.Instance = Assignment.belongsTo(Instance, { foreignKey: 'instanceName' });
 
-Instance.Assignments = Instance.hasMany(Assignment, {
-    foreignKey: 'sourceInstanceName',
-});
-Assignment.Instance = Assignment.belongsTo(Instance);
+Instance.OwnedAssignments = Instance.hasMany(Assignment, { foreignKey: 'sourceInstanceName' });
+Assignment.SourceInstance = Assignment.belongsTo(Instance, { foreignKey: 'sourceInstanceName' });
 
 module.exports = Assignment;
