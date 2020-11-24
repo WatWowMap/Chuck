@@ -181,6 +181,7 @@ class Pokestop extends Model {
             let rewardData = {};
             let infoData = {};
             rewardData['type'] = reward.type;
+            const rpc = await rpc();
             switch (reward.type) {
                 case rpc.QuestRewardProto.Type.CANDY:
                     infoData['amount'] = reward.amount;
