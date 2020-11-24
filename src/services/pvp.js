@@ -1,6 +1,7 @@
 'use strict';
 
 const LRU = require('lru-cache');
+const rpc = require('purified-protos');
 const cpMultipliers = require('../../static/data/cp_multiplier.json');
 const masterfile = require('../../static/data/masterfile.json');
 
@@ -12,7 +13,6 @@ const leagues = {
     great: [1500, 40],
     ultra: [2500, 40],
 };
-let rpc;
 
 const calculateStatProduct = (stats, attack, defense, stamina, level) => {
     const multiplier = cpMultipliers[level];
@@ -114,10 +114,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     }
     let canEvolve = true;
     if (costumeId) {
-        if (rpc === undefined) {
-            rpc = await require('purified-protos')();
-        }
-        const costumeName = rpc.PokemonDisplayProto.Costume[costumeId];
+        const costumeName = (await rpc()).PokemonDisplayProto.Costume[costumeId];
         canEvolve = costumeName.endsWith('_NOEVOLVE') || costumeName.endsWith('_NO_EVOLVE');
     }
     if (canEvolve && masterForm.evolutions) {
