@@ -10,24 +10,19 @@ class Assignment extends Model {
 
     /**
      * Get all available assignments.
+     * @deprecated Use findAll.
      */
     static async getAll() {
-        return Assignment.findAll({});
+        return Assignment.findAll();
     }
 
     /**
      * Get all available assignments.
      * @param id
+     * @deprecated Use findByPk.
      */
     static async getById(id) {
-        try {
-            return await Assignment.findOne({
-                where: { id: id },
-            });
-        } catch (err) {
-            console.error('[Assignment] Error:', err);
-            return null;
-        }
+        Instance.findByPk(id);
     }
 
      /**
@@ -49,20 +44,6 @@ class Assignment extends Model {
         const results = await Assignment.destroy({});
 
         //console.error('[Assignment] Error:', results);
-    }
-
-    async save() {
-        const results = await Assignment.update({
-            id: this.id,
-            device_uuid: this.device_uuid,
-            instance_name: this.instance_name,
-            source_instance_name: this.source_instance_name,
-            time: this.time,
-            date: this.date,
-            enabled: this.enabled,
-        });
-
-        //console.log('[Assignment] Save:', results);
     }
 }
 
