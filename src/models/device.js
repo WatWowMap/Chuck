@@ -59,15 +59,6 @@ class Device extends Model {
         });
         console.log('[Device] Touch:', results);
     }
-
-    /**
-     * Create device.
-     * @deprecated Use save.
-     */
-    async create() {
-        const results = await this.save();
-        console.log('[Device] Insert:', results);
-    }
 }
 
 Device.init({
