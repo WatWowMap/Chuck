@@ -12,7 +12,7 @@ class Assignment extends Model {
      * Get all available assignments.
      * @deprecated Use findAll.
      */
-    static async getAll() {
+    static getAll() {
         return Assignment.findAll();
     }
 
@@ -21,7 +21,7 @@ class Assignment extends Model {
      * @param id
      * @deprecated Use findByPk.
      */
-    static async getById(id) {
+    static getById(id) {
         return Instance.findByPk(id);
     }
 
