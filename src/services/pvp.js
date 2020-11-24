@@ -4,11 +4,13 @@ const LRU = require('lru-cache');
 const rpc = require('purified-protos');
 const cpMultipliers = require('../../static/data/cp_multiplier.json');
 const masterfile = require('../../static/data/masterfile.json');
+const config = require('./config.js');
 
 const rankCache = new LRU({
     maxAge: 1000 * 60 * 60 * 24,
     updateAgeOnGet: true,
 });
+//add to config once Chuck db has one pvp column
 const leagues = {
     great: 1500,
     ultra: 2500,
@@ -18,7 +20,7 @@ const leagues = {
  * CP multiplier up to level (maxLevelCap + .5) must all be defined.
  * @type {number[]}
  */
-const levelCaps = [40, 41, 50, 51];
+const levelCaps = config.dataparser.pvp.levelCaps;
 
 const calculateStatProduct = (stats, attack, defense, stamina, level) => {
     const multiplier = cpMultipliers[level];
