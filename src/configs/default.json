@@ -17,7 +17,11 @@
             "quests": true,
             "gymDefenders": true,
             "weather": true
-        }
+        },
+        "pokemonTimeUnseen": 20,
+        "pokemonTimeReseen": 10,
+        "dittoDisguises": [ 46,163,165,167,187,223,293,316,322,399,590 ],
+        "lureTime": 30
     },
     "db": {
         "type": "mysql",
@@ -36,7 +40,7 @@
     },
     "webhooks": {
         "enabled": false,
-        "urls": ["http://127.0.0.1:9003"],
+        "urls": ["http://127.0.0.1:9002"],
         "delay": 5,
         "retryCount": 5
     },

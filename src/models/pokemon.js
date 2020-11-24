@@ -9,6 +9,7 @@ const Spawnpoint = require('./spawnpoint.js');
 const RedisClient = require('../services/redis.js');
 const WebhookController = require('../services/webhook.js');
 const ipcWorker = require('../ipc/worker.js');
+const config = require('../services/config.js');
 
 /**
  * Pokemon model class.
@@ -17,9 +18,9 @@ class Pokemon extends Model {
     static DittoPokemonId = 132;
     static WeatherBoostMinLevel = 6;
     static WeatherBoostMinIvStat = 4;
-    static PokemonTimeUnseen = 1200;
-    static PokemonTimeReseen = 600;
-    static DittoDisguises = [46,163,165,167,187,223,293,316,322,399,590];
+    static PokemonTimeUnseen = config.dataparser.pokemonTimeUnseen * 60;
+    static PokemonTimeReseen = config.dataparser.pokemonTimeReseen * 60;
+    static DittoDisguises = config.dataparser.dittoDisguises;
     static DittoMove1Transform = 242;
     static DittoMove2Struggle = 133;
 

@@ -408,7 +408,7 @@ class Consumer {
             let updatedPokestops = [];
             for (let i = 0; i < quests.length; i++) {
                 let quest = quests[i];
-                let pokestop = Pokestop.fromQuest(quest);
+                let pokestop = await Pokestop.fromQuest(quest);
                 if (await pokestop.triggerWebhook(true)) {
                     console.warn('[Quest] Found a quest belonging to a new stop, skipping...');
                     continue;
