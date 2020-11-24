@@ -10,17 +10,10 @@ const rankCache = new LRU({
     maxAge: 1000 * 60 * 60 * 24,
     updateAgeOnGet: true,
 });
-//add to config once Chuck db has one pvp column
-const leagues = {
-    great: 1500,
-    ultra: 2500,
-};
+
 /**
- * A list of level caps that will be considered. Must be a strictly increasing sequence.
- * CP multiplier up to level (maxLevelCap + .5) must all be defined.
  * @type {number[]}
  */
-const levelCaps = config.dataparser.pvp.levelCaps;
 
 const calculateStatProduct = (stats, attack, defense, stamina, level) => {
     const multiplier = cpMultipliers[level];
@@ -64,9 +57,9 @@ const calculateAllRanks = (stats) => {
     let value = rankCache.get(key);
     if (value === undefined) {
         value = {};
-        for (const [leagueName, cpCap] of Object.entries(leagues)) {
+        for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
             let combinations;
-            for (const lvCap of levelCaps) {
+            for (const lvCap of config.dataparser.pvp.levelCaps) {
                 if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
                     continue;   // not viable
                 }
