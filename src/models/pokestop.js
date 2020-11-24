@@ -1,13 +1,12 @@
 'use strict';
 
 const POGOProtos = require('pogo-protos');
+const rpc = require('purified-protos');
 
 const { DataTypes, Model, Op, Sequelize } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
 const Cell = require('./cell');
-const questReward = require('../../static/data/quest_reward.json')
-const conditionType = require('../../static/data/condition_types.json')
 const config = require('../services/config.js');
 
 /**
@@ -85,7 +84,7 @@ class Pokestop extends Model {
      * Add quest proto data to pokestop.
      * @param quest
      */
-    static fromQuest(quest) {
+    static async fromQuest(quest) {
         let conditions = [];
         let rewards = [];
         for (let i = 0; i < quest.goal.condition.length; i++) {
@@ -95,30 +94,31 @@ class Pokestop extends Model {
             conditionData['type'] = condition.type;
             // TODO: Needs testing
             let info = condition;
+            const rpc = await rpc();
             switch (condition.type) {
-                case conditionType.badgeType:
+                case rpc.QuestConditionProto.ConditionType.WITH_BADGE_TYPE:
                     infoData['amount'] = info.badge_type.amount;
                     infoData['badge_rank'] = info.badge_rank;
                     let badgeTypesById = [];
                     info.badge_type.forEach(badge => badgeTypesById.push(badge));
                     infoData['badge_types'] = badgeTypesById;
                     break;
-                case conditionType.item:
+                case rpc.QuestConditionProto.ConditionType.WITH_ITEM:
                     if (info.item !== 0) {
                         infoData['item_id'] = info.item;
                     }
                     break;
-                case conditionType.raidLevel:
+                case rpc.QuestConditionProto.ConditionType.WITH_RAID_LEVEL:
                     let raidLevelById = [];
                     info.with_raid_level.raid_level.forEach(raidLevel => raidLevelById.push(raidLevel));
                     infoData['raid_levels'] = raidLevelById;
                     break;
-                case conditionType.pokemonType:
+                case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_TYPE:
                     let pokemonTypesById = [];
                     info.with_pokemon_type.pokemon_type.forEach(type => pokemonTypesById.push(type));
                     infoData['pokemon_type_ids'] = pokemonTypesById;
                     break;
-                case conditionType.pokemonCategory:
+                case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_CATEGORY:
                     if (info.with_pokemon_category.category_name) {
                         infoData['category_name'] = info.with_pokemon_category.category_name;
                     }
@@ -126,61 +126,50 @@ class Pokestop extends Model {
                         infoData['pokemon_ids'] = info.with_pokemon_category.pokemon_ids;
                     }
                     break;
-                case conditionType.winRaidStatus:
+                case rpc.QuestConditionProto.ConditionType.WITH_WIN_RAID_STATUS:
                     break;
-                case conditionType.throwType:
-                case conditionType.throwTypeInARow:
+                case rpc.QuestConditionProto.ConditionType.WITH_THROW_TYPE:
+                case rpc.QuestConditionProto.ConditionType.WITH_THROW_TYPE_IN_A_ROW:
                     if (info.with_throw_type.throw_type > 0) {
                         infoData['throw_type_id'] = info.with_throw_type.throw_type;
                     }
                     infoData['hit'] = info.with_throw_type.hit
                     break;
-                case conditionType.location:
+                case rpc.QuestConditionProto.ConditionType.WITH_LOCATION:
                     infoData['cell_ids'] = info.s2_cell_id;
                     break;
-                case conditionType.distance:
+                case rpc.QuestConditionProto.ConditionType.WITH_DISTANCE:
                     infoData['distance'] = info.distance_km;
                     break;
-                case conditionType.pokemonAlignment:
+                case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_ALIGNMENT:
                     infoData['alignment_ids'] = info.pokemon_alignment.alignment.map(x => parseInt(x));
                     break;
-                case conditionType.invasionCharacter:
+                case rpc.QuestConditionProto.ConditionType.WITH_INVASION_CHARACTER:
                     infoData['character_category_ids'] = info.with_invasion_character.category.map(x => parseInt(x));
                     break;
-                case conditionType.npcCombat:
+                case rpc.QuestConditionProto.ConditionType.WITH_NPC_COMBAT:
                     infoData['win'] = info.with_npc_combat.requires_win || false;
                     infoData['trainer_ids'] = info.with_npc_combat.combat_npc_trainer_id;
                     break;
-                case conditionType.pvpCombat:
+                case rpc.QuestConditionProto.ConditionType.WITH_PVP_COMBAT:
                     infoData['win'] = info.with_pvp_combat.requires_win || false;
                     infoData['template_ids'] = info.with_pvp_combat.combat_league_template_id;
                     break;
-                case conditionType.buddy:
+                case rpc.QuestConditionProto.ConditionType.WITH_BUDDY:
                     if (info.with_buddy) {
                         infoData['min_buddy_level'] = info.with_buddy.min_buddy_level; // TODO: with_buddy? is Condition
                         infoData['must_be_on_map'] = info.with_buddy.must_be_on_map;
                     }
                     break;
-                case conditionType.dailyBuddyAffection:
+                case rpc.QuestConditionProto.ConditionType.WITH_DAILY_BUDDY_AFFECTION:
                     infoData['min_buddy_affection_earned_today'] = info.daily_buddy_affection.min_buddy_affection_earned_today;
                     break;
-                case conditionType.megaEvoPokemon:
+                case rpc.QuestConditionProto.ConditionType.WITH_TEMP_EVO_POKEMON:
                     infoData['raid_pokemon_evolutions'] = info.with_mega_evo_pokemon.pokemon_evolution.map(x => parseInt(x));
                     break;
-                case conditionType.winGymBattleStatus: break;
-                case conditionType.superEffectiveCharge: break;
-                case conditionType.uniquePokestop: break;
-                case conditionType.questContext: break;
-                case conditionType.winBattleStatus: break;
-                case conditionType.curveBall: break;
-                case conditionType.newFriend: break;
-                case conditionType.daysInARow: break;
-                case conditionType.weatherBoost: break;
-                case conditionType.dailyCaptureBonus: break;
-                case conditionType.dailySpinBonus: break;
-                case conditionType.uniquePokemon: break;
-                case conditionType.buddyInterestingPoi: break;
-                case conditionType.unset: break;
+                default:
+                    console.warn('Unhandled quest condition', condition.type);
+                    break;
             }
             if (infoData) {
                 conditionData['info'] = infoData;
@@ -193,20 +182,18 @@ class Pokestop extends Model {
             let infoData = {};
             rewardData['type'] = reward.type;
             switch (reward.type) {
-                case questReward.avatarClothing:
-                    break;
-                case questReward.candy:
+                case rpc.QuestRewardProto.Type.CANDY:
                     infoData['amount'] = reward.amount;
                     infoData['pokemon_id'] = reward.pokemon_id;
                     break;
-                case questReward.experience:
+                case rpc.QuestRewardProto.Type.EXPERIENCE:
                     infoData['amount'] = reward.exp;
                     break;
-                case questReward.item:
+                case rpc.QuestRewardProto.Type.ITEM:
                     infoData['amount'] = reward.item.amount;
                     infoData['item_id'] = reward.item.item;
                     break;
-                case questReward.pokemonEncounter:
+                case rpc.QuestRewardProto.Type.POKEMON_ENCOUNTER:
                     if (reward.pokemon_encounter.is_hidden_ditto) {
                         infoData['pokemon_id'] = 132;
                         infoData['pokemon_id_display'] = reward.pokemon_encounter.pokemon_id;
@@ -220,16 +207,12 @@ class Pokestop extends Model {
                         infoData['shiny'] = reward.pokemon_encounter.pokemon_display.shiny || false;
                     }
                     break;
-                case questReward.quest:
-                    break;
-                case questReward.stardust:
+                case rpc.QuestRewardProto.Type.STARDUST:
                     infoData['amount'] = reward.stardust;
                     break;
-                case questReward.megaResource:
+                case rpc.QuestRewardProto.Type.MEGA_RESOURCE:
                     infoData['amount'] = reward.mega_resource.amount;
                     infoData['pokemon_id'] = reward.mega_resource.pokemon_id;
-                    break;
-                case questReward.unset:
                     break;
                 default:
                     console.warn('Unrecognized reward.type', reward.type);
