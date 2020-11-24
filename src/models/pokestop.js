@@ -353,7 +353,7 @@ class Pokestop extends Model {
     }
 
     /**
-     * Get Pokestop object as sql string
+     * Get Pokestop object
      */
     getClosest(lat, lon) {
         return Pokestop.findAll({
