@@ -46,19 +46,14 @@ class Assignment extends Model {
 }
 
 Assignment.init({
-    deviceUuid: {
-        type: DataTypes.STRING,
-        unique: true,
-    },
+    deviceUuid: DataTypes.STRING,
     instanceName: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
     },
     time: {
         type: DataTypes.MEDIUMINT(6).UNSIGNED,
         allowNull: false,
-        unique: true,
     },
     enabled: {
         type: DataTypes.BOOLEAN,
@@ -76,9 +71,8 @@ Assignment.init({
         defaultValue: null,
     },
     date: {
-        type: DataTypes.MEDIUMINT.UNSIGNED,
+        type: DataTypes.DATE,
         defaultValue: null,
-        unique: true,
     },
 }, {
     sequelize,
@@ -87,8 +81,13 @@ Assignment.init({
     indexes: [
         {
             name: 'assignment_fk_instance_name',
-            fields: ['instance_name'],
+            fields: ['instanceName'],
         },
+        {
+            name: 'assignment_unique',
+            unique: true,
+            fields: ['deviceUuid', 'instanceName', 'time', 'date'],
+        }
     ],
     tableName: 'assignment',
 });
