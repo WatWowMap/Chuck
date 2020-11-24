@@ -1,9 +1,5 @@
 'use strict';
 
-const config = require('../services/config.js');
-const MySQLConnector = require('../services/mysql.js');
-const db = new MySQLConnector(config.db);
-
 const { DataTypes, Model, Op, Sequelize } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 
@@ -25,7 +21,7 @@ class Device extends Model {
      */
     static async getById(uuid) {
         try {
-            return await Device.findAll({
+            return await Device.findOne({
                 where: { uuid: uuid },
             });
         } catch (err) {
@@ -128,7 +124,7 @@ Device.init({
     },
     account_username: {
         type: DataTypes.STRING(128),
-        allowNull: false,
+        allowNull: true,
         defaultValue: null,
     },
     last_lat: {
