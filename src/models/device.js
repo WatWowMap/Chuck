@@ -13,26 +13,6 @@ const sequelize = require('../services/sequelize.js');
 class Device extends Model {
 
     /**
-     * Initalize new Device object.
-     * @param uuid 
-     * @param instanceName 
-     * @param accountUsername 
-     * @param lastHost 
-     * @param lastSeen 
-     * @param lastLat 
-     * @param lastLon 
-     */
-    constructor(uuid, instanceName, accountUsername, lastHost, lastSeen, lastLat, lastLon) {
-        this.uuid = uuid;
-        this.instanceName = instanceName;
-        this.accountUsername = accountUsername;
-        this.lastHost = lastHost;
-        this.lastSeen = lastSeen;
-        this.lastLat = lastLat;
-        this.lastLon = lastLon;
-    }
-
-    /**
      * Get all available devices.
      */
     static getAll() {
@@ -68,7 +48,7 @@ class Device extends Model {
         }, {
             where: { uuid: uuid },
         });
-        console.log('[Device] SetLastLocation:', results);
+        //console.log('[Device] SetLastLocation:', results);
     }
 
     /**
@@ -95,7 +75,7 @@ class Device extends Model {
     async create() {
         const results = await Device.create({
             uuid: this.uuid,
-            instanceName = this.instanceName,
+            instanceName: this.instanceName,
             accountUsername: this.accountUsername,
             lastHost: this.lastHost,
             lastSeen: this.lastSeen,

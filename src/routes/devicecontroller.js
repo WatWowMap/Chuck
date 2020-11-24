@@ -91,7 +91,15 @@ class DeviceController {
         } else {
             // Register new device
             console.log(`[Controller] [${uuid}] Registering device`);
-            let newDevice = new Device(uuid, null, null, null, ts, 0.0, 0.0);
+            const newDevice = new Device({
+                uuid: uuid,
+                instanceName: null,
+                accountUsername: null,
+                lastSeen: ts,
+                lastHost: null,
+                lastLat: 0,
+                lastLon: 0,
+            })
             await newDevice.create();
             sendResponse(res, 'ok', {
                 assigned: false,
