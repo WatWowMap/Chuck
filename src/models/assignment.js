@@ -22,7 +22,7 @@ class Assignment extends Model {
      * @deprecated Use findByPk.
      */
     static async getById(id) {
-        Instance.findByPk(id);
+        return Instance.findByPk(id);
     }
 
      /**
