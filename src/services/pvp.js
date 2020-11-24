@@ -7,13 +7,9 @@ const masterfile = require('../../static/data/masterfile.json');
 const config = require('./config.js');
 
 const rankCache = new LRU({
-    maxAge: 1000 * 60 * 60 * 24,
+    maxAge: config.dataparser.pvp.rankCacheAge,
     updateAgeOnGet: true,
 });
-
-/**
- * @type {number[]}
- */
 
 const calculateStatProduct = (stats, attack, defense, stamina, level) => {
     const multiplier = cpMultipliers[level];

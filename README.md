@@ -99,8 +99,11 @@ This allows the devs to constantly add more config options in the future, withou
         "dittoDisguises": [ 46,163,165,167,187,223,293,316,322,399,590 ],
         "lureTime": 30,
         "pvp": {
+            // A list of level caps that will be considered. Must be a strictly increasing sequence.
+            // CP multiplier up to level (maxLevelCap + .5) must all be defined.
             "levelCaps": [40, 41, 50, 51],
-            "leagues": { //additional leagues are not currently supported, please do not touch these until this message is removed!
+            "leagues": {
+                // additional leagues are not currently supported, please do not touch these until this message is removed!
                 "great": 1500,
                 "ultra": 2500
             }
