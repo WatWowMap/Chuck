@@ -69,7 +69,7 @@ const calculateAllRanks = (stats) => {
                     for (let s = 0; s <= 15; s++) {
                         const currentStat = calculatePvPStat(stats, a, d, s, cpCap, lvCap);
                         arrD.push(currentStat);
-                        arrayToSort.push({ attack: a, defense: d, stamina: s, value: currentStat.value });
+                        arrayToSort.push(currentStat);
                     }
                     arrA.push(arrD);
                 }
@@ -79,8 +79,8 @@ const calculateAllRanks = (stats) => {
             arrayToSort.sort((a, b) => b.value - a.value);
             const best = arrayToSort[0].value;
             for (let i = 0, j = 0; i < arrayToSort.length; i++) {
-                const entry = combinations[arrayToSort[i].attack][arrayToSort[i].defense][arrayToSort[i].stamina];
-                entry.percentage = Number((arrayToSort[i].value / best).toFixed(5));
+                const entry = arrayToSort[i];
+                entry.percentage = Number((entry.value / best).toFixed(5));
                 if (entry.value < arrayToSort[j].value) {
                     j = i;
                 }
