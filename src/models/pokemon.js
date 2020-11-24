@@ -44,6 +44,9 @@ class Pokemon extends Model {
     _setPokemonDisplay(pokemonId, display, username) {
         if (!this.isNewRecord && (this.pokemonId !== pokemonId || this.gender !== display.gender ||
             this.form !== display.form || this.costume !== display.costume)) {
+            if (this.pokemonId === Pokemon.DittoPokemonId) {
+                return; // prevent trying to reset ditto
+            }
             console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
                 'to', pokemonId, 'by', username, '- unhandled');
             // TODO: handle A/B spawn?
@@ -120,8 +123,10 @@ class Pokemon extends Model {
 
     _ensureExpireTimestamp() {
         // First time seeing pokemon, check if expire timestamp set
-        if (this.isNewRecord && !this.expireTimestamp) {
+        if (this.isNewRecord || !this.expireTimestamp) {
             this.expireTimestamp = this.firstSeenTimestamp + Pokemon.PokemonTimeUnseen;
+        } else if (!this.expireTimestampVerified) {
+            this.expireTimestamp = Math.max(this.expireTimestamp, this.updated + Pokemon.PokemonTimeReseen);
         }
     }
 
@@ -145,7 +150,7 @@ class Pokemon extends Model {
                 if (retry-- <= 0) {
                     throw error;
                 }
-                console.warn('[Pokemon] Encountered error, retrying', error.stack);
+                console.warn('[Pokemon] Encountered error, retrying,', retry, 'attempts left:', error.stack);
             }
         }
         if (pokemon.isNewRecord) {
@@ -262,13 +267,7 @@ class Pokemon extends Model {
                 level = Math.round(171.0112688 * cpMultiplier - 95.20425243);
             }
             this.level = level;
-            this.isDitto = Pokemon.isDittoDisguised(this.pokemonId,
-                this.level,
-                this.weather,
-                this.atkIv,
-                this.defIv,
-                this.staIv,
-            );
+            this.isDitto = this.isDittoDisguised();
             if (this.isDitto) {
                 console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
                 this.setDittoAttributes(this.pokemonId);
@@ -292,36 +291,18 @@ class Pokemon extends Model {
         this.move2 = Pokemon.DittoMove2Struggle;
         this.gender = 3;
         this.costume = 0;
-        // this.size = 0;
-        // this.weight = 0;
     }
 
     /**
      * Check if Pokemon is Ditto disguised.
-     * @param pokemon 
      */
-    static isDittoDisguisedFromPokemon(pokemon) {
-        let isDisguised = (pokemon.pokemonId == Pokemon.DittoPokemonId) || (Pokemon.DittoDisguises.includes(pokemon.pokemonId) || false);
-        let isUnderLevelBoosted = pokemon.level > 0 && pokemon.level < Pokemon.WeatherBoostMinLevel;
-        let isUnderIvStatBoosted = pokemon.level > 0 && (pokemon.atkIv < Pokemon.WeatherBoostMinIvStat || pokemon.defIv < Pokemon.WeatherBoostMinIvStat || pokemon.staIv < Pokemon.WeatherBoostMinIvStat);
-        let isWeatherBoosted = pokemon.weather > 0;
-        return isDisguised && (isUnderLevelBoosted || isUnderIvStatBoosted) && isWeatherBoosted;
-    }
-
-    /**
-     * Check if Pokemon is Ditto disguised.
-     * @param pokemonId 
-     * @param level 
-     * @param weather 
-     * @param atkIv 
-     * @param defIv 
-     * @param staIv 
-     */
-    static isDittoDisguised(pokemonId, level, weather, atkIv, defIv, staIv) {
-        let isDisguised = (pokemonId == Pokemon.DittoPokemonId) || (Pokemon.DittoDisguises.includes(pokemonId) || false);
-        let isUnderLevelBoosted = level > 0 && level < Pokemon.WeatherBoostMinLevel;
-        let isUnderIvStatBoosted = level > 0 && (atkIv < Pokemon.WeatherBoostMinIvStat || defIv < Pokemon.WeatherBoostMinIvStat || staIv < Pokemon.WeatherBoostMinIvStat);
-        let isWeatherBoosted = weather > 0;
+    isDittoDisguised() {
+        let isDisguised = this.pokemonId === Pokemon.DittoPokemonId || Pokemon.DittoDisguises.includes(this.pokemonId);
+        let isUnderLevelBoosted = this.level > 0 && this.level < Pokemon.WeatherBoostMinLevel;
+        let isUnderIvStatBoosted = this.level > 0 && (this.atkIv < Pokemon.WeatherBoostMinIvStat ||
+            this.defIv < Pokemon.WeatherBoostMinIvStat ||
+            this.staIv < Pokemon.WeatherBoostMinIvStat);
+        let isWeatherBoosted = this.weather > 0;
         return isDisguised && (isUnderLevelBoosted || isUnderIvStatBoosted) && isWeatherBoosted;
     }
 
