@@ -1,7 +1,7 @@
 'use strict';
 
 const POGOProtos = require('pogo-protos');
-const rpc = require('purified-protos');
+const protos = require('purified-protos');
 
 const { DataTypes, Model, Op, Sequelize } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
@@ -94,7 +94,7 @@ class Pokestop extends Model {
             conditionData['type'] = condition.type;
             // TODO: Needs testing
             let info = condition;
-            const rpc = await rpc();
+            const rpc = await protos();
             switch (condition.type) {
                 case rpc.QuestConditionProto.ConditionType.WITH_BADGE_TYPE:
                     infoData['amount'] = info.badge_type.amount;
@@ -181,7 +181,7 @@ class Pokestop extends Model {
             let rewardData = {};
             let infoData = {};
             rewardData['type'] = reward.type;
-            const rpc = await rpc();
+            const rpc = await protos();
             switch (reward.type) {
                 case rpc.QuestRewardProto.Type.CANDY:
                     infoData['amount'] = reward.amount;
