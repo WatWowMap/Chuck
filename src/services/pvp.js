@@ -112,29 +112,34 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     if (!masterPokemon || !masterPokemon.attack) {
         return result;
     }
-    const pushEntry = (leagueName, maxed, entry) => {
-        if (!result[leagueName]) {
-            result[leagueName] = [];
-        }
-        if (maxed) {
-            entry.capped = true;
-        }
-        result[leagueName].push(entry);
-    };
     const masterForm = masterPokemon.forms[formId] || masterPokemon;
     const baseEntry = { pokemon: pokemonId };
     if (formId) {
         baseEntry.form = formId;
     }
-    const allRanks = calculateAllRanks(masterForm.attack ? masterForm : masterPokemon);
-    for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
-        for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
-            const ivEntry = combinations[attack][defense][stamina];
-            if (level <= ivEntry.level) {
-                pushEntry(leagueName, combinations.maxed, { ...baseEntry, cap: parseFloat(lvCap), ...ivEntry });
+    const pushAllEntries = (stats, evolution = 0) => {
+        const allRanks = calculateAllRanks(stats);
+        for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
+            for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
+                const ivEntry = combinations[attack][defense][stamina];
+                if (level > ivEntry.level) {
+                    continue;
+                }
+                const entry = { ...baseEntry, cap: parseFloat(lvCap), ...ivEntry };
+                if (evolution) {
+                    entry.evolution = evolution;
+                }
+                if (combinations.maxed) {
+                    entry.capped = true;
+                }
+                if (!result[leagueName]) {
+                    result[leagueName] = [];
+                }
+                result[leagueName].push(entry);
             }
         }
-    }
+    };
+    pushAllEntries(masterForm.attack ? masterForm : masterPokemon);
     let canEvolve = true;
     if (costumeId) {
         const costumeName = (await rpc()).PokemonDisplayProto.Costume[costumeId];
@@ -155,21 +160,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     }
     if (masterForm.temp_evolutions) {
         for (const [tempEvoId, tempEvo] of Object.entries(masterForm.temp_evolutions)) {
-            const overrideStats = tempEvo.attack ? tempEvo : masterPokemon.temp_evolutions[tempEvoId];
-            const tempRanks = calculateAllRanks(overrideStats);
-            for (const [leagueName, combinationIndex] of Object.entries(tempRanks)) {
-                for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
-                    const ivEntry = combinations[attack][defense][stamina];
-                    if (level <= ivEntry.level) {
-                        pushEntry(leagueName, combinations.maxed, {
-                            ...baseEntry,
-                            evolution: parseInt(tempEvoId),
-                            cap: parseFloat(lvCap),
-                            ...ivEntry,
-                        });
-                    }
-                }
-            }
+            pushAllEntries(tempEvo.attack ? tempEvo : masterPokemon.temp_evolutions[tempEvoId], parseInt(tempEvoId));
         }
     }
     return result;
