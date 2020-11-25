@@ -54,66 +54,51 @@ const calculateAllRanks = (stats) => {
     if (value === undefined) {
         value = {};
         for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
-            let combinations;
+            let combinationIndex;
             for (const lvCap of config.dataparser.pvp.levelCaps) {
                 if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
                     continue;   // not viable
                 }
                 const arrayToSort = [];
-                if (combinations === undefined) {
-                    combinations = [];
-                    for (let a = 0; a <= 15; a++) {
-                        const arrA = [];
-                        for (let d = 0; d <= 15; d++) {
-                            const arrD = [];
-                            for (let s = 0; s <= 15; s++) {
-                                const currentStat = calculatePvPStat(stats, a, d, s, cpCap, lvCap);
-                                arrD.push(currentStat);
-                                arrayToSort.push(currentStat);
-                            }
-                            arrA.push(arrD);
+                const combinations = [];
+                for (let a = 0; a <= 15; a++) {
+                    const arrA = [];
+                    for (let d = 0; d <= 15; d++) {
+                        const arrD = [];
+                        for (let s = 0; s <= 15; s++) {
+                            const currentStat = calculatePvPStat(stats, a, d, s, cpCap, lvCap);
+                            arrD.push(currentStat);
+                            arrayToSort.push(currentStat);
                         }
-                        combinations.push(arrA);
+                        arrA.push(arrD);
                     }
+                    combinations.push(arrA);
+                }
+                if (combinationIndex === undefined) {
+                    combinationIndex = { [lvCap]: combinations };
                 } else {
-                    for (let a = 0; a <= 15; a++) {
-                        for (let d = 0; d <= 15; d++) {
-                            const arrD = combinations[a][d];
-                            const notFirst = Array.isArray(arrD[0]);
-                            for (let s = 0; s <= 15; s++) {
-                                const currentStat = calculatePvPStat(stats, a, d, s, cpCap, lvCap);
-                                if (!notFirst) {
-                                    arrD[s] = [arrD[s]];
-                                }
-                                arrD[s].push(currentStat);
-                                arrayToSort.push(currentStat);
-                            }
-                        }
-                    }
+                    combinationIndex[lvCap] = combinations;
                 }
 
                 arrayToSort.sort((a, b) => b.value - a.value);
-                // it is relevant only if adding the next worst thing matters
-                const isLevelCapRelevant = calculateCP(stats, 0, 0, 0, lvCap + .5) <= cpCap;
                 const best = arrayToSort[0].value;
                 for (let i = 0, j = 0; i < arrayToSort.length; i++) {
                     const entry = arrayToSort[i];
                     entry.percentage = Number((entry.value / best).toFixed(5));
-                    if (isLevelCapRelevant) {
-                        entry.cap = lvCap;
-                    }
                     if (entry.value < arrayToSort[j].value) {
                         j = i;
                     }
                     entry.rank = j + 1;
                     entry.value = Math.floor(entry.value);
                 }
-                if (!isLevelCapRelevant) {
-                    break;  // further increasing the cap will not be relevant
+                // check if no more power up is possible: further increasing the cap will not be relevant
+                if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
+                    combinations.maxed = true;
+                    break;
                 }
             }
-            if (combinations !== undefined) {
-                value[leagueName] = combinations;
+            if (combinationIndex !== undefined) {
+                value[leagueName] = combinationIndex;
             }
         }
         rankCache.set(key, value);
@@ -127,22 +112,27 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     if (!masterPokemon || !masterPokemon.attack) {
         return result;
     }
+    const pushEntry = (leagueName, maxed, entry) => {
+        if (!result[leagueName]) {
+            result[leagueName] = [];
+        }
+        if (maxed) {
+            entry.capped = true;
+        }
+        result[leagueName].push(entry);
+    };
     const masterForm = masterPokemon.forms[formId] || masterPokemon;
     const baseEntry = { pokemon: pokemonId };
     if (formId) {
         baseEntry.form = formId;
     }
     const allRanks = calculateAllRanks(masterForm.attack ? masterForm : masterPokemon);
-    for (const [leagueName, combinations] of Object.entries(allRanks)) {
-        const ivEntries = combinations[attack][defense][stamina];
-        for (const ivEntry of Array.isArray(ivEntries) ? ivEntries : [ivEntries]) {
-            if (level > ivEntry.level) {
-                continue;   // over leveled, cannot get into cap
+    for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
+        for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
+            const ivEntry = combinations[attack][defense][stamina];
+            if (level <= ivEntry.level) {
+                pushEntry(leagueName, combinations.maxed, { ...baseEntry, cap: parseFloat(lvCap), ...ivEntry });
             }
-            if (!result[leagueName]) {
-                result[leagueName] = [];
-            }
-            result[leagueName].push({ ...baseEntry, ...ivEntry });
         }
     }
     let canEvolve = true;
@@ -167,16 +157,17 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
         for (const [tempEvoId, tempEvo] of Object.entries(masterForm.temp_evolutions)) {
             const overrideStats = tempEvo.attack ? tempEvo : masterPokemon.temp_evolutions[tempEvoId];
             const tempRanks = calculateAllRanks(overrideStats);
-            for (const [leagueName, combinations] of Object.entries(tempRanks)) {
-                const ivEntries = combinations[attack][defense][stamina];
-                for (const ivEntry of Array.isArray(ivEntries) ? ivEntries : [ivEntries]) {
-                    if (level > ivEntry.level) {
-                        continue;   // over leveled, cannot get into cap
+            for (const [leagueName, combinationIndex] of Object.entries(tempRanks)) {
+                for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
+                    const ivEntry = combinations[attack][defense][stamina];
+                    if (level <= ivEntry.level) {
+                        pushEntry(leagueName, combinations.maxed, {
+                            ...baseEntry,
+                            evolution: parseInt(tempEvoId),
+                            cap: parseFloat(lvCap),
+                            ...ivEntry,
+                        });
                     }
-                    if (!result[leagueName]) {
-                        result[leagueName] = [];
-                    }
-                    result[leagueName].push({...baseEntry, evolution: parseInt(tempEvoId), ...ivEntry});
                 }
             }
         }
