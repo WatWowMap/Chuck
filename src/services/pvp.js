@@ -26,13 +26,13 @@ const calculateStatProduct = (stats, attack, defense, stamina, level) => {
 };
 
 const calculateCP = (stats, attack, defense, stamina, level) => {
-    const multiplier = Math.pow(cpMultipliers[level], 2);
+    const multiplier = cpMultipliers[level];
 
-    const attackMultiplier = stats.attack + attack;
-    const defenseMultiplier = Math.pow(stats.defense + defense, 0.5);
-    const staminaMultiplier = Math.pow(stats.stamina + stamina, 0.5);
+    const a = stats.attack + attack;
+    const d = stats.defense + defense;
+    const s = stats.stamina + stamina;
 
-    const cp = Math.floor((attackMultiplier * defenseMultiplier * staminaMultiplier * multiplier) / 10);
+    const cp = Math.floor(multiplier * multiplier * a * Math.sqrt(d * s) / 10);
     return cp < 10 ? 10 : cp;
 };
 
