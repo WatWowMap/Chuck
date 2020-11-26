@@ -1,6 +1,6 @@
 'use strict';
 
-const { DataTypes, Model } = require('sequelize');
+const { DataTypes, Model, Transaction } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 
 const Cell = require('./cell.js');
@@ -133,7 +133,11 @@ class Pokemon extends Model {
     static async _attemptUpdate(id, work) {
         let retry = 5, pokemon, oldAtkIv;
         for (;;) {
-            const transaction = await sequelize.transaction();
+            const transaction = await sequelize.transaction({
+                // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
+                // the lower transaction level (compared to REPEATABLE_READ) is ok since we do not perform range queries
+                isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
+            });
             try {
                 pokemon = await Pokemon.getOrCreate(id, transaction);
                 oldAtkIv = pokemon.atkIv;
@@ -150,7 +154,11 @@ class Pokemon extends Model {
                 if (retry-- <= 0) {
                     throw error;
                 }
-                console.warn('[Pokemon] Encountered error, retrying,', retry, 'attempts left:', error.stack);
+                // note to debuggers: SequelizeUniqueConstraintError is expected when two workers attempt to insert the
+                // same row at the same time. In this case, one worker will succeed and the subsequent worker will
+                // retry the transaction and update the row as expected.
+                console.warn('[Pokemon] Encountered error, retrying transaction', transaction.id,
+                    retry, 'attempts left:', error.stack);
             }
         }
         if (pokemon.isNewRecord) {
