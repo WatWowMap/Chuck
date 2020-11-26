@@ -99,6 +99,9 @@ class Pokemon extends Model {
             console.warn('[Pokemon] Wild Pokemon null lat/lon!');
         }
         const oldSpawnId = this.spawnId;
+        if (!wild.spawn_point_id) {
+            console.warn('Interesting pokemon', wild);
+        }
         this.spawnId = parseInt(wild.spawn_point_id, 16);
         this.username = username;
         if (this.isNewRecord) {

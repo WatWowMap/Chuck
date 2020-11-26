@@ -25,27 +25,24 @@ class Consumer {
         this.stopsIdsPerCell = {};
     }
 
-    async updatePokemon(wildPokemon, nearbyPokemon) {
-        if (wildPokemon.length > 0) {
-            for (let i = 0; i < wildPokemon.length; i++) {
-                let wild = wildPokemon[i];
-                try {
-                    await Pokemon.updateFromWild(this.username, wild.timestampMs, wild.cell, wild.data);
-                } catch (err) {
-                    console.error('[Wild] Error:', err.stack);
-                }
+    updateWildPokemon(wildPokemon) {
+        return wildPokemon.map(async wild => {
+            try {
+                await Pokemon.updateFromWild(this.username, wild.timestampMs, wild.cell, wild.data);
+            } catch (err) {
+                console.error('[Wild] Error:', err.stack);
             }
-        }
-        if (nearbyPokemon.length > 0) {
-            for (let i = 0; i < nearbyPokemon.length; i++) {
-                let nearby = nearbyPokemon[i];
-                try {
-                    await Pokemon.updateFromNearby(this.username, nearby.timestampMs, nearby.cell, nearby.data);
-                } catch (err) {
-                    console.error('[Nearby] Error:', err.stack);
-                }
+        });
+    }
+
+    updateNearbyPokemon(nearbyPokemon) {
+        return nearbyPokemon.map(async nearby => {
+            try {
+                await Pokemon.updateFromNearby(this.username, nearby.timestampMs, nearby.cell, nearby.data);
+            } catch (err) {
+                console.error('[Nearby] Error:', err.stack);
             }
-        }
+        });
     }
 
     async updateForts(forts) {
@@ -390,17 +387,14 @@ class Consumer {
         }
     }
 
-    async updateEncounters(encounters) {
-        if (encounters.length > 0) {
-            for (let i = 0; i < encounters.length; i++) {
-                let encounter = encounters[i];
-                try {
-                    await Pokemon.updateFromEncounter(encounter, this.username);
-                } catch (err) {
-                    console.error('[Encounter] Error:', err);
-                }
+    updateEncounters(encounters) {
+        return encounters.map(async encounter => {
+            try {
+                await Pokemon.updateFromEncounter(encounter, this.username);
+            } catch (err) {
+                console.error('[Encounter] Error:', err);
             }
-        }
+        });
     }
 
     async updateQuests(quests) {
