@@ -21,8 +21,6 @@ class Pokemon extends Model {
     static PokemonTimeUnseen = config.dataparser.pokemonTimeUnseen * 60;
     static PokemonTimeReseen = config.dataparser.pokemonTimeReseen * 60;
     static DittoDisguises = config.dataparser.dittoDisguises;
-    static DittoMove1Transform = 242;
-    static DittoMove2Struggle = 133;
 
     /**
      * Find or create a new Pokemon from the database.
@@ -302,8 +300,6 @@ class Pokemon extends Model {
         this.displayPokemonId = displayPokemonId;
         this.pokemonId = Pokemon.DittoPokemonId;
         this.form = 0;
-        this.move1 = Pokemon.DittoMove1Transform;
-        this.move2 = Pokemon.DittoMove2Struggle;
         this.gender = 3;
         this.costume = 0;
     }
