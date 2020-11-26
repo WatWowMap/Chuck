@@ -238,7 +238,7 @@ class Pokemon extends Model {
             } else if (this.pokestopId !== nearby.fort_id) {
                 const pokestop = await locatePokestop();
                 if (pokestop === null) {
-                    console.warn('[Pokemon] Unable to locate its nearby Pokestop', nearby.fort_id);
+                    console.info('[Pokemon] Unable to locate its nearby Pokestop', nearby.fort_id);
                     return;
                 }
                 // TODO: remember previously found Pokestop too to prevent overcounting
