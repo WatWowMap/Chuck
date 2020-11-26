@@ -99,7 +99,7 @@ class Pokemon extends Model {
             console.warn('[Pokemon] Wild Pokemon null lat/lon!');
         }
         const oldSpawnId = this.spawnId;
-        this.spawnId = parseInt(wild.spawn_point_id, 16).toString();
+        this.spawnId = parseInt(wild.spawn_point_id, 16);
         this.username = username;
         if (this.isNewRecord) {
             this.changedTimestamp = this.firstSeenTimestamp = this.updated;
