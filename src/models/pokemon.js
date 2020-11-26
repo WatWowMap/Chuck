@@ -1,6 +1,6 @@
 'use strict';
 
-const { DataTypes, Model, Transaction } = require('sequelize');
+const { DataTypes, Model, Transaction, UniqueConstraintError } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 
 const Cell = require('./cell.js');
@@ -163,11 +163,13 @@ class Pokemon extends Model {
                 if (retry-- <= 0) {
                     throw error;
                 }
-                // note to debuggers: SequelizeUniqueConstraintError is expected when two workers attempt to insert the
-                // same row at the same time. In this case, one worker will succeed and the subsequent worker will
-                // retry the transaction and update the row as expected.
-                console.warn('[Pokemon] Encountered error, retrying transaction', transaction.id,
-                    retry, 'attempts left:', error.stack);
+                // UniqueConstraintError is expected when two workers attempt to insert the same row at the same time
+                // In this case, one worker will succeed and the other worker will retry the transaction and
+                // succeed updating the row in the second attempt as expected.
+                if (!(error instanceof UniqueConstraintError)) {
+                    console.warn('[Pokemon] Encountered error, retrying transaction', transaction.id,
+                        retry, 'attempts left:', error.stack);
+                }
             }
         }
         if (pokemon.isNewRecord) {
