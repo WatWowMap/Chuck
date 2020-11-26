@@ -195,7 +195,7 @@ class Pokemon extends Model {
     static updateFromWild(username, timestampMs, cellId, wild) {
         return Pokemon._attemptUpdate(wild.encounter_id.toString(), async function () {
             this.updated = Math.round(timestampMs / 1000);
-            this.cellId = cellId;
+            this.cellId = cellId.toString();
             await this._addWildPokemon(wild, username);
         });
     }
@@ -210,7 +210,7 @@ class Pokemon extends Model {
             console.assert(this.id === encounterId, 'unmatched encounterId');
             this._setPokemonDisplay(nearby.pokemon_id, nearby.pokemon_display, username);
             this.username = username;
-            this.cellId = cellId;
+            this.cellId = cellId.toString();
             const locatePokestop = async () => {
                 let pokestop = null;
                 try {
