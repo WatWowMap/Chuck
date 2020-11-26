@@ -13,12 +13,11 @@ Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDevi
 2.) Install dependencies `npm run update`  
 3.) Copy config `cp src/configs/config.example.json src/configs/config.json`  
 4.) Fill out config `vi src/configs/config.json` (listening port, instances, db info, etc)  
-5.) Create PvP stat tables, run npm run create-pvp-tables  
-6.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
-7.) Run `npm run controller`  
-8.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
-9.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
-10.) Point `data_endpoint` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://dataparser_ip:9001`
+5.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
+6.) Run `npm run controller`  
+7.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
+8.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
+9.) Point `data_endpoint` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://dataparser_ip:9001`
 ```
 INSERT INTO bjsdb.instance (name, type, data)
 SELECT name, type, data FROM rdmdb.instance;
@@ -87,6 +86,28 @@ SELECT name, type, data FROM rdmdb.instance;
         "file": false
     }
 }
+```
+
+Additional config values can be found in `src/configs/default.json`. **Do not edit these values directly in `default.json`!** If you would like to edit them, please first copy and paste them into the *EXACT* respective locations in your `config.json` file, then you can edit them. Failure to do the first part could lead to unexpected consequences. 
+
+# Why are there two config files? 
+This allows the devs to constantly add more config options in the future, without forcing you to update your `config.json` everytime you pull. If you would like __us__ to maintain these config options for you (For example if Ditto disguises are updated in the game or if new PVP Leagues are added), then leave them in `default.json`. 
+
+```js
+        "pokemonTimeUnseen": 20,
+        "pokemonTimeReseen": 10,
+        "dittoDisguises": [ 46,163,165,167,187,223,293,316,322,399,590 ],
+        "lureTime": 30,
+        "pvp": {
+            // A list of level caps that will be considered. Must be a strictly increasing sequence.
+            // CP multiplier up to level (maxLevelCap + .5) must all be defined.
+            "levelCaps": [40, 41, 50, 51],
+            "leagues": {
+                // additional leagues are not currently supported, please do not touch these until this message is removed!
+                "great": 1500,
+                "ultra": 2500
+            }
+        }
 ```
 ## Updating  
 1.) `git pull`  
