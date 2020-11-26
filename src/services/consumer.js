@@ -30,7 +30,7 @@ class Consumer {
             for (let i = 0; i < wildPokemon.length; i++) {
                 let wild = wildPokemon[i];
                 try {
-                    await Pokemon.updateFromWild(wild.cell, wild.timestampMs, wild.data);
+                    await Pokemon.updateFromWild(this.username, wild.timestampMs, wild.cell, wild.data);
                 } catch (err) {
                     console.error('[Wild] Error:', err.stack);
                 }

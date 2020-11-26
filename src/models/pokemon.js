@@ -83,10 +83,10 @@ class Pokemon extends Model {
         }
     }
 
-    async _addWildPokemon(wild) {
+    async _addWildPokemon(wild, username) {
         //console.log('Wild Pokemon Data:', wild.pokemon_data);
         console.assert(this.id === wild.encounter_id.toString(), 'unmatched encounterId');
-        this._setPokemonDisplay(wild.pokemon_data.pokemon_id, wild.pokemon_data.pokemon_display, wild.username);
+        this._setPokemonDisplay(wild.pokemon_data.pokemon_id, wild.pokemon_data.pokemon_display, username);
         this.lat = wild.latitude;
         this.lon = wild.longitude;
         if (this.lat === null || this.lon === null) {
@@ -94,7 +94,7 @@ class Pokemon extends Model {
         }
         const oldSpawnId = this.spawnId;
         this.spawnId = parseInt(wild.spawn_point_id, 16).toString();
-        this.username = wild.username;
+        this.username = username;
         if (this.isNewRecord) {
             this.changedTimestamp = this.firstSeenTimestamp = this.updated;
             this.expireTimestampVerified = false;
@@ -186,11 +186,11 @@ class Pokemon extends Model {
     /**
      * Update Pokemon object from WildPokemon.
      */
-    static updateFromWild(cellId, timestampMs, wild) {
+    static updateFromWild(username, timestampMs, cellId, wild) {
         return Pokemon._attemptUpdate(wild.encounter_id.toString(), async function () {
             this.updated = Math.round(timestampMs / 1000);
             this.cellId = cellId;
-            await this._addWildPokemon(wild);
+            await this._addWildPokemon(wild, username);
         });
     }
 
@@ -251,7 +251,7 @@ class Pokemon extends Model {
     static updateFromEncounter(encounter, username) {
         return Pokemon._attemptUpdate(encounter.wild_pokemon.encounter_id.toString(), async function () {
             this.changedTimestamp = this.updated = new Date().getTime() / 1000;
-            this._addWildPokemon(encounter.wild_pokemon);
+            this._addWildPokemon(encounter.wild_pokemon, username);
             this.cp = encounter.wild_pokemon.pokemon_data.cp;
             this.move1 = encounter.wild_pokemon.pokemon_data.move_1;
             this.move2 = encounter.wild_pokemon.pokemon_data.move_2;
@@ -261,7 +261,6 @@ class Pokemon extends Model {
             this.defIv = encounter.wild_pokemon.pokemon_data.individual_defense;
             this.staIv = encounter.wild_pokemon.pokemon_data.individual_stamina;
             this.shiny = encounter.wild_pokemon.pokemon_data.pokemon_display.shiny;
-            this.username = username;
             if (encounter.capture_probability) {
                 this.capture1 = parseFloat(encounter.capture_probability.capture_probability[0]);
                 this.capture2 = parseFloat(encounter.capture_probability.capture_probability[1]);
