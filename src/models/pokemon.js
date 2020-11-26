@@ -42,20 +42,28 @@ class Pokemon extends Model {
     }
 
     _setPokemonDisplay(pokemonId, display, username) {
-        if (!this.isNewRecord && (this.pokemonId !== pokemonId || this.gender !== display.gender ||
+        if (!this.isNewRecord && (!this.isDitto || this.displayPokemonId !== pokemonId) &&
+            (this.pokemonId !== pokemonId || this.gender !== display.gender ||
             this.form !== display.form || this.costume !== display.costume)) {
-            if (this.pokemonId === Pokemon.DittoPokemonId) {
-                return; // prevent trying to reset ditto
+            if (this.username === username) {   // spawn change confirmed
+                console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
+                this.isDitto = false;
+                this.displayPokemonId = null;
+            } else {
+                console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
+                    'to', pokemonId, 'by', username, '- unhandled');
+                // TODO: handle A/B spawn?
             }
-            console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
-                'to', pokemonId, 'by', username, '- unhandled');
-            // TODO: handle A/B spawn?
         }
-        this.pokemonId = pokemonId;
+        if (this.isNewRecord || !this.isDitto) {
+            this.pokemonId = pokemonId;
+        }
         if (display !== null) {
-            this.gender = display.gender;
-            this.form = display.form;
-            this.costume = display.costume;
+            if (this.isNewRecord || !this.isDitto) {
+                this.gender = display.gender;
+                this.form = display.form;
+                this.costume = display.costume;
+            }
             if (!this.isNewRecord && (this.weather === null) !== (display.weather_boosted_condition === null)) {
                 console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
                     'to', display.weather_boosted_condition, 'by', username, '- clearing IVs');
