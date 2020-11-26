@@ -166,6 +166,4 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     return result;
 };
 
-module.exports = (ipcMaster) => {
-    ipcMaster.registerCallback('queryPvPRank', queryPvPRank);
-};
+module.exports = { queryPvPRank };

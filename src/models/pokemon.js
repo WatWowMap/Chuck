@@ -8,7 +8,7 @@ const Pokestop = require('./pokestop.js');
 const Spawnpoint = require('./spawnpoint.js');
 const RedisClient = require('../services/redis.js');
 const WebhookController = require('../services/webhook.js');
-const ipcWorker = require('../ipc/worker.js');
+const PvP = require('../services/pvp.js');
 const config = require('../services/config.js');
 
 /**
@@ -291,7 +291,7 @@ class Pokemon extends Model {
                 this.setDittoAttributes(this.pokemonId);
             }
 
-            const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
+            const pvp = await PvP.queryPvPRank(this.pokemonId, this.form, this.costume, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
             this.pvpRankingsGreatLeague = pvp.great || null;
             this.pvpRankingsUltraLeague = pvp.ultra || null;
         });
