@@ -6,6 +6,7 @@ const POGOProtos = require('pogo-protos');
 const config = require('../services/config.js');
 const Account = require('../models/account.js');
 const Device = require('../models/device.js');
+const Instance = require('../models/instance.js');
 const { sendResponse, base64_decode } = require('../services/utils.js');
 const Consumer = require('../services/consumer.js');
 
@@ -95,6 +96,42 @@ class RouteController {
             lonTarget = json['lon_target'];
 
             if (uuid && latTarget && lonTarget) {
+                if (config.dataparser.addDevicesThroughParser) {
+                    try {
+                        let account = await Account.getWithUsername(username);
+                        if (account==null || account.username==null) {
+                            let account = new Account(username, 'temp', 0, 0, 0, trainerLevel, 0, 0, 0);
+                            await account.save();
+                        }
+                        let deviceByUsername = await Device.getByAccountUsername(username);
+                        if (deviceByUsername==null || deviceByUsername.uuid==null) {
+                            console.debug("No Device found yet for the given username");
+                        } else {
+                            if (deviceByUsername.uuid != uuid) {
+                                console.debug("Account is logged in on another device, clear accountname for this device");
+                                await Device.setAccountUsername(deviceByUsername.uuid, '');
+                            }
+                        }
+
+                        let device = await Device.getById(uuid);
+                        if (device==null || device.uuid==null) {
+                            let instance = await Instance.getByName('AutoAddedByParser');
+                            if (instance==null || instance.name==null) {
+                                let instance = new Instance('AutoAddedByParser', 'circle_pokemon', '{"area":[{"lat":-90,"lon":-180},{"lat":-90,"lon":180},{"lat":90,"lon":180},{"lat":90,"lon":-180}],"timezone_offset":7200,"min_level":1,"max_level":40}');
+                                await instance.save();
+                            }
+
+                            let device = new Device(uuid, instance.name, username, '', Math.floor(Date.now() / 1000), latTarget, lonTarget);
+                            await device.create();
+                        }
+                        if (device != null && device.uuid!= null && device.accountUsername != account.username) {
+                            await Device.setAccountUsername(uuid, account.username);
+                        }
+                    } catch (err) {
+                        console.error('[Raw] Error:', err);
+                    }
+                }
+
                 try {
                     await Device.setLastLocation(uuid, latTarget, lonTarget);
                 } catch (err) {

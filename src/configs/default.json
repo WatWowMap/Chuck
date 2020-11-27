@@ -17,7 +17,8 @@
             "quests": true,
             "gymDefenders": true,
             "weather": true
-        }
+        },
+        "addDevicesThroughParser": false
     },
     "db": {
         "type": "mysql",

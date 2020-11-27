@@ -97,6 +97,41 @@ class Device {
     }
 
     /**
+     * Get device based on account username.
+     * @param username 
+     */
+    static async getByAccountUsername(username) {
+        let sql = `
+        SELECT uuid, instance_name, account_username, last_host, last_seen, last_lat, last_lon
+        FROM device
+        WHERE account_username = ?
+        LIMIT 1
+        `;
+        let args = [username];
+        let result = await db.query(sql, args)
+            .then(x => x)
+            .catch(err => { 
+                console.error('[Device] Failed to get Device with account username', username, 'Error:', err);
+            });
+        let device;
+        if (result) {
+            let keys = Object.values(result);
+            keys.forEach(key => {
+                device = new Device(
+                    key.uuid,
+                    key.instance_name,
+                    key.account_username,
+                    key.last_host || '',
+                    key.last_seen || 0,
+                    key.last_lat || 0.0,
+                    key.last_lon || 0.0
+                );
+            });
+        }
+        return device;
+    }
+
+    /**
      * Set last device location.
      * @param uuid 
      * @param lat 
@@ -117,6 +152,28 @@ class Device {
         //console.log('[Device] SetLastLocation:', results);
     }
 
+    /**
+     * Set device account username.
+     * @param uuid 
+     * @param username 
+     */
+    static async setAccountUsername(uuid, username) {
+        if (username === '') {
+            username = null;
+        }
+        let sql = `
+        UPDATE device
+        SET account_username = ?
+        WHERE uuid = ?
+        `;
+        let args = [username, uuid];
+        let results = await db.query(sql, args)
+            .then(x => x)
+            .catch(err => {
+                console.error('[Device] Error:', err);
+            });
+    }
+    
     /**
      * Update host information for device.
      * @param uuid 
