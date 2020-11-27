@@ -29,10 +29,12 @@ class Device extends Model {
      * Get device based on account username.
      * @param username 
      */
-    static async getByAccountUsername(username) {
-        const results = await Device.findOne({
+    static getByAccountUsername(username) {
+        const results = Device.findOne({
             where: { accountUsername: username },
         });
+        return results;
+    }
 
     /**
      * Set last device location.
@@ -40,8 +42,8 @@ class Device extends Model {
      * @param lat 
      * @param lon 
      */
-    static async setLastLocation(uuid, lat, lon) {
-        const results = await Device.update({
+    static setLastLocation(uuid, lat, lon) {
+        const results = Device.update({
             lastLat: lat,
             lastLon: lon,
             lastSeen: Date.now() / 1000,
@@ -56,11 +58,11 @@ class Device extends Model {
      * @param uuid 
      * @param username 
      */
-    static async setAccountUsername(uuid, username) {
+    static setAccountUsername(uuid, username) {
         if (!username || username === '') {
             username = null;
         }
-        const results = await Device.update({
+        const results = Device.update({
             accountUsername: username,
         }, {
             where: { uuid: uuid },
