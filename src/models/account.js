@@ -1,13 +1,12 @@
 'use strict';
 
-const config = require('../config.json');
-const MySQLConnector = require('../services/mysql.js');
-const db = new MySQLConnector(config.db);
+const { DataTypes, Model, Op, Sequelize } = require('sequelize');
+const sequelize = require('../services/sequelize.js');
 
 /**
  * Account model class.
  */
-class Account {
+class Account extends Model {
 
     /**
      * Initialize new Account object.
@@ -21,6 +20,7 @@ class Account {
      * @param lastEncounterLon 
      * @param lastEncounterTime 
      */
+    /*
     constructor(username, password, firstWarningTimestamp, failedTimestamp, failed,
         level, lastEncounterLat, lastEncounterLon, lastEncounterTime, spins, tutorial,
         creationTimestampMs, warn, warnExpireTimestamp, warnMessageAcknowledged,
@@ -45,11 +45,12 @@ class Account {
         this.creationTimestampMs = creationTimestampMs;
         this.warn = warn || null;
         this.warnExpireTimestamp = warnExpireTimestamp || null;
-        this.warnMessageAcknowledged = warnMessageAcknowledged = null;
+        this.warnMessageAcknowledged = warnMessageAcknowledged || null;
         this.suspendedMessageAcknowledged = suspendedMessageAcknowledged || null;
         this.wasSuspended = wasSuspended || null;
         this.banned = banned || null;
     }
+    */
 
     parsePlayerData(playerData) {
         this.creationTimestampMs = parseInt(playerData.player_data.creation_timestamp_ms / 1000);
@@ -80,42 +81,12 @@ class Account {
     }
 
     /**
-     * @param results
-     * @returns {Account|null}
-     */
-    static createFromDbResults(results) {
-        if (results && results.length > 0) {
-            const result = results[0];
-            return new Account(
-              result.username,
-              result.password,
-              result.first_warning_timestamp,
-              result.failed_timestamp,
-              result.failed,
-              result.level,
-              result.last_encounter_lat,
-              result.last_encounter_lon,
-              result.last_encounter_time,
-              result.spins,
-              result.tutorial,
-              result.creation_timestamp_ms,
-              result.warn,
-              result.warn_expire_ms,
-              result.warn_message_acknowledged,
-              result.suspended_message_acknowledged,
-              result.was_suspended,
-              result.banned
-            );
-        }
-        return null;
-    }
-
-    /**
      * Get new account between minimum and maximum level.
      * @param minLevel
      * @param maxLevel
      */
     static async getNewAccount(minLevel, maxLevel) {
+        /*
         let sql = `
         SELECT username, password, level, first_warning_timestamp, failed_timestamp, failed,
             last_encounter_lat, last_encounter_lon, last_encounter_time, spins, tutorial,
@@ -127,14 +98,20 @@ class Account {
         ORDER BY level DESC, RAND()
         LIMIT 1
         `;
-        let results = await db.query(sql, [minLevel, maxLevel])
-            .then(x => x)
-            .catch(err => {
-                console.error('[Account] Failed to get new Account', err);
-                return null;
-            });
-
-        return Account.createFromDbResults(results);
+        */
+        const results = await Account.findOne({
+            where: {
+                firstWarningTimestamp: { [Op.ne]: null },
+                failedTimestamp: { [Op.ne]: null },
+                // device.uuid IS NULL,
+                level: { [Op.gte]: minLevel, [Op.lte]: maxLevel },
+                failed: { [Op.eq]: null },
+                lastEncounterTime: { [Op.eq]: null },//, [Op.gte]: 7200 },
+                
+            }
+        });
+        return results;
+        //return Account.createFromDbResults(results);
     }
 
     /**
@@ -142,24 +119,14 @@ class Account {
      * @param username 
      */
     static async getWithUsername(username) {
-        let sql = `
-        SELECT username, password, level, first_warning_timestamp, failed_timestamp, failed,
-            last_encounter_lat, last_encounter_lon, last_encounter_time, spins, tutorial,
-            creation_timestamp_ms, warn, warn_expire_ms, warn_message_acknowledged,
-            suspended_message_acknowledged, was_suspended, banned
-        FROM account
-        WHERE username = ?
-        LIMIT 1
-        `;
-        let args = [username];
-        let results = await db.query(sql, args)
-            .then(x => x)
-            .catch(err => { 
-                console.error('[Account] Failed to get Account with username', username, 'Error:', err);
-                return null;
+        try {
+            return await Account.findOne({
+                where: { username: username },
             });
-
-        return Account.createFromDbResults(results);
+        } catch (err) {
+            console.error('[Account] Failed to get Account with username', username, 'Error:', err);
+            return null;
+        }
     }
 
     /**
@@ -170,19 +137,14 @@ class Account {
      * @param encounterTime 
      */
     static async didEncounter(username, newLat, newLon, encounterTime) {
-        let sql = `
-        UPDATE account
-        SET last_encounter_lat = ?, last_encounter_lon = ?, last_encounter_time = ?
-        WHERE username = ?
-        `;
-        let args = [newLat, newLon, encounterTime, username];
-        let result = await db.query(sql, args)
-            .then(x => x)
-            .catch(err => {
-                console.error('[Account] Failed to set encounter info for account with username', username, 'Error:', err);
-                return null;
-            });
-            //console.log('[Account] DidEncounter:', result);
+        const results = await Account.update({
+            lastEncounterLat: newLat,
+            lastEncounterLon: newLon,
+            lastEncounterTime: encounterTime,
+        }, {
+            where: { username: username },
+        });
+        //console.log('[Account] DidEncounter:', results);
     }
 
     /**
@@ -191,18 +153,11 @@ class Account {
      * @param level 
      */
     static async setLevel(username, level) {
-        let sql = `
-        UPDATE account
-        SET level = ?
-        WHERE username = ?
-        `;
-        let args = [level, username];
-        let result = await db.query(sql, args)
-            .then(x => x)
-            .catch(err => { 
-                console.error('[Account] Failed to set Account level for username', username, 'Error:', err);
-                return null;
-            });
+        const results = await Account.update({
+            level: level,
+        }, {
+            where: { username: username },
+        });
         //console.log('[Account] SetLevel:', result);
     }
 
@@ -212,18 +167,10 @@ class Account {
      * @param level 
      */
     static async spin(username) {
-        let sql = `
-        UPDATE account
-        SET spins = spins + 1
-        WHERE username = ?
-        `;
-        let args = [username];
-        let result = await db.query(sql, args)
-            .then(x => x)
-            .catch(err => { 
-                console.error('[Account] Failed to set Account spin count for username', username, 'Error:', err);
-                return null;
-            });
+        const results = await Account.increment('spins', {
+            by: 1,
+            where: { username: username }
+        });
         //console.log('[Account] Spin:', result);
     }
 
@@ -341,90 +288,158 @@ class Account {
     }
 
     static async getTotalCount() {
-        let sql = `
-        SELECT COUNT(username) AS count FROM account
-        `;
-        let results = await db.query(sql);
-        if (results && results.length > 0) {
-            return results[0].count;
-        }
-        return 0;
+        const results = await Account.count();
+        return results || 0;
+    }
+
+    async create() {
+        const results = await Account.create({
+            username: this.username,
+            password: this.password,
+            firstWarningTimestamp: this.firstWarningTimestamp,
+            failedTimestamp: this.failedTimestamp,
+            failed: this.failed,
+            level: this.level,
+            lastEncounterLat: this.lastEncounterLat,
+            lastEncounterLon: this.lastEncounterLon,
+            lastEncounterTime: this.lastEncounterTime,
+            spins: this.spins,
+            tutorial: this.tutorial,
+            creationTimestampMs: this.creationTimestampMs,
+            warn: this.warn,
+            warnExpireTimestamp: this.warnExpireTimestamp,
+            warnMessageAcknowledged: this.warn_message_acknowledged,
+            suspendedMessageAcknowledged: this.suspended_message_acknowledged,
+            wasSuspended: this.was_suspended,
+            banned: this.banned,
+        });
+        console.log('[Device] Insert:', results);
     }
 
     /**
      * Save account.
      */
     async save() {
-        const sql = `
-        INSERT INTO account (
-            username, password, level, first_warning_timestamp, failed_timestamp, failed,
-            last_encounter_lat, last_encounter_lon, last_encounter_time, spins, tutorial,
-            creation_timestamp_ms, warn, warn_expire_ms, warn_message_acknowledged,
-            suspended_message_acknowledged, was_suspended, banned
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            password=VALUES(password),
-            level=VALUES(level),
-            first_warning_timestamp=VALUES(first_warning_timestamp),
-            failed_timestamp=VALUES(failed_timestamp),
-            failed=VALUES(failed),
-            last_encounter_lat=VALUES(last_encounter_lat),
-            last_encounter_lon=VALUES(last_encounter_lon),
-            last_encounter_time=VALUES(last_encounter_time),
-            spins=VALUES(spins),
-            tutorial=VALUES(tutorial),
-            creation_timestamp_ms=VALUES(creation_timestamp_ms),
-            warn=VALUES(warn),
-            warn_expire_ms=VALUES(warn_expire_ms),
-            warn_message_acknowledged=VALUES(warn_message_acknowledged),
-            suspended_message_acknowledged=VALUES(suspended_message_acknowledged),
-            was_suspended=VALUES(was_suspended),
-            banned=VALUES(banned)
-        `;
-        const args = [
-            this.username, this.password, this.level, this.firstWarningTimestamp, this.failedTimestamp, this.failed,
-            this.lastEncounterLat, this.lastEncounterLon, this.lastEncounterTime, this.spins, this.tutorial,
-            this.creationTimestampMs, this.warn, this.warnExpireTimestamp, this.warnMessageAcknowledged,
-            this.suspendedMessageAcknowledged, this.wasSuspended, this.banned
-        ];
-        let result = await db.query(sql, args)
-            .then(x => x)
-            .catch(err => {
-                console.error('[Account] Error:', err);
-                return null;
-            });
+        const results = await Account.update({
+            username: this.username,
+            password: this.password,
+            level: this.level,
+            firstWarningTimestamp: this.firstWarningTimestamp,
+            failedTimestamp: this.failedTimestamp,
+            failed: this.failed,
+            lastEncounterLat: this.lastEncounterLat,
+            lastEncounterLon: this.lastEncounterLon,
+            lastEncounterTime: this.lastEncounterTime,
+            spins: this.spins,
+            tutorial: this.tutorial,
+            creationTimestampMs: this.creationTimestampMs,
+            warn: this.warn,
+            warnExpireTimestamp: this.warnExpireTimestamp,
+            warnMessageAcknowledged: this.warnMessageAcknowledged,
+            suspendedMessageAcknowledged: this.suspendedMessageAcknowledged,
+            wasSuspended: this.wasSuspended,
+            banned: this.banned,
+        });
         //console.log('[Account] Save:', result)
     }
-
-    /**
-     * Get Account object as sql string
-     */
-    toSql() {
-        return `
-        (
-            '${this.username}',
-            '${this.password}',
-            ${this.firstWarningTimestamp},                        
-            ${this.failedTimestamp},
-            ${this.failed},
-            ${this.level},
-            ${this.last_encounter_lat},
-            ${this.last_encounter_lon},
-            ${this.last_encounter_time},
-            ${this.spins},
-            ${this.tutorial},
-            ${this.creationTimestampMs},
-            ${this.warn},
-            ${this.warnExpireMs},
-            ${this.warnMessageAcknowledged},
-            ${this.suspendedMessageAcknowledged},
-            ${this.wasSuspended},
-            ${this.banned}
-        )
-        `;
-    }
 }
+
+Account.init({
+    username: {
+        type: DataTypes.STRING(32),
+        primaryKey: true,
+        allowNull: false,
+    },
+    password: {
+        type: DataTypes.STRING(32),
+        allowNull: false,
+    },
+    first_warning_timestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        allowNull: true,
+        defaultValue: null,
+    },
+    failed_timestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        allowNull: true,
+        defaultValue: null,
+    },
+    failed: {
+        type: DataTypes.STRING(32),
+        allowNull: true,
+        defaultValue: null,
+    },
+    level: {
+        type: DataTypes.TINYINT(3),
+        allowNull: false,
+        defaultValue: 0,
+    },
+    last_encounter_lat: {
+        type: DataTypes.DOUBLE(18, 14),
+        allowNull: true,
+        defaultValue: null,
+    },
+    last_encounter_lon: {
+        type: DataTypes.DOUBLE(18, 14),
+        allowNull: true,
+        defaultValue: null,
+    },
+    last_encounter_time: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        allowNull: true,
+        defaultValue: null,
+    },
+    spins: {
+        type: DataTypes.SMALLINT(6).UNSIGNED,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    tutorial: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    creation_timestamp_ms: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        allowNull: true,
+        defaultValue: null,
+    },
+    warn: {
+        type: DataTypes.TINYINT(1),
+        allowNull: true,
+        defaultValue: null,
+    },
+    warn_expire_ms: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        allowNull: true,
+        defaultValue: null,
+    },
+    warn_message_acknowledged: {
+        type: DataTypes.TINYINT(1),
+        allowNull: true,
+        defaultValue: null,
+    },
+    suspended_message_acknowledged: {
+        type: DataTypes.TINYINT(1),
+        allowNull: true,
+        defaultValue: null,
+    },
+    was_suspended: {
+        type: DataTypes.TINYINT(1),
+        allowNull: true,
+        defaultValue: null,
+    },
+    banned: {
+        type: DataTypes.TINYINT(1),
+        allowNull: true,
+        defaultValue: null,
+    },
+}, {
+    sequelize,
+    timestamps: false,
+    underscored: true,
+    tableName: 'account',
+});
 
 // Export the class
 module.exports = Account;

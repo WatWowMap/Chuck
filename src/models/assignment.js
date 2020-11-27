@@ -1,119 +1,104 @@
 'use strict';
 
-const config = require('../config.json');
-const MySQLConnector = require('../services/mysql.js');
-const db = new MySQLConnector(config.db);
+const { DataTypes, Model } = require('sequelize');
+const sequelize = require('../services/sequelize.js');
+const Device = require('./device.js');
+const Instance = require('./instance.js');
 
 /**
  * Assignment model class.
  */
-class Assignment {
+class Assignment extends Model {
 
     /**
-     * Initialize new Assignment object.
+     * Get all available assignments.
+     * @deprecated Use findAll.
      */
-    constructor(id, instanceName, sourceInstanceName, deviceUUID, time = 0, date = null, enabled = true) {
-        this.id = id;
-        this.instanceName = instanceName;
-        this.sourceInstanceName = sourceInstanceName || null;
-        this.deviceUUID = deviceUUID;
-        this.time = time;
-        this.date = date;
-        this.enabled = enabled;
+    static getAll() {
+        return Assignment.findAll();
     }
 
-    static async getAll() {
-        let sql = `
-        SELECT id, device_uuid, instance_name, source_instance_name, time, date, enabled
-        FROM assignment
-        `;
-        let results = await db.query(sql);
-        let assignments = [];
-        if (results && results.length > 0) {
-            for (let i = 0; i < results.length; i++) {
-                let result = results[i];
-                assignments.push(new Assignment(
-                    result.id,
-                    result.instance_name,
-                    result.source_instance_name,
-                    result.device_uuid,
-                    result.time,
-                    result.date,
-                    result.enabled
-                ));
-            }
-        }
-        return assignments;
+    /**
+     * Get all available assignments.
+     * @param id
+     * @deprecated Use findByPk.
+     */
+    static getById(id) {
+        return Assignment.findByPk(id);
     }
 
-    static async getById(id) {
-        let sql = `
-        SELECT id, device_uuid, instance_name, source_instance_name, time, date, enabled
-        FROM assignment
-        WHERE id = ?
-        `;
-        let args = [id];
-        let results = await db.query(sql, args);
-        if (results && results.length > 0) {
-            let result = results[0];
-            return new Assignment(
-                result.id,
-                result.instance_name,
-                result.source_instance_name,
-                result.device_uuid,
-                result.time,
-                result.date,
-                result.enabled
-            );
-        }
-        return null;
+    /**
+     * Delete an instance by ID.
+     * @param id
+     */
+    static deleteById(id) {
+        return Assignment.destroy({
+            where: { id },
+        });
     }
 
-    static async deleteById(id) {
-        let sql = `
-        DELETE FROM assignment
-        WHERE id = ?
-        `;
-        let args = [id];
-        try {
-            let results = await db.query(sql, args);
-            //console.log('[Assignment] DeleteById:', results);
-        } catch (err) {
-            console.error('[Assignment] Error:', err);
-        }
-    }
-
-    static async deleteAll() {
-        let sql = `
-        DELETE FROM assignment
-        `;
-        try {
-            let results = await db.query(sql);
-            //console.log('[Assignment] DeleteAll:', results);
-        } catch (err) {
-            console.error('[Assignment] Error:', err);
-        }
-    }
-
-    async save() {
-        let sql = `
-        INSERT INTO assignment (id, device_uuid, instance_name, source_instance_name, time, date, enabled) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            device_uuid=VALUES(device_uuid),
-            instance_name=VALUES(instance_name),
-            source_instance_name=VALUES(source_instance_name),
-            time=VALUES(time),
-            date=VALUES(date),
-            enabled=VALUES(enabled)
-        `;
-        let args = [this.id, this.deviceUUID, this.instanceName, this.sourceInstanceName, this.time || 0, this.date, this.enabled];
-        try {
-            let results = await db.query(sql, args);
-            //console.log('[Assignment] Save:', results);
-        } catch (err) {
-            console.error('[Assignment] Error:', err);
-        }
+    /**
+     * Delete everything.
+     */
+    static deleteAll() {
+        return Assignment.destroy();
     }
 }
+
+Assignment.init({
+    deviceUuid: DataTypes.STRING,
+    instanceName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    time: {
+        type: DataTypes.MEDIUMINT(6).UNSIGNED,
+        allowNull: false,
+    },
+    enabled: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+    },
+    id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+    },
+    sourceInstanceName: {
+        type: DataTypes.STRING,
+        defaultValue: null,
+    },
+    date: {
+        type: DataTypes.DATE,
+        defaultValue: null,
+    },
+}, {
+    sequelize,
+    timestamps: false,
+    underscored: true,
+    indexes: [
+        {
+            name: 'assignment_fk_instance_name',
+            fields: ['instanceName'],
+        },
+        {
+            name: 'assignment_unique',
+            unique: true,
+            fields: ['deviceUuid', 'instanceName', 'time', 'date'],
+        }
+    ],
+    tableName: 'assignment',
+});
+
+Device.Assignments = Device.hasMany(Assignment, { foreignKey: 'deviceUuid' });
+Assignment.Device = Assignment.belongsTo(Device, { foreignKey: 'deviceUuid' });
+
+Instance.Assignments = Instance.hasMany(Assignment, { foreignKey: 'instanceName' });
+Assignment.Instance = Assignment.belongsTo(Instance, { foreignKey: 'instanceName' });
+
+Instance.OwnedAssignments = Instance.hasMany(Assignment, { foreignKey: 'sourceInstanceName' });
+Assignment.SourceInstance = Assignment.belongsTo(Instance, { foreignKey: 'sourceInstanceName' });
 
 module.exports = Assignment;

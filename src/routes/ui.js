@@ -13,7 +13,6 @@ const Device = require('../models/device.js');
 const Instance = require('../models/instance.js');
 const Pokestop = require('../models/pokestop.js');
 const utils = require('../services/utils.js');
-const { nearest } = require('@turf/turf');
 
 // Main dashboard route
 router.get(['/', '/index'], async (req, res) => {
@@ -595,7 +594,11 @@ const addInstancePost = async (req, res) => {
         }
         
         try {
-            let instance = new Instance(name, type, instanceData);
+            const instance = Instance.build({
+                name,
+                type,
+                data: instanceData,
+            });
             await instance.save();
             InstanceController.instance.addInstance(instance);
         } catch (err) {

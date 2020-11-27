@@ -23,7 +23,7 @@ const pool  = mysql.createPool({
 //});
 
 pool.on('enqueue', () => {
-    console.log('[MySQL] Waiting for available connection slot');
+    // console.log('[MySQL] Waiting for available connection slot');
 });
 
 //pool.on('release', (connection) => {
