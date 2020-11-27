@@ -319,7 +319,7 @@ class Pokemon extends Model {
             this.defIv < Pokemon.WeatherBoostMinIvStat ||
             this.staIv < Pokemon.WeatherBoostMinIvStat);
         let isWeatherBoosted = this.weather > 0;
-        return isDisguised && (isUnderLevelBoosted || isUnderIvStatBoosted) && isWeatherBoosted;
+        return isDisguised && (isWeatherBoosted ? isUnderLevelBoosted || isUnderIvStatBoosted : this.level > 30);
     }
 
     /**
