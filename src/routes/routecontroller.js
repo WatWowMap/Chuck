@@ -321,7 +321,7 @@ class RouteController {
         let jobs = [];
 
         if (cells.length > 0) {
-            jobs.push(this.consumers[username].updateCells(cells));
+            await this.consumers[username].updateCells(cells);
         }
 
         if (clientWeathers.length > 0) {
