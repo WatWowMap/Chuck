@@ -30,35 +30,9 @@ class Device extends Model {
      * @param username 
      */
     static async getByAccountUsername(username) {
-        let sql = `
-        SELECT uuid, instance_name, account_username, last_host, last_seen, last_lat, last_lon
-        FROM device
-        WHERE account_username = ?
-        LIMIT 1
-        `;
-        let args = [username];
-        let result = await db.query(sql, args)
-            .then(x => x)
-            .catch(err => { 
-                console.error('[Device] Failed to get Device with account username', username, 'Error:', err);
-            });
-        let device;
-        if (result) {
-            let keys = Object.values(result);
-            keys.forEach(key => {
-                device = new Device(
-                    key.uuid,
-                    key.instance_name,
-                    key.account_username,
-                    key.last_host || '',
-                    key.last_seen || 0,
-                    key.last_lat || 0.0,
-                    key.last_lon || 0.0
-                );
-            });
-        }
-        return device;
-    }
+        const results = await Device.findOne({
+            where: { accountUsername: username },
+        });
 
     /**
      * Set last device location.
@@ -83,20 +57,14 @@ class Device extends Model {
      * @param username 
      */
     static async setAccountUsername(uuid, username) {
-        if (username === '') {
+        if (!username || username === '') {
             username = null;
         }
-        let sql = `
-        UPDATE device
-        SET account_username = ?
-        WHERE uuid = ?
-        `;
-        let args = [username, uuid];
-        let results = await db.query(sql, args)
-            .then(x => x)
-            .catch(err => {
-                console.error('[Device] Error:', err);
-            });
+        const results = await Device.update({
+            accountUsername: username,
+        }, {
+            where: { uuid: uuid },
+        });
     }
     
     /**
