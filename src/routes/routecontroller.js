@@ -100,7 +100,14 @@ class RouteController {
                     try {
                         let account = await Account.getWithUsername(username);
                         if (account==null || account.username==null) {
-                            let account = new Account(username, 'temp', 0, 0, 0, trainerLevel, 0, 0, 0);
+                            let account = Account.build({
+                                username: username,
+                                password: 'temp',
+                                firstWarningTimestamp: 0,
+                                failedTimestamp: 0,
+                                failed: null,
+                                level: trainerLevel,
+                            });
                             await account.save();
                         }
                         let deviceByUsername = await Device.getByAccountUsername(username);
@@ -117,12 +124,24 @@ class RouteController {
                         if (device==null || device.uuid==null) {
                             let instance = await Instance.getByName('AutoAddedByParser');
                             if (instance==null || instance.name==null) {
-                                let instance = new Instance('AutoAddedByParser', 'circle_pokemon', '{"area":[{"lat":-90,"lon":-180},{"lat":-90,"lon":180},{"lat":90,"lon":180},{"lat":90,"lon":-180}],"timezone_offset":7200,"min_level":1,"max_level":40}');
+                                let instance = Instance.build({
+                                    name: 'AutoAddedByParser',
+                                    type: InstanceType.CirclePokemon,
+                                    data: JSON.parse('{"area":[{"lat":-90,"lon":-180},{"lat":-90,"lon":180},{"lat":90,"lon":180},{"lat":90,"lon":-180}],"timezone_offset":7200,"min_level":1,"max_level":40}'),
+                                });
                                 await instance.save();
                             }
 
-                            let device = new Device(uuid, instance.name, username, '', Math.floor(Date.now() / 1000), latTarget, lonTarget);
-                            await device.create();
+                            let device = Device.build({
+                                uuid: uuid,
+                                instanceName: instance.name,
+                                accountUsername: username,
+                                lastHost: null,
+                                lastSeen: Math.floor(Date.now() / 1000),
+                                lastLat: latTarget,
+                                lastLon: lonTarget,
+                            });
+                            await device.save();
                         }
                         if (device != null && device.uuid!= null && device.accountUsername != account.username) {
                             await Device.setAccountUsername(uuid, account.username);
