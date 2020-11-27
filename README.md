@@ -44,8 +44,6 @@ SELECT name, type, data FROM rdmdb.instance;
     "dataparser": {
         // Data Endpoint for your devices
         "port": 9001,
-        // Number of clusters to use for parsing
-        "clusters": 4,
         // Protos to parse
         "parse": {
             "pokemon": true,

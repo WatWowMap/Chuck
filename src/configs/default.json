@@ -8,7 +8,6 @@
     },
     "dataparser": {
         "port": 9001,
-        "clusters": 4,
         "parse": {
             "pokemon": true,
             "encounters": true,
