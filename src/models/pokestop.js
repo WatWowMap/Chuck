@@ -519,7 +519,7 @@ Pokestop.init({
     },
     arScanEligible: {
         type: DataTypes.BOOLEAN,
-        defaultValue: null,
+        defaultValue: 0,
     },
 }, {
     sequelize,
