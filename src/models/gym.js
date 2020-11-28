@@ -37,6 +37,7 @@ class Gym extends Model {
         'raidPokemonForm',
         'raidPokemonGender',
         'raidPokemonEvolution',
+        'arScanEligible',
     ];
     static fromFort(cellId, fort) {
         const ts = new Date().getTime() / 1000;
@@ -58,6 +59,7 @@ class Gym extends Model {
             deleted: false,
             firstSeenTimestamp: ts,
             updated: ts,
+            arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.raid_info) {
             record.raidEndTimestamp = fort.raid_info.raid_end_ms / 1000;
@@ -148,6 +150,7 @@ class Gym extends Model {
                         raid_active_until: this.raidEndTimestamp,
                         ex_raid_eligible: this.exRaidEligible,
                         sponsor_id: this.sponsorId,
+                        ar_scan_eligible: this.arScanEligible || 0,
                     }
                 };
             case 'gym-info':
@@ -164,6 +167,7 @@ class Gym extends Model {
                         ex_raid_eligible: this.exRaidEligible,
                         in_battle: this.inBattle,
                         sponsor_id: this.sponsorId,
+                        ar_scan_eligible: this.arScanEligible || 0,
                     }
                 };
             case 'egg':
@@ -326,6 +330,10 @@ Gym.init({
     raidPokemonEvolution: {
         type: DataTypes.TINYINT(1).UNSIGNED,
         defaultValue: null,
+    },
+    arScanEligible: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: 0,
     },
 }, {
     sequelize,

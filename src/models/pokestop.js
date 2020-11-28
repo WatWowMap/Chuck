@@ -97,7 +97,6 @@ class Pokestop extends Model {
             // TODO: Needs testing
             let info = condition;
             const rpc = await protos();
-            console.log(rpc.QuestConditionProto);
             switch (condition.type) {
                 case rpc.QuestConditionProto.ConditionType.WITH_BADGE_TYPE:
                     infoData['amount'] = info.badge_type.amount;
