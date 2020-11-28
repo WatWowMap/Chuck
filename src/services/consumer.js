@@ -424,7 +424,6 @@ class Consumer {
 
     async updatePlayerData(playerData) {
         if (playerData.length > 0) {
-            let playerDataSQL = [];
             for (let i = 0; i < playerData.length; i++) {
                 let data = playerData[i];
                 if (!data || !data.player_data) {
@@ -432,55 +431,19 @@ class Consumer {
                     continue;
                 }
                 try {
-                    let account;
+                    let account = null;
                     try {
-                        account = await Account.getWithUsername(this.username);
+                        account = await Account.findByPk(this.username);
                     } catch (err) {
                         console.error('[Account] Error:', err);
-                        account = null;
                     }
-                    if (account instanceof Account) {
-                        // Add quest data to pokestop object
+                    if (account !== null) {
                         account.parsePlayerData(data);
-                        playerDataSQL.push(account.toSql());
+                        account.save(); // todo: handle race?
                     }
                 } catch (err) {
                     console.error('[Account] Error:', err);
                 }
-            }
-
-            if (playerDataSQL.length > 0) {
-                let sqlUpdate = `INSERT INTO account (
-                    username, password, first_warning_timestamp, failed, level,
-                    last_encounter_lat, last_encounter_lon, last_encounter_time,
-                    spins, tutorial, creation_timestamp_ms, warn, warn_expire_ms,
-                    warn_message_acknowledged, suspended_message_acknowledged,
-                    was_suspended, banned, creation_timestamp, warn_expire_timestamp
-                ) VALUES
-                `;
-                sqlUpdate += playerDataSQL.join(',');
-                //console.log('sql:', sqlUpdate);
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                    password=VALUES(password),
-                    first_warning_timestamp=VALUES(first_warning_timestamp),
-                    failed=VALUES(failed),
-                    level=VALUES(level),
-                    last_encounter_lat=VALUES(last_encounter_lat),
-                    last_encounter_lon=VALUES(last_encounter_lon),
-                    last_encounter_time=VALUES(last_encounter_time),
-                    spins=VALUES(spins),
-                    tutorial=VALUES(tutorial),
-                    creation_timestamp_ms=VALUES(creation_timestamp_ms),
-                    warn=VALUES(warn),
-                    warn_expire_ms=VALUES(warn_expire_ms),
-                    warn_message_acknowledged=VALUES(warn_message_acknowledged),
-                    suspended_message_acknowledged=VALUES(suspended_message_acknowledged),
-                    was_suspended=VALUES(was_suspended),
-                    banned=VALUES(banned)
-                `;
-                let result = await db.query(sqlUpdate);
-                console.log('[PlayerData] Result:', result.affectedRows);
             }
         }
     }

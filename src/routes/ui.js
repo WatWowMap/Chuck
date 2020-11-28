@@ -389,7 +389,11 @@ const addAccounts = (req, res) => {
             let username = split[0].trim();
             let password = split[1].trim();
             let level = split.length === 3 ? split[2].trim() : defaultLevel;
-            accs.push(new Account(username, password, null, null, null, level, null, null, null, 0, 0, null, null, null, null, null, null, null));
+            accs.push(Account.build({
+                username,
+                password,
+                level,
+            }));
         }
     }
     if (accs.length === 0) {

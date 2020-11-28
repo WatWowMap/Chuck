@@ -1,77 +1,31 @@
 'use strict';
 
-const { DataTypes, Model, Op, Sequelize } = require('sequelize');
+const { DataTypes, Model, Op } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 
 /**
  * Account model class.
  */
 class Account extends Model {
-
-    /**
-     * Initialize new Account object.
-     * @param username 
-     * @param password 
-     * @param firstWarningTimestamp 
-     * @param failedTimestamp 
-     * @param failed 
-     * @param level 
-     * @param lastEncounterLat 
-     * @param lastEncounterLon 
-     * @param lastEncounterTime 
-     */
-    /*
-    constructor(username, password, firstWarningTimestamp, failedTimestamp, failed,
-        level, lastEncounterLat, lastEncounterLon, lastEncounterTime, spins, tutorial,
-        creationTimestampMs, warn, warnExpireTimestamp, warnMessageAcknowledged,
-        suspendedMessageAcknowledged, wasSuspended, banned) {
-        this.username = username;
-        this.password = password;
-        if (firstWarningTimestamp > 0) {
-            this.firstWarningTimestamp = firstWarningTimestamp;
-        }
-        if (failedTimestamp > 0) {
-            this.failedTimestamp = failedTimestamp;
-        }
-        this.failed = failed || null;
-        this.level = level;
-        this.lastEncounterLat = lastEncounterLat || null;
-        this.lastEncounterLon = lastEncounterLon || null;
-        if (lastEncounterTime > 0) {
-            this.lastEncounterTime = lastEncounterTime;
-        }
-        this.spins = spins || 0;
-        this.tutorial = tutorial || 0;
-        this.creationTimestampMs = creationTimestampMs;
-        this.warn = warn || null;
-        this.warnExpireTimestamp = warnExpireTimestamp || null;
-        this.warnMessageAcknowledged = warnMessageAcknowledged || null;
-        this.suspendedMessageAcknowledged = suspendedMessageAcknowledged || null;
-        this.wasSuspended = wasSuspended || null;
-        this.banned = banned || null;
-    }
-    */
-
     parsePlayerData(playerData) {
         this.creationTimestampMs = parseInt(playerData.player_data.creation_timestamp_ms / 1000);
         this.warn = playerData.warn;
-        let warnExpireTimestamp = parseInt(playerData.warn_expire_ms / 1000);
-        if (warnExpireTimestamp > 0) {
-            this.warnExpireTimestamp = warnExpireTimestamp;
+        if (playerData.warn_expire_ms > 0) {
+            this.warnExpireMs = playerData.warn_expire_ms;
         }
         this.warnMessageAcknowledged = playerData.warn_message_acknowledged;
         this.suspendedMessageAcknowledged = playerData.suspended_message_acknowledged;
         this.wasSuspended = playerData.was_suspended;
         this.banned = playerData.banned;
 
-        if (playerData.warn && !failed) {
+        if (playerData.warn && !this.failed) {
             this.failed = 'GPR_RED_WARNING';
             let ts = new Date().getTime() / 1000;
             if (!this.firstWarningTimestamp) {
                 this.firstWarningTimestamp = ts;
             }
             this.failedTimestamp = ts;
-            console.debug(`[Account] Account Name: ${self.username} - Username: ${playerData.player_data.username} - Red Warning: ${playerData.warn}`);
+            console.debug(`[Account] Account Name: ${this.username} - Username: ${playerData.player_data.username} - Red Warning: ${playerData.warn}`);
         }
         if (playerData.banned) {
             this.failed = 'GPR_BANNED';
@@ -116,17 +70,11 @@ class Account extends Model {
 
     /**
      * Get account with username.
-     * @param username 
+     * @param username
+     * @deprecated Use findByPk.
      */
-    static async getWithUsername(username) {
-        try {
-            return await Account.findOne({
-                where: { username: username },
-            });
-        } catch (err) {
-            console.error('[Account] Failed to get Account with username', username, 'Error:', err);
-            return null;
-        }
+    static getWithUsername(username) {
+        return Account.findByPk(username);
     }
 
     /**
@@ -292,6 +240,10 @@ class Account extends Model {
         return results || 0;
     }
 
+    /**
+     * @deprecated Use save.
+     * @returns {Promise<void>}
+     */
     async create() {
         const results = await Account.create({
             username: this.username,
@@ -307,40 +259,13 @@ class Account extends Model {
             tutorial: this.tutorial,
             creationTimestampMs: this.creationTimestampMs,
             warn: this.warn,
-            warnExpireTimestamp: this.warnExpireTimestamp,
+            warnExpireMs: this.warnExpireMs,
             warnMessageAcknowledged: this.warn_message_acknowledged,
             suspendedMessageAcknowledged: this.suspended_message_acknowledged,
             wasSuspended: this.was_suspended,
             banned: this.banned,
         });
         console.log('[Device] Insert:', results);
-    }
-
-    /**
-     * Save account.
-     */
-    async save() {
-        const results = await Account.update({
-            username: this.username,
-            password: this.password,
-            level: this.level,
-            firstWarningTimestamp: this.firstWarningTimestamp,
-            failedTimestamp: this.failedTimestamp,
-            failed: this.failed,
-            lastEncounterLat: this.lastEncounterLat,
-            lastEncounterLon: this.lastEncounterLon,
-            lastEncounterTime: this.lastEncounterTime,
-            spins: this.spins,
-            tutorial: this.tutorial,
-            creationTimestampMs: this.creationTimestampMs,
-            warn: this.warn,
-            warnExpireTimestamp: this.warnExpireTimestamp,
-            warnMessageAcknowledged: this.warnMessageAcknowledged,
-            suspendedMessageAcknowledged: this.suspendedMessageAcknowledged,
-            wasSuspended: this.wasSuspended,
-            banned: this.banned,
-        });
-        //console.log('[Account] Save:', result)
     }
 }
 
@@ -354,12 +279,12 @@ Account.init({
         type: DataTypes.STRING(32),
         allowNull: false,
     },
-    first_warning_timestamp: {
+    firstWarningTimestamp: {
         type: DataTypes.INTEGER(11).UNSIGNED,
         allowNull: true,
         defaultValue: null,
     },
-    failed_timestamp: {
+    failedTimestamp: {
         type: DataTypes.INTEGER(11).UNSIGNED,
         allowNull: true,
         defaultValue: null,
@@ -374,17 +299,17 @@ Account.init({
         allowNull: false,
         defaultValue: 0,
     },
-    last_encounter_lat: {
+    lastEncounterLat: {
         type: DataTypes.DOUBLE(18, 14),
         allowNull: true,
         defaultValue: null,
     },
-    last_encounter_lon: {
+    lastEncounterLon: {
         type: DataTypes.DOUBLE(18, 14),
         allowNull: true,
         defaultValue: null,
     },
-    last_encounter_time: {
+    lastEncounterTime: {
         type: DataTypes.INTEGER(11).UNSIGNED,
         allowNull: true,
         defaultValue: null,
@@ -399,7 +324,7 @@ Account.init({
         allowNull: false,
         defaultValue: 0,
     },
-    creation_timestamp_ms: {
+    creationTimestampMs: {
         type: DataTypes.INTEGER(11).UNSIGNED,
         allowNull: true,
         defaultValue: null,
@@ -409,22 +334,22 @@ Account.init({
         allowNull: true,
         defaultValue: null,
     },
-    warn_expire_ms: {
+    warnExpireMs: {
         type: DataTypes.INTEGER(11).UNSIGNED,
         allowNull: true,
         defaultValue: null,
     },
-    warn_message_acknowledged: {
+    warnMessageAcknowledged: {
         type: DataTypes.TINYINT(1),
         allowNull: true,
         defaultValue: null,
     },
-    suspended_message_acknowledged: {
+    suspendMessageAcknowledged: {
         type: DataTypes.TINYINT(1),
         allowNull: true,
         defaultValue: null,
     },
-    was_suspended: {
+    wasSuspended: {
         type: DataTypes.TINYINT(1),
         allowNull: true,
         defaultValue: null,
