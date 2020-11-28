@@ -175,7 +175,7 @@ class Account extends Model {
     }
 
     static async getStats() {
-        let sql = `
+        const results = await sequelize.query(`
         SELECT
             a.level AS level,
             COUNT(level) AS total,
@@ -189,9 +189,13 @@ class Account extends Model {
             (SELECT count(username) FROM device as d LEFT JOIN accounts_dashboard as ad ON ad.username = d.account_username WHERE a.level = ad.level) AS in_use
         FROM account AS a
         GROUP BY level
-        ORDER BY level DESC
-        `;
-        let results = await db.query(sql);        
+        ORDER BY level DESC;
+        `, {
+            model: Account,
+            mapToModel: true, // pass true here if you have any mapped fields
+            type: QueryTypes.SELECT,
+        });
+  
         let stats = [];
         for (let i = 0; i < results.length; i++) {
             let result = results[i];
@@ -222,7 +226,7 @@ class Account extends Model {
     }
 
     static async getStatCounts() {
-        let sql = `
+        const results = await sequelize.query(`
         SELECT 
             SUM(spins >= 3500) AS spin_limit_count,
             SUM(
@@ -245,8 +249,12 @@ class Account extends Model {
             SUM(first_warning_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 7 DAY)) as warning_7days,
             SUM(first_warning_timestamp IS NOT NULL) as warning_total
         FROM account;
-        `;
-        let results = await db.query(sql);
+        `, {
+            model: Account,
+            mapToModel: true, // pass true here if you have any mapped fields
+            type: QueryTypes.SELECT,
+        });
+
         if (results && results.length > 0) {
             const result = results[0];
             result.banned_1day = result.banned_1day || 0;
@@ -261,7 +269,7 @@ class Account extends Model {
     }
 
     static async getDeviceAccountStats() {
-        let sql = `
+        const results = await sequelize.query(`
         SELECT
             SUM(
                 first_warning_timestamp is NULL
@@ -277,9 +285,12 @@ class Account extends Model {
             SUM(device.uuid IS NOT NULL) AS in_use_count
         FROM account
         LEFT JOIN device ON username = account_username
-            
-        `;
-        let results = await db.query(sql);
+        `, {
+            model: Account,
+            mapToModel: true, // pass true here if you have any mapped fields
+            type: QueryTypes.SELECT,
+        });
+
         if (results && results.length > 0) {
             const result = results[0];
             return result;
