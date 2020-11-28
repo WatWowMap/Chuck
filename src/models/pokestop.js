@@ -30,7 +30,7 @@ class Pokestop extends Model {
         'incidentExpireTimestamp',
         'pokestopDisplay',
         'gruntType',
-        'isArScanEligible',
+        'arScanEligible',
     ];
     static fromFort(cellId, fort) {
         let ts = new Date().getTime() / 1000;
@@ -46,7 +46,7 @@ class Pokestop extends Model {
             firstSeenTimestamp: ts,
             updated: ts,
             deleted: false,
-            arScanEligible: 0,
+            arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0 &&
             (fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK) ||
@@ -97,6 +97,7 @@ class Pokestop extends Model {
             // TODO: Needs testing
             let info = condition;
             const rpc = await protos();
+            console.log(rpc.QuestConditionProto);
             switch (condition.type) {
                 case rpc.QuestConditionProto.ConditionType.WITH_BADGE_TYPE:
                     infoData['amount'] = info.badge_type.amount;
