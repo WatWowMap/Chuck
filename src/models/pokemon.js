@@ -20,7 +20,6 @@ class Pokemon extends Model {
     static WeatherBoostMinIvStat = 4;
     static PokemonTimeUnseen = config.dataparser.pokemonTimeUnseen * 60;
     static PokemonTimeReseen = config.dataparser.pokemonTimeReseen * 60;
-    static DittoDisguises = config.dataparser.dittoDisguises;
 
     /**
      * Find or create a new Pokemon from the database.
@@ -313,13 +312,12 @@ class Pokemon extends Model {
      * Check if Pokemon is Ditto disguised.
      */
     isDittoDisguised() {
-        let isDisguised = this.pokemonId === Pokemon.DittoPokemonId || Pokemon.DittoDisguises.includes(this.pokemonId);
         let isUnderLevelBoosted = this.level > 0 && this.level < Pokemon.WeatherBoostMinLevel;
         let isUnderIvStatBoosted = this.level > 0 && (this.atkIv < Pokemon.WeatherBoostMinIvStat ||
             this.defIv < Pokemon.WeatherBoostMinIvStat ||
             this.staIv < Pokemon.WeatherBoostMinIvStat);
         let isWeatherBoosted = this.weather > 0;
-        return isDisguised && (isWeatherBoosted ? isUnderLevelBoosted || isUnderIvStatBoosted : this.level > 30);
+        return (isWeatherBoosted ? isUnderLevelBoosted || isUnderIvStatBoosted : this.level > 30);
     }
 
     /**
