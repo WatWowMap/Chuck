@@ -9,10 +9,9 @@ const Gym = require('../models/gym.js');
 const Pokemon = require('../models/pokemon.js');
 const Pokestop = require('../models/pokestop.js');
 
-const MySQLConnector = require('../services/mysql.js');
+const sequelize = require('./sequelize.js');
 const Cell = require('../models/cell');
 const Weather = require('../models/weather');
-const db = new MySQLConnector(config.db);
 
 /**
  * Consumer database class
@@ -276,7 +275,7 @@ class Consumer {
                     updated=VALUES(updated)
                 `;
                 try {
-                    let result = await db.query(sql);
+                    let result = await sequelize.query(sql);
                     //console.log('[GymInfos] Result:', result.affectedRows);
                 } catch (err) {
                     console.error('[Trainers] Error:', err);
@@ -316,7 +315,7 @@ class Consumer {
                     updated=VALUES(updated)
                 `;
                 try {
-                    let result = await db.query(sql);
+                    let result = await sequelize.query(sql);
                     //console.log('[GymInfos] Result:', result.affectedRows);
                 } catch (err) {
                     console.error('[Defenders] Error:', err);
