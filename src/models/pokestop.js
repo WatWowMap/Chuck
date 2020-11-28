@@ -30,6 +30,7 @@ class Pokestop extends Model {
         'incidentExpireTimestamp',
         'pokestopDisplay',
         'gruntType',
+        'ar_scan_eligible',
     ];
     static fromFort(cellId, fort) {
         let ts = new Date().getTime() / 1000;
@@ -414,6 +415,7 @@ class Pokestop extends Model {
                         lure_id: this.lureId || 0,
                         pokestop_display: this.pokestopDisplay || 0,
                         incident_expire_timestamp: this.incidentExpireTimestamp || 0,
+                        ar_scan_eligible: this.arScanEligible || 0,
                         updated: this.updated || 1
                     }
                 };
@@ -513,6 +515,10 @@ Pokestop.init({
     },
     sponsorId: {
         type: DataTypes.SMALLINT(5).UNSIGNED,
+        defaultValue: null,
+    },
+    arScanEligible: {
+        type: DataTypes.BOOLEAN,
         defaultValue: null,
     },
 }, {
