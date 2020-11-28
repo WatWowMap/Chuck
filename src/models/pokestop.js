@@ -30,7 +30,7 @@ class Pokestop extends Model {
         'incidentExpireTimestamp',
         'pokestopDisplay',
         'gruntType',
-        'ar_scan_eligible',
+        'isArScanEligible',
     ];
     static fromFort(cellId, fort) {
         let ts = new Date().getTime() / 1000;
@@ -46,6 +46,7 @@ class Pokestop extends Model {
             firstSeenTimestamp: ts,
             updated: ts,
             deleted: false,
+            arScanEligible: 0,
         };
         if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0 &&
             (fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK) ||
@@ -277,6 +278,7 @@ class Pokestop extends Model {
             }
             this.lat = oldPokestop.lat;
             this.lon = oldPokestop.lon;
+            this.arScanEligible = oldPokestop.arScanEligible;
             if (updateQuest && (this.questTimestamp || 0) > (oldPokestop.questTimestamp || 0)) {
                 WebhookController.instance.addQuestEvent(this.toJson('quest'));
             }
