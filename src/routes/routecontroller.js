@@ -244,7 +244,8 @@ class RouteController {
                                     nearbyNew.forEach(nearbyPokemon => {
                                         nearbyPokemons.push({
                                             cell: mapCell.s2_cell_id,
-                                            data: nearbyPokemon
+                                            data: nearbyPokemon,
+                                            timestampMs: timestampMs,
                                         });
                                     });
                                 }
@@ -317,41 +318,49 @@ class RouteController {
 
         let total = wildPokemons.length + nearbyPokemons.length + clientWeathers.length + forts.length + fortDetails.length + gymInfos.length + quests.length + encounters.length + cells.length;
         let startTime = process.hrtime();
+        let jobs = [];
+
         if (cells.length > 0) {
             await this.consumers[username].updateCells(cells);
         }
 
         if (clientWeathers.length > 0) {
-            await this.consumers[username].updateWeather(clientWeathers);
+            jobs.push(this.consumers[username].updateWeather(clientWeathers));
         }
 
-        if (wildPokemons.length > 0 || nearbyPokemons.length > 0) {
-            await this.consumers[username].updatePokemon(wildPokemons, nearbyPokemons);
+        if (wildPokemons.length > 0) {
+            jobs = jobs.concat(this.consumers[username].updateWildPokemon(wildPokemons));
+        }
+
+        if (nearbyPokemons.length > 0) {
+            jobs = jobs.concat(this.consumers[username].updateNearbyPokemon(nearbyPokemons));
         }
 
         if (forts.length > 0) {
-            await this.consumers[username].updateForts(forts);
+            jobs.push(this.consumers[username].updateForts(forts));
         }
 
         if (fortDetails.length > 0) {
-            await this.consumers[username].updateFortDetails(fortDetails);
+            jobs.push(this.consumers[username].updateFortDetails(fortDetails));
         }
 
         if (gymInfos.length > 0) {
-            await this.consumers[username].updateGymInfos(gymInfos);
+            jobs.push(this.consumers[username].updateGymInfos(gymInfos));
         }
 
         if (quests.length > 0) {
-            await this.consumers[username].updateQuests(quests);
+            jobs.push(this.consumers[username].updateQuests(quests));
         }
 
         if (encounters.length > 0) {
-            await this.consumers[username].updateEncounters(encounters);
+            jobs = jobs.concat(this.consumers[username].updateEncounters(encounters));
         }
 
         if (playerData.length > 0) {
-            await this.consumers[username].updatePlayerData(playerData);
+            jobs.push(this.consumers[username].updatePlayerData(playerData));
         }
+
+        await Promise.all(jobs);
 
         let endTime = process.hrtime(startTime);
         let ms = (endTime[0] * 1000000000 + endTime[1]) / 1000000;

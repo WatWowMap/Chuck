@@ -36,7 +36,7 @@
     },
     "webhooks": {
         "enabled": false,
-        "urls": ["http://127.0.0.1:9003"],
+        "urls": ["http://127.0.0.1:9002"],
         "delay": 5,
         "retryCount": 5
     }

@@ -13,7 +13,6 @@ const Device = require('../models/device.js');
 const Instance = require('../models/instance.js');
 const Pokestop = require('../models/pokestop.js');
 const utils = require('../services/utils.js');
-const { nearest } = require('@turf/turf');
 
 // Main dashboard route
 router.get(['/', '/index'], async (req, res) => {
@@ -390,7 +389,11 @@ const addAccounts = (req, res) => {
             let username = split[0].trim();
             let password = split[1].trim();
             let level = split.length === 3 ? split[2].trim() : defaultLevel;
-            accs.push(new Account(username, password, null, null, null, level, null, null, null, 0, 0, null, null, null, null, null, null, null));
+            accs.push(Account.build({
+                username,
+                password,
+                level,
+            }));
         }
     }
     if (accs.length === 0) {
@@ -595,7 +598,11 @@ const addInstancePost = async (req, res) => {
         }
         
         try {
-            let instance = new Instance(name, type, instanceData);
+            const instance = Instance.build({
+                name,
+                type,
+                data: instanceData,
+            });
             await instance.save();
             InstanceController.instance.addInstance(instance);
         } catch (err) {
