@@ -36,7 +36,7 @@ class Migrator {
         WHERE \`key\` = "DB_VERSION"
         LIMIT 1;`;
         const results = await sequelize.query(getDBVersionSQL)
-            .then(x => x)
+            .then(x => x[0])
             .catch(err => {
                 console.error(`[DBController] Failed to get current database version: (${err})`);
                 process.exit(-1);
@@ -53,12 +53,6 @@ class Migrator {
             await utils.snooze(30 * 1000);
         }
         this.migrate(version, newestVersion);
-    }
-
-    static async getEntries() {
-        const sql = 'SELECT `key`, `value` FROM metadata';
-        const results = await sequelize.query(sql);
-        return results;
     }
 
     async migrate(fromVersion, toVersion) {
@@ -81,7 +75,7 @@ class Migrator {
                 if (msql !== '') {
                     //console.log(`[DBController] Executing: ${msql}`);
                     await sequelize.query(msql)
-                        .then(x => x)
+                        .then(x => x[0])
                         .catch(async err => {
                             console.error(`[DBController] Migration failed: ${err}`);
                         });
@@ -138,7 +132,7 @@ class Migrator {
         const results = await sequelize.query(sql, {
             replacements: [key],
         })
-            .then(x => x)
+            .then(x => x[0])
             .catch(err => {
                 console.error(`[DbController] Error: ${err}`);
                 return null;
@@ -159,7 +153,7 @@ class Migrator {
         const results = await sequelize.query(sql, {
             replacements: [key, value],
         })
-            .then(x => x)
+            .then(x => x[0])
             .catch(err => {
                 console.error(`[DbController] Error: ${err}`);
                 return null;

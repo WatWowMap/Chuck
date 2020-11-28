@@ -276,7 +276,7 @@ class Consumer {
                 `;
                 try {
                     let result = await sequelize.query(sql);
-                    //console.log('[GymInfos] Result:', result.affectedRows);
+                    //console.log('[GymInfos] Result:', result[0].length);
                 } catch (err) {
                     console.error('[Trainers] Error:', err);
                 }
@@ -316,7 +316,7 @@ class Consumer {
                 `;
                 try {
                     let result = await sequelize.query(sql);
-                    //console.log('[GymInfos] Result:', result.affectedRows);
+                    //console.log('[GymInfos] Result:', result[0].length);
                 } catch (err) {
                     console.error('[Defenders] Error:', err);
                     console.error('sql:', sql);
