@@ -278,7 +278,6 @@ class Pokestop extends Model {
             }
             this.lat = oldPokestop.lat;
             this.lon = oldPokestop.lon;
-            this.arScanEligible = oldPokestop.arScanEligible;
             if (updateQuest && (this.questTimestamp || 0) > (oldPokestop.questTimestamp || 0)) {
                 WebhookController.instance.addQuestEvent(this.toJson('quest'));
             }
@@ -417,7 +416,7 @@ class Pokestop extends Model {
                         lure_id: this.lureId || 0,
                         pokestop_display: this.pokestopDisplay || 0,
                         incident_expire_timestamp: this.incidentExpireTimestamp || 0,
-                        ar_scan_eligible: this.arScanEligible || 0,
+                        ar_scan_eligible: this.arScanEligible,
                         updated: this.updated || 1
                     }
                 };
@@ -519,10 +518,7 @@ Pokestop.init({
         type: DataTypes.SMALLINT(5).UNSIGNED,
         defaultValue: null,
     },
-    arScanEligible: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: 0,
-    },
+    arScanEligible: DataTypes.BOOLEAN,
 }, {
     sequelize,
     timestamps: false,

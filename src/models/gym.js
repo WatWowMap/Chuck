@@ -150,7 +150,7 @@ class Gym extends Model {
                         raid_active_until: this.raidEndTimestamp,
                         ex_raid_eligible: this.exRaidEligible,
                         sponsor_id: this.sponsorId,
-                        ar_scan_eligible: this.arScanEligible || 0,
+                        ar_scan_eligible: this.arScanEligible,
                     }
                 };
             case 'gym-info':
@@ -167,7 +167,7 @@ class Gym extends Model {
                         ex_raid_eligible: this.exRaidEligible,
                         in_battle: this.inBattle,
                         sponsor_id: this.sponsorId,
-                        ar_scan_eligible: this.arScanEligible || 0,
+                        ar_scan_eligible: this.arScanEligible,
                     }
                 };
             case 'egg':
@@ -331,10 +331,7 @@ Gym.init({
         type: DataTypes.TINYINT(1).UNSIGNED,
         defaultValue: null,
     },
-    arScanEligible: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: 0,
-    },
+    arScanEligible: DataTypes.BOOLEAN,
 }, {
     sequelize,
     timestamps: false,
