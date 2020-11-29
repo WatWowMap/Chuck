@@ -30,6 +30,7 @@ class Pokestop extends Model {
         'incidentExpireTimestamp',
         'pokestopDisplay',
         'gruntType',
+        'arScanEligible',
     ];
     static fromFort(cellId, fort) {
         let ts = new Date().getTime() / 1000;
@@ -45,6 +46,7 @@ class Pokestop extends Model {
             firstSeenTimestamp: ts,
             updated: ts,
             deleted: false,
+            arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0 &&
             (fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK) ||
@@ -414,6 +416,7 @@ class Pokestop extends Model {
                         lure_id: this.lureId || 0,
                         pokestop_display: this.pokestopDisplay || 0,
                         incident_expire_timestamp: this.incidentExpireTimestamp || 0,
+                        ar_scan_eligible: this.arScanEligible,
                         updated: this.updated || 1
                     }
                 };
@@ -515,6 +518,7 @@ Pokestop.init({
         type: DataTypes.SMALLINT(5).UNSIGNED,
         defaultValue: null,
     },
+    arScanEligible: DataTypes.BOOLEAN,
 }, {
     sequelize,
     timestamps: false,
