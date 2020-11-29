@@ -139,7 +139,7 @@ class Pokemon extends Model {
     }
 
     static async _attemptUpdate(id, work) {
-        let retry = 5, pokemon, oldAtkIv;
+        let retry = 5, pokemon;
         for (;;) {
             const transaction = await sequelize.transaction({
                 // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
@@ -148,7 +148,6 @@ class Pokemon extends Model {
             });
             try {
                 pokemon = await Pokemon.getOrCreate(id, transaction);
-                oldAtkIv = pokemon.atkIv;
                 if (await work.call(pokemon, transaction) === true) {
                     await transaction.commit();
                     return pokemon;
@@ -171,13 +170,15 @@ class Pokemon extends Model {
                 }
             }
         }
-        if (pokemon.isNewRecord) {
+        if (pokemon.isNewRecord || pokemon.changed('pokemonId') || pokemon.changed('gender') ||
+            pokemon.changed('form') || pokemon.changed('weather') || pokemon.changed('costume')) {
             WebhookController.instance.addPokemonEvent(pokemon.toJson());
             await RedisClient.publish('pokemon_add_queue', JSON.stringify(pokemon));
             if (pokemon.atkIv !== null) {
                 await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon));
             }
-        } else if (oldAtkIv === null && pokemon.atkIv !== null) {
+        } else if (pokemon.changed('level') || pokemon.changed('atkIv') ||
+            pokemon.changed('defIv') || pokemon.changed('staIv')) {
             WebhookController.instance.addPokemonEvent(pokemon.toJson());
             await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon));
         }
