@@ -139,7 +139,7 @@ class Pokemon extends Model {
     }
 
     static async _attemptUpdate(id, work) {
-        let retry = 5, pokemon, changed = [];
+        let retry = 5, pokemon, changed;
         for (;;) {
             const transaction = await sequelize.transaction({
                 // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
@@ -171,15 +171,17 @@ class Pokemon extends Model {
                 }
             }
         }
-        if (['pokemonId', 'gender', 'form', 'weather', 'costume'].some(x => changed.includes(x))) {
-            WebhookController.instance.addPokemonEvent(pokemon.toJson());
-            await RedisClient.publish('pokemon_add_queue', JSON.stringify(pokemon));
-            if (pokemon.atkIv !== null) {
+        if (changed) {
+            if (['pokemonId', 'gender', 'form', 'weather', 'costume'].some(x => changed.includes(x))) {
+                WebhookController.instance.addPokemonEvent(pokemon.toJson());
+                await RedisClient.publish('pokemon_add_queue', JSON.stringify(pokemon));
+                if (pokemon.atkIv !== null) {
+                    await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon));
+                }
+            } else if (['level', 'atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
+                WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon));
             }
-        } else if (['level', 'atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
-            WebhookController.instance.addPokemonEvent(pokemon.toJson());
-            await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon));
         }
         return pokemon;
     }
