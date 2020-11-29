@@ -329,20 +329,17 @@ class Pokemon extends Model {
     getDespawnTimer(spawnpoint) {
         let despawnSecond = spawnpoint.despawnSecond;
         if (despawnSecond) {
-            let currentDate = new Date(this.updated);
+            let currentDate = new Date(this.updated * 1000);
             let ts = Math.floor(this.updated);
             let minute = currentDate.getMinutes();
             let second = currentDate.getSeconds();
             let secondOfHour = second + minute * 60;
 
-            let despawnOffset;
-            if (despawnSecond < secondOfHour) {
-                despawnOffset = 3600 + despawnSecond - secondOfHour;
-            } else {
-                despawnOffset = despawnSecond - secondOfHour;
+            let despawnOffset = despawnSecond - secondOfHour;
+            if (despawnOffset < 0) {
+                despawnOffset += 3600;
             }
-            let despawn = ts + despawnOffset;
-            return despawn;
+            return ts + despawnOffset;
         }
     }
 
