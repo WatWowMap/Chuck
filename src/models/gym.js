@@ -155,7 +155,7 @@ class Gym extends Model {
                     type: 'gym_details',
                     message: {
                         id: this.id,
-                        name: this.name || 'Unknown',
+                        gym_name: this.name || 'Unknown',
                         url: this.url,
                         latitude: this.lat,
                         longitude: this.lon,
@@ -173,7 +173,7 @@ class Gym extends Model {
                     message: {
                         gym_id: this.id,
                         gym_name: this.name || 'Unknown',
-                        gym_url: this.url,
+                        url: this.url,
                         latitude: this.lat,
                         longitude: this.lon,
                         team_id: this.teamId,
