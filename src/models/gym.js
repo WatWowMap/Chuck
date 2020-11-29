@@ -93,22 +93,22 @@ class Gym extends Model {
         }
 
         if (oldGym === null) {
-            WebhookController.instance.addGymEvent(this.toJson('gym'));
-            WebhookController.instance.addGymInfoEvent(this.toJson('gym-info'));
+            WebhookController.instance.addGymEvent(this.toJson('gym', oldGym));
+            WebhookController.instance.addGymInfoEvent(this.toJson('gym-info', oldGym));
             let raidBattleTime = new Date((this.raidBattleTimestamp || 0) * 1000);
             let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
             let now = new Date().getTime() / 1000;            
             
             if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
-                WebhookController.instance.addEggEvent(this.toJson('egg'));
+                WebhookController.instance.addEggEvent(this.toJson('egg', oldGym));
             } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {
-                WebhookController.instance.addRaidEvent(this.toJson('raid'));
+                WebhookController.instance.addRaidEvent(this.toJson('raid', oldGym));
             }
         } else {
             if (oldGym.availableSlots !== this.availableSlots ||
                 oldGym.teamId !== this.teamId ||
                 oldGym.inBattle !== this.inBattle) {
-                WebhookController.instance.addGymInfoEvent(this.toJson('gym-info'));
+                WebhookController.instance.addGymInfoEvent(this.toJson('gym-info', oldGym));
             }
             if (this.raidSpawnTimestamp > 0 && (
                 oldGym.raidLevel !== this.raidLevel ||
@@ -120,9 +120,9 @@ class Gym extends Model {
                 let now = new Date().getTime() / 1000;
 
                 if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
-                    WebhookController.instance.addEggEvent(this.toJson('egg'));
+                    WebhookController.instance.addEggEvent(this.toJson('egg', oldGym));
                 } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {
-                    WebhookController.instance.addRaidEvent(this.toJson('raid'));
+                    WebhookController.instance.addRaidEvent(this.toJson('raid', oldGym));
                 }
             }
         }
@@ -131,21 +131,21 @@ class Gym extends Model {
     /**
      * Get Gym object as JSON object with correct property keys for webhook payload
      */
-    toJson(type) {
+    toJson(type, old) {
         switch (type) {
             case 'gym':
                 return {
                     type: 'gym',
                     message: {
                         gym_id: this.id,
-                        gym_name: this.name || 'Unknown',
+                        gym_name: this.name || old.name || 'Unknown',
                         latitude: this.lat,
                         longitude: this.lon,
-                        url: this.url,
+                        url: this.url || old.url,
                         enabled: this.enabled,
                         team_id: this.teamId,
                         last_modified: this.lastModifiedTimestamp,
-                        guard_pokemon_id: this.guardPokemonId,
+                        guard_pokemon_id: this.guardingPokemonId,
                         slots_available: this.availableSlots,
                         raid_active_until: this.raidEndTimestamp,
                         ex_raid_eligible: this.exRaidEligible,
@@ -158,8 +158,8 @@ class Gym extends Model {
                     type: 'gym_details',
                     message: {
                         id: this.id,
-                        gym_name: this.name || 'Unknown',
-                        url: this.url,
+                        gym_name: this.name || old.name || 'Unknown',
+                        url: this.url || old.url,
                         latitude: this.lat,
                         longitude: this.lon,
                         team: this.teamId,
@@ -176,8 +176,8 @@ class Gym extends Model {
                     type: 'raid',
                     message: {
                         gym_id: this.id,
-                        gym_name: this.name || 'Unknown',
-                        url: this.url,
+                        gym_name: this.name || old.name || 'Unknown',
+                        url: this.url || old.url,
                         latitude: this.lat,
                         longitude: this.lon,
                         team_id: this.teamId,

@@ -269,7 +269,7 @@ class Pokestop extends Model {
         } catch { }
 
         if (oldPokestop === null) {
-            WebhookController.instance.addPokestopEvent(this.toJson('pokestop'));
+            WebhookController.instance.addPokestopEvent(this.toJson('pokestop', oldPokestop));
             oldPokestop = {};
         }
         if (updateQuest) {
@@ -279,14 +279,14 @@ class Pokestop extends Model {
             this.lat = oldPokestop.lat;
             this.lon = oldPokestop.lon;
             if (updateQuest && (this.questTimestamp || 0) > (oldPokestop.questTimestamp || 0)) {
-                WebhookController.instance.addQuestEvent(this.toJson('quest'));
+                WebhookController.instance.addQuestEvent(this.toJson('quest', oldPokestop));
             }
         } else {
             if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
-                WebhookController.instance.addLureEvent(this.toJson('lure'));
+                WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
             }
             if ((oldPokestop.incidentExpireTimestamp || 0) < (this.incidentExpireTimestamp || 0)) {
-                WebhookController.instance.addInvasionEvent(this.toJson('invasion'));
+                WebhookController.instance.addInvasionEvent(this.toJson('invasion', oldPokestop));
             }
         }
         return false;
@@ -363,7 +363,7 @@ class Pokestop extends Model {
      * Get Pokestop object as JSON object with correct property keys for webhook payload
      * @param {*} type 
      */
-    toJson(type) {
+    toJson(type, old) {
         switch (type) {
             case "quest": // Quest
                 return {
@@ -378,8 +378,8 @@ class Pokestop extends Model {
                         conditions: this.questConditions,
                         rewards: this.questRewards,
                         updated: this.questTimestamp,
-                        pokestop_name: this.name || "Unknown",
-                        url: this.url || "",
+                        pokestop_name: this.name || old.name || "Unknown",
+                        url: this.url || old.url,
                     }
                 };
             case "invasion": // Invasion
@@ -389,8 +389,8 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        pokestop_name: this.name || "Unknown",
-                        url: this.url || "",
+                        pokestop_name: this.name || old.name || "Unknown",
+                        url: this.url || old.url,
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
@@ -408,8 +408,8 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        pokestop_name: this.name || "Unknown",
-                        url: this.url || "",
+                        pokestop_name: this.name || old.name || "Unknown",
+                        url: this.url || old.url,
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
