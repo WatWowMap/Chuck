@@ -377,7 +377,7 @@ class Pokestop extends Model {
                         rewards: this.questRewards,
                         updated: this.questTimestamp,
                         pokestop_name: this.name || "Unknown",
-                        pokestop_url: this.url || ""
+                        url: this.url || "",
                     }
                 };
             case "invasion": // Invasion
@@ -387,7 +387,7 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        name: this.name || "Unknown",
+                        pokestop_name: this.name || "Unknown",
                         url: this.url || "",
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
@@ -406,7 +406,7 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        name: this.name || "Unknown",
+                        pokestop_name: this.name || "Unknown",
                         url: this.url || "",
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
