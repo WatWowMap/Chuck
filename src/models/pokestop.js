@@ -133,7 +133,7 @@ class Pokestop extends Model {
                     if (info.with_throw_type.throw_type > 0) {
                         infoData['throw_type_id'] = info.with_throw_type.throw_type;
                     }
-                    infoData['hit'] = info.with_throw_type.hit
+                    infoData['hit'] = info.with_throw_type.hit;
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_LOCATION:
                     infoData['cell_ids'] = info.s2_cell_id;
@@ -142,7 +142,7 @@ class Pokestop extends Model {
                     infoData['distance'] = info.distance_km;
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_ALIGNMENT:
-                    infoData['alignment_ids'] = info.pokemon_alignment.alignment.map(x => parseInt(x));
+                    infoData['alignment_ids'] = info.with_pokemon_alignment.alignment.map(x => parseInt(x));
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_INVASION_CHARACTER:
                     infoData['character_category_ids'] = info.with_invasion_character.category.map(x => parseInt(x));
@@ -162,10 +162,10 @@ class Pokestop extends Model {
                     }
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_DAILY_BUDDY_AFFECTION:
-                    infoData['min_buddy_affection_earned_today'] = info.daily_buddy_affection.min_buddy_affection_earned_today;
+                    infoData['min_buddy_affection_earned_today'] = info.with_daily_buddy_affection.min_buddy_affection_earned_today;
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_TEMP_EVO_POKEMON:
-                    infoData['raid_pokemon_evolutions'] = info.with_mega_evo_pokemon.pokemon_evolution.map(x => parseInt(x));
+                    infoData['raid_pokemon_evolutions'] = info.with_temp_evo_id.mega_form.map(x => parseInt(x));
                     break;
                 default:
                     console.warn('Unhandled quest condition', condition.type);
