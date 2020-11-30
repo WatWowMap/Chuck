@@ -20,7 +20,6 @@ class Gym extends Model {
         'exRaidEligible',
         'inBattle',
         'sponsorId',
-        'url',
         'totalCp',
         'cellId',
         'deleted',
@@ -61,7 +60,7 @@ class Gym extends Model {
             arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.raid_info) {
-            record.url = fort.image_url;
+            // TODO: record.url = fort.image_url;
             record.raidEndTimestamp = fort.raid_info.raid_end_ms / 1000;
             record.raidSpawnTimestamp = fort.raid_info.raid_spawn_ms / 1000;
             record.raidBattleTimestamp = fort.raid_info.raid_battle_ms / 1000;
