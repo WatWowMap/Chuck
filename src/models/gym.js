@@ -53,7 +53,6 @@ class Gym extends Model {
             exRaidEligible: fort.is_ex_raid_eligible,
             inBattle: fort.is_in_battle,
             sponsorId: fort.sponsor > 0 ? fort.sponsor : 0,
-            url: fort.image_url ? fort.image_url : null,
             totalCp: fort.owned_by_team ? fort.gym_display.total_gym_cp : 0,
             cellId,
             deleted: false,
@@ -62,6 +61,7 @@ class Gym extends Model {
             arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.raid_info) {
+            record.url = fort.image_url;
             record.raidEndTimestamp = fort.raid_info.raid_end_ms / 1000;
             record.raidSpawnTimestamp = fort.raid_info.raid_spawn_ms / 1000;
             record.raidBattleTimestamp = fort.raid_info.raid_battle_ms / 1000;
