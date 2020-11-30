@@ -99,7 +99,7 @@ class RouteController {
                 if (config.dataparser.addDevicesThroughParser) {
                     try {
                         let account = await Account.getWithUsername(username);
-                        if (account==null || account.username==null) {
+                        if (!account || account.username==null) {
                             let account = Account.build({
                                 username: username,
                                 password: 'temp',
@@ -111,7 +111,7 @@ class RouteController {
                             await account.save();
                         }
                         let deviceByUsername = await Device.getByAccountUsername(username);
-                        if (deviceByUsername==null || deviceByUsername.uuid==null) {
+                        if (!deviceByUsername) {
                             console.debug("No Device found yet for the given username");
                         } else {
                             if (deviceByUsername.uuid != uuid) {
@@ -121,9 +121,9 @@ class RouteController {
                         }
 
                         let device = await Device.getById(uuid);
-                        if (device==null || device.uuid==null) {
+                        if (!device) {
                             let instance = await Instance.getByName('AutoAddedByParser');
-                            if (instance==null || instance.name==null) {
+                            if (!instance || instance.name==null) {
                                 let instance = Instance.build({
                                     name: 'AutoAddedByParser',
                                     type: InstanceType.CirclePokemon,
@@ -143,7 +143,7 @@ class RouteController {
                             });
                             await device.save();
                         }
-                        if (device != null && device.uuid!= null && device.accountUsername != account.username) {
+                        if (device && device.accountUsername != account.username) {
                             await Device.setAccountUsername(uuid, account.username);
                         }
                     } catch (err) {
