@@ -4,6 +4,7 @@ const S2 = require('nodes2ts');
 const { DataTypes, Model } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
+const config = require('../services/config.js');
 
 /**
  * Weather model class.
@@ -54,6 +55,10 @@ class Weather extends Model {
     }
 
     async triggerWebhook() {
+        if (!config.webhooks.enabled || config.urls.length === 0) {
+            return;
+        }
+
         WebhookController.instance.addWeatherEvent(this.toJson());
     }
 

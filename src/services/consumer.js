@@ -57,7 +57,7 @@ class Consumer {
                                 continue;
                             }
                             const gym = Gym.fromFort(fort.cell, fort.data);
-                            await gym.triggerWebhook();
+                            gym.triggerWebhook();
                             updatedGyms.push(gym.toJSON());
 
                             if (!this.gymIdsPerCell[fort.cell]) {
@@ -71,7 +71,7 @@ class Consumer {
                                 continue;
                             }
                             const pokestop = Pokestop.fromFort(fort.cell, fort.data);
-                            await pokestop.triggerWebhook(false);
+                            pokestop.triggerWebhook(false);
                             updatedPokestops.push(pokestop.toJSON());
 
                             if (!this.stopsIdsPerCell[fort.cell]) {
@@ -373,7 +373,7 @@ class Consumer {
                 let conditions = weather[i];
                 try {
                     const weather = Weather.fromClientWeather(conditions.cell.toString(), conditions.data, ts);
-                    await weather.triggerWebhook();
+                    weather.triggerWebhook();
                     updatedWeather.push(weather.toJSON());
                 } catch (err) {
                     console.error('[Weather] Error:', err);

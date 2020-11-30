@@ -2,6 +2,7 @@
 
 const { DataTypes, Model } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
+const config = require('../services/config.js');
 const WebhookController = require('../services/webhook.js');
 const Cell = require('./cell.js');
 
@@ -83,6 +84,10 @@ class Gym extends Model {
      * trigger webhooks
      */
     async triggerWebhook() {
+        if (!config.webhooks.enabled || config.urls.length === 0) {
+            return;
+        }
+
         let oldGym = null;
         try {
             oldGym = await Gym.findByPk(this.id);
@@ -94,8 +99,8 @@ class Gym extends Model {
             WebhookController.instance.addGymInfoEvent(this.toJson('gym-info', oldGym));
             let raidBattleTime = new Date((this.raidBattleTimestamp || 0) * 1000);
             let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
-            let now = new Date().getTime() / 1000;            
-            
+            let now = new Date().getTime() / 1000;
+
             if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
                 WebhookController.instance.addEggEvent(this.toJson('egg', oldGym));
             } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {

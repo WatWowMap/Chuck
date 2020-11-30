@@ -261,6 +261,10 @@ class Pokestop extends Model {
      * Update Pokestop values if changed from already found Pokestop
      */
     async triggerWebhook(updateQuest) {
+        if (!config.webhooks.enabled || config.urls.length === 0) {
+            return;
+        }
+
         let oldPokestop = null;
         try {
             oldPokestop = await Pokestop.findByPk(this.id);
