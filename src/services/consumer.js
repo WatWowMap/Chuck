@@ -422,29 +422,26 @@ class Consumer {
     }
 
     async updatePlayerData(playerData) {
-        if (playerData.length > 0) {
-            for (let i = 0; i < playerData.length; i++) {
-                let data = playerData[i];
-                if (!data || !data.player_data) {
-                    // Don't try and process empty data
-                    continue;
-                }
+        return playerData.map(async data => {
+            if (!data || !data.player_data) {
+                // Don't try and process empty data
+                return;
+            }
+            try {
+                let account = null;
                 try {
-                    let account = null;
-                    try {
-                        account = await Account.findByPk(this.username);
-                    } catch (err) {
-                        console.error('[Account] Error:', err);
-                    }
-                    if (account !== null) {
-                        account.parsePlayerData(data);
-                        account.save(); // todo: handle race?
-                    }
+                    account = await Account.findByPk(this.username);
                 } catch (err) {
                     console.error('[Account] Error:', err);
                 }
+                if (account !== null) {
+                    account.parsePlayerData(data);
+                    await account.save();   // todo: handle race?
+                }
+            } catch (err) {
+                console.error('[Account] Error:', err);
             }
-        }
+        });
     }
 }
 

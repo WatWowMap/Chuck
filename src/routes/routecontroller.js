@@ -320,12 +320,16 @@ class RouteController {
         let startTime = process.hrtime();
         let jobs = [];
 
-        if (cells.length > 0) {
-            await this.consumers[username].updateCells(cells);
+        if (playerData.length > 0) {
+            jobs = this.consumers[username].updatePlayerData(playerData);
         }
 
         if (clientWeathers.length > 0) {
             jobs.push(this.consumers[username].updateWeather(clientWeathers));
+        }
+
+        if (cells.length > 0) {
+            await this.consumers[username].updateCells(cells);
         }
 
         if (wildPokemons.length > 0) {
@@ -334,6 +338,10 @@ class RouteController {
 
         if (nearbyPokemons.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateNearbyPokemon(nearbyPokemons));
+        }
+
+        if (encounters.length > 0) {
+            jobs = jobs.concat(this.consumers[username].updateEncounters(encounters));
         }
 
         if (forts.length > 0) {
@@ -350,14 +358,6 @@ class RouteController {
 
         if (quests.length > 0) {
             jobs.push(this.consumers[username].updateQuests(quests));
-        }
-
-        if (encounters.length > 0) {
-            jobs = jobs.concat(this.consumers[username].updateEncounters(encounters));
-        }
-
-        if (playerData.length > 0) {
-            jobs.push(this.consumers[username].updatePlayerData(playerData));
         }
 
         await Promise.all(jobs);
