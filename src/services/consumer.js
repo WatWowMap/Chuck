@@ -87,7 +87,7 @@ class Consumer {
                         }
                     }
                 } catch (err) {
-                    console.error('[Forts] Error:', err);
+                    console.error('[Forts] Error:', err.stack);
                 }
             }
             if (updatedGyms.length > 0 || updatedGymsWithUrl.length > 0) {
