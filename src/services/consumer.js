@@ -47,6 +47,7 @@ class Consumer {
     async updateForts(forts) {
         if (forts.length > 0) {
             const updatedGyms = [];
+            const updatedGymsWithUrl = [];
             const updatedPokestops = [];
             for (let i = 0; i < forts.length; i++) {
                 let fort = forts[i];
@@ -58,7 +59,11 @@ class Consumer {
                             }
                             const gym = Gym.fromFort(fort.cell, fort.data);
                             await gym.triggerWebhook();
-                            updatedGyms.push(gym.toJSON());
+                            if (gym.url) {
+                                updatedGymsWithUrl.push(gym.toJSON());
+                            } else {
+                                updatedGyms.push(gym.toJSON());
+                            }
 
                             if (!this.gymIdsPerCell[fort.cell]) {
                                 this.gymIdsPerCell[fort.cell] = [];
@@ -85,12 +90,15 @@ class Consumer {
                     console.error('[Forts] Error:', err);
                 }
             }
-            if (updatedGyms.length > 0) {
+            if (updatedGyms.length > 0 || updatedGymsWithUrl.length > 0) {
                 try {
                     let result = await Gym.bulkCreate(updatedGyms, {
                         updateOnDuplicate: Gym.fromFortFields,
                     });
                     //console.log('[Gym] Result:', result.length);
+                    await Gym.bulkCreate(updatedGymsWithUrl, {
+                        updateOnDuplicate: ['url'].concat(Gym.fromFortFields),
+                    });
                 } catch (err) {
                     console.error('[Gym] Error:', err);
                     //console.error('sql:', sqlUpdate);
