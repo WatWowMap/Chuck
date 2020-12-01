@@ -31,7 +31,7 @@ class Device extends Model {
      */
     static getByAccountUsername(username) {
         const results = Device.findOne({
-            where: { accountUsername: username },
+            where: { account_username: username },
         });
         return results;
     }
