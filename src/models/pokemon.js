@@ -224,6 +224,10 @@ class Pokemon extends Model {
                 } catch (err) {
                     console.error('[Pokemon] InitNearby Error:', err);
                 }
+                if (pokestop !== null && nearby.fort_image_url) {
+                    pokestop.url = nearby.fort_image_url;
+                    pokestop.save();    // we intentionally do not await this Promise
+                }
                 return pokestop;
             };
             if (this.isNewRecord) {
