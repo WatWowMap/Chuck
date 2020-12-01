@@ -12,12 +12,16 @@
     "test-fix": "npx eslint src/**/*.js --fix",
     "update": "npm install && npm update pogo-translations && npm run create-locales"
   },
-  "author": "WWM",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WatWowMap/Chuck.git"
+  },
+  "author": "WatWowMap",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/wwm/Chuck/issues"
+    "url": "https://github.com/WatWowMap/Chuck/issues"
   },
-  "homepage": "https://github.com/wwm/Chuck",
+  "homepage": "https://github.com/WatWowMap/Chuck",
   "dependencies": {
     "@turf/turf": "^5.1.6",
     "axios": "^0.20.0",
