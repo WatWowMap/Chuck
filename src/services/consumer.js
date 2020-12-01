@@ -167,7 +167,7 @@ class Consumer {
 
             if (updatedPokestops.length > 0) {
                 try {
-                    const result = await Pokestop.bulkCreate(updatedGyms, {
+                    const result = await Pokestop.bulkCreate(updatedPokestops, {
                         updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
