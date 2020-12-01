@@ -97,9 +97,12 @@ class RouteController {
 
             if (uuid && latTarget && lonTarget) {
                 if (config.dataparser.addDevicesThroughParser) {
+                    console.debug("Need to add Devices through Data");
                     try {
+                        console.debug("Getting Account with username ", username);
                         let account = await Account.getWithUsername(username);
                         if (!account || account.username==null) {
+                            console.debug("No account with that username found");
                             let account = Account.build({
                                 username: username,
                                 password: 'temp',
@@ -109,7 +112,9 @@ class RouteController {
                                 level: trainerLevel,
                             });
                             await account.save();
+                            console.debug("Account created and saved");
                         }
+                        console.debug("Getting Device that is linked with the given username");
                         let deviceByUsername = await Device.getByAccountUsername(username);
                         if (!deviceByUsername) {
                             console.debug("No Device found yet for the given username");
@@ -120,18 +125,23 @@ class RouteController {
                             }
                         }
 
+                        console.debug("Getting Device based on uuid", uuid);
                         let device = await Device.getById(uuid);
                         if (!device) {
+                            console.debug("No Device found for the given uuid, getting AutoAddedByParser instance");
                             let instance = await Instance.getByName('AutoAddedByParser');
                             if (!instance || instance.name==null) {
+                                console.debug("Instance not found");
                                 let instance = Instance.build({
                                     name: 'AutoAddedByParser',
                                     type: InstanceType.CirclePokemon,
                                     data: JSON.parse('{"area":[{"lat":-90,"lon":-180},{"lat":-90,"lon":180},{"lat":90,"lon":180},{"lat":90,"lon":-180}],"timezone_offset":7200,"min_level":1,"max_level":40}'),
                                 });
                                 await instance.save();
+                                console.debug("Instance created and saved");
                             }
 
+                            console.debug("Creating device");
                             let device = Device.build({
                                 uuid: uuid,
                                 instanceName: instance.name,
@@ -142,9 +152,13 @@ class RouteController {
                                 lastLon: lonTarget,
                             });
                             await device.save();
+                            console.debug("Device created and saved");
                         }
+                        console.debug("Checking if the device username is the current account username");
                         if (device && device.accountUsername != account.username) {
+                            console.debug("Different account logged in, changing account");
                             await Device.setAccountUsername(uuid, account.username);
+                            console.debug("Account username updated");
                         }
                     } catch (err) {
                         console.error('[Raw] Error:', err);
