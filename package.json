@@ -8,17 +8,20 @@
     "controller": "node src/controller.js",
     "dataparser": "node src/dataparser.js",
     "create-locales": "node src/createLocales.js",
-    "create-pvp-tables": "node static/data/PvPRank.js",
     "test": "npx eslint src/**/*.js",
     "test-fix": "npx eslint src/**/*.js --fix",
     "update": "npm install && npm update pogo-translations && npm run create-locales"
   },
-  "author": "WWM",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WatWowMap/Chuck.git"
+  },
+  "author": "WatWowMap",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/wwm/Chuck/issues"
+    "url": "https://github.com/WatWowMap/Chuck/issues"
   },
-  "homepage": "https://github.com/wwm/Chuck",
+  "homepage": "https://github.com/WatWowMap/Chuck",
   "dependencies": {
     "@turf/turf": "^5.1.6",
     "axios": "^0.20.0",
@@ -30,12 +33,13 @@
     "google-protobuf": "^3.13.0",
     "helmet": "^4.1.0",
     "i18n": "^0.9.1",
+    "lru-cache": "^6.0.0",
     "mustache-express": "^1.3.0",
-    "mysql": "^2.18.1",
     "mysql2": "^2.2.5",
     "nodes2ts": "^2.0.0",
     "pogo-protos": "git+https://github.com/Furtif/pogo-protos.git",
     "pogo-translations": "git+https://github.com/bschultz/pogo-translations.git",
+    "purified-protos": "^0.193.2",
     "redis": "^3.0.2",
     "s2-geometry": "^1.2.10",
     "sequelize": "^6.3.5"

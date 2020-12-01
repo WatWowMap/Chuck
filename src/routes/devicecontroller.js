@@ -91,8 +91,15 @@ class DeviceController {
         } else {
             // Register new device
             console.log(`[Controller] [${uuid}] Registering device`);
-            let newDevice = new Device(uuid, null, null, null, ts, 0.0, 0.0);
-            await newDevice.create();
+            await Device.create({
+                uuid: uuid,
+                instanceName: null,
+                accountUsername: null,
+                lastSeen: ts,
+                lastHost: null,
+                lastLat: 0,
+                lastLon: 0,
+            });
             sendResponse(res, 'ok', {
                 assigned: false,
                 first_warning_timestamp: firstWarningTimestamp
@@ -176,7 +183,7 @@ class DeviceController {
 
         device.accountUsername = account.username;
         device.deviceLevel = account.level;
-        await device.save(device.uuid);
+        await device.save();
         sendResponse(res, 'ok', {
             username: account.username.trim(),
             password: account.password.trim(),
