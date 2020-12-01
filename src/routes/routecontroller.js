@@ -131,10 +131,30 @@ class RouteController {
                             let instance = await Instance.getByName('AutoAddedByParser');
                             if (!instance || instance.name==null) {
                                 console.debug("Instance not found");
+                                const data = {
+                                    area: [
+                                        {
+                                            "lat":-90,
+                                            "lon":-180
+                                        },{
+                                            "lat":-90,
+                                            "lon":180
+                                        },{
+                                            "lat":90,
+                                            "lon":180
+                                        },{
+                                            "lat":90,
+                                            "lon":-180
+                                        }
+                                    ],
+                                    timezone_offset: 7200,
+                                    min_level: 1,
+                                    max_level: 40,
+                                };
                                 let instance = Instance.create({
                                     name: 'AutoAddedByParser',
                                     type: InstanceType.CirclePokemon,
-                                    data: JSON.parse('{"area":[{"lat":-90,"lon":-180},{"lat":-90,"lon":180},{"lat":90,"lon":180},{"lat":90,"lon":-180}],"timezone_offset":7200,"min_level":1,"max_level":40}'),
+                                    data: data,
                                 });
                                 console.debug("Instance created");
                             }
