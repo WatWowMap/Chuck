@@ -429,7 +429,7 @@ class Consumer {
         }
     }
 
-    async updatePlayerData(playerData) {
+    updatePlayerData(playerData) {
         return playerData.map(async data => {
             if (!data || !data.player_data) {
                 // Don't try and process empty data
