@@ -2,19 +2,19 @@
  
 ![Node.js CI](https://github.com/versx/ControllerJS/workflows/Node.js%20CI/badge.svg)
 
-Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDeviceMap) `/controler` endpoint  
+Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDeviceMap)  
 
 ## Prerequisites  
 - [MySQL 8](https://dev.mysql.com/downloads/mysql/) or [MariaDB 10](https://mariadb.org/download/) database server  
 - [Redis Server](https://redis.io/download) 
 
 ## Installation  
-1.) Clone repository `git clone https://github.com/vwwm/chuck`  
+1.) Clone repository `git clone https://github.com/WatWowMap/Chuck`  
 2.) Install dependencies `npm run update`  
 3.) Copy config `cp src/configs/config.example.json src/configs/config.json`  
 4.) Fill out config `vi src/configs/config.json` (listening port, instances, db info, etc)  
 5.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
-6.) Run `npm run controller`  
+6.) Run `npm run controller`  //not currently working! Set DCM endpoint to Chuck parser for the time being, use RDM Controller.  
 7.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
 8.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
 9.) Point `data_endpoint` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://dataparser_ip:9001`

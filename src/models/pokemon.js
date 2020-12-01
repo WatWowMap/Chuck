@@ -20,7 +20,6 @@ class Pokemon extends Model {
     static WeatherBoostMinIvStat = 4;
     static PokemonTimeUnseen = config.dataparser.pokemonTimeUnseen * 60;
     static PokemonTimeReseen = config.dataparser.pokemonTimeReseen * 60;
-    static DittoDisguises = config.dataparser.dittoDisguises;
 
     /**
      * Find or create a new Pokemon from the database.
@@ -132,7 +131,7 @@ class Pokemon extends Model {
 
     _ensureExpireTimestamp() {
         // First time seeing pokemon, check if expire timestamp set
-        if (this.isNewRecord || !this.expireTimestamp) {
+        if (!this.expireTimestamp) {
             this.expireTimestamp = this.firstSeenTimestamp + Pokemon.PokemonTimeUnseen;
         } else if (!this.expireTimestampVerified) {
             this.expireTimestamp = Math.max(this.expireTimestamp, this.updated + Pokemon.PokemonTimeReseen);
@@ -140,7 +139,7 @@ class Pokemon extends Model {
     }
 
     static async _attemptUpdate(id, work) {
-        let retry = 5, pokemon, oldAtkIv;
+        let retry = 5, pokemon, changed;
         for (;;) {
             const transaction = await sequelize.transaction({
                 // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
@@ -149,12 +148,12 @@ class Pokemon extends Model {
             });
             try {
                 pokemon = await Pokemon.getOrCreate(id, transaction);
-                oldAtkIv = pokemon.atkIv;
                 if (await work.call(pokemon, transaction) === true) {
                     await transaction.commit();
                     return pokemon;
                 }
                 pokemon._ensureExpireTimestamp();
+                changed = pokemon.changed();
                 await pokemon.save({ transaction });
                 await transaction.commit();
                 break;
@@ -172,15 +171,17 @@ class Pokemon extends Model {
                 }
             }
         }
-        if (pokemon.isNewRecord) {
-            WebhookController.instance.addPokemonEvent(pokemon.toJson());
-            await RedisClient.publish('pokemon_add_queue', JSON.stringify(pokemon));
-            if (pokemon.atkIv !== null) {
-                await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon));
+        if (changed) {
+            if (['pokemonId', 'gender', 'form', 'weather', 'costume'].some(x => changed.includes(x))) {
+                WebhookController.instance.addPokemonEvent(pokemon.toJson());
+                await RedisClient.publish('pokemon_add_queue', JSON.stringify(pokemon.toJSON()));
+                if (pokemon.atkIv !== null) {
+                    await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon.toJSON()));
+                }
+            } else if (['level', 'atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
+                WebhookController.instance.addPokemonEvent(pokemon.toJson());
+                await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon.toJSON()));
             }
-        } else if (oldAtkIv === null && pokemon.atkIv !== null) {
-            WebhookController.instance.addPokemonEvent(pokemon.toJson());
-            await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon));
         }
         return pokemon;
     }
@@ -222,6 +223,10 @@ class Pokemon extends Model {
                     pokestop = await Pokestop.findByPk(nearby.fort_id);
                 } catch (err) {
                     console.error('[Pokemon] InitNearby Error:', err);
+                }
+                if (pokestop !== null && nearby.fort_image_url) {
+                    pokestop.url = nearby.fort_image_url;
+                    pokestop.save().catch(err => console.warn('[Nearby] Updating Pokestop image failed', err));
                 }
                 return pokestop;
             };
@@ -313,13 +318,12 @@ class Pokemon extends Model {
      * Check if Pokemon is Ditto disguised.
      */
     isDittoDisguised() {
-        let isDisguised = this.pokemonId === Pokemon.DittoPokemonId || Pokemon.DittoDisguises.includes(this.pokemonId);
         let isUnderLevelBoosted = this.level > 0 && this.level < Pokemon.WeatherBoostMinLevel;
         let isUnderIvStatBoosted = this.level > 0 && (this.atkIv < Pokemon.WeatherBoostMinIvStat ||
             this.defIv < Pokemon.WeatherBoostMinIvStat ||
             this.staIv < Pokemon.WeatherBoostMinIvStat);
         let isWeatherBoosted = this.weather > 0;
-        return isDisguised && (isUnderLevelBoosted || isUnderIvStatBoosted) && isWeatherBoosted;
+        return (isWeatherBoosted ? isUnderLevelBoosted || isUnderIvStatBoosted : this.level > 30);
     }
 
     /**
@@ -329,20 +333,17 @@ class Pokemon extends Model {
     getDespawnTimer(spawnpoint) {
         let despawnSecond = spawnpoint.despawnSecond;
         if (despawnSecond) {
-            let currentDate = new Date(this.updated);
+            let currentDate = new Date(this.updated * 1000);
             let ts = Math.floor(this.updated);
             let minute = currentDate.getMinutes();
             let second = currentDate.getSeconds();
             let secondOfHour = second + minute * 60;
 
-            let despawnOffset;
-            if (despawnSecond < secondOfHour) {
-                despawnOffset = 3600 + despawnSecond - secondOfHour;
-            } else {
-                despawnOffset = despawnSecond - secondOfHour;
+            let despawnOffset = despawnSecond - secondOfHour;
+            if (despawnOffset < 0) {
+                despawnOffset += 3600;
             }
-            let despawn = ts + despawnOffset;
-            return despawn;
+            return ts + despawnOffset;
         }
     }
 

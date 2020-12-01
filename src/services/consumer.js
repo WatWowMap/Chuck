@@ -9,10 +9,9 @@ const Gym = require('../models/gym.js');
 const Pokemon = require('../models/pokemon.js');
 const Pokestop = require('../models/pokestop.js');
 
-const MySQLConnector = require('../services/mysql.js');
+const sequelize = require('./sequelize.js');
 const Cell = require('../models/cell');
 const Weather = require('../models/weather');
-const db = new MySQLConnector(config.db);
 
 /**
  * Consumer database class
@@ -48,6 +47,7 @@ class Consumer {
     async updateForts(forts) {
         if (forts.length > 0) {
             const updatedGyms = [];
+            const updatedGymsWithUrl = [];
             const updatedPokestops = [];
             for (let i = 0; i < forts.length; i++) {
                 let fort = forts[i];
@@ -59,7 +59,11 @@ class Consumer {
                             }
                             const gym = Gym.fromFort(fort.cell, fort.data);
                             await gym.triggerWebhook();
-                            updatedGyms.push(gym.toJSON());
+                            if (gym.url) {
+                                updatedGymsWithUrl.push(gym.toJSON());
+                            } else {
+                                updatedGyms.push(gym.toJSON());
+                            }
 
                             if (!this.gymIdsPerCell[fort.cell]) {
                                 this.gymIdsPerCell[fort.cell] = [];
@@ -83,15 +87,18 @@ class Consumer {
                         }
                     }
                 } catch (err) {
-                    console.error('[Forts] Error:', err);
+                    console.error('[Forts] Error:', err.stack);
                 }
             }
-            if (updatedGyms.length > 0) {
+            if (updatedGyms.length > 0 || updatedGymsWithUrl.length > 0) {
                 try {
                     let result = await Gym.bulkCreate(updatedGyms, {
                         updateOnDuplicate: Gym.fromFortFields,
                     });
                     //console.log('[Gym] Result:', result.length);
+                    await Gym.bulkCreate(updatedGymsWithUrl, {
+                        updateOnDuplicate: ['url'].concat(Gym.fromFortFields),
+                    });
                 } catch (err) {
                     console.error('[Gym] Error:', err);
                     //console.error('sql:', sqlUpdate);
@@ -160,7 +167,7 @@ class Consumer {
 
             if (updatedPokestops.length > 0) {
                 try {
-                    const result = await Pokestop.bulkCreate(updatedGyms, {
+                    const result = await Pokestop.bulkCreate(updatedPokestops, {
                         updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
@@ -276,8 +283,8 @@ class Consumer {
                     updated=VALUES(updated)
                 `;
                 try {
-                    let result = await db.query(sql);
-                    //console.log('[GymInfos] Result:', result.affectedRows);
+                    let result = await sequelize.query(sql);
+                    //console.log('[GymInfos] Result:', result[0].length);
                 } catch (err) {
                     console.error('[Trainers] Error:', err);
                 }
@@ -316,8 +323,8 @@ class Consumer {
                     updated=VALUES(updated)
                 `;
                 try {
-                    let result = await db.query(sql);
-                    //console.log('[GymInfos] Result:', result.affectedRows);
+                    let result = await sequelize.query(sql);
+                    //console.log('[GymInfos] Result:', result[0].length);
                 } catch (err) {
                     console.error('[Defenders] Error:', err);
                     console.error('sql:', sql);
@@ -423,66 +430,26 @@ class Consumer {
     }
 
     async updatePlayerData(playerData) {
-        if (playerData.length > 0) {
-            let playerDataSQL = [];
-            for (let i = 0; i < playerData.length; i++) {
-                let data = playerData[i];
-                if (!data || !data.player_data) {
-                    // Don't try and process empty data
-                    continue;
-                }
+        return playerData.map(async data => {
+            if (!data || !data.player_data) {
+                // Don't try and process empty data
+                return;
+            }
+            try {
+                let account = null;
                 try {
-                    let account;
-                    try {
-                        account = await Account.getWithUsername(this.username);
-                    } catch (err) {
-                        console.error('[Account] Error:', err);
-                        account = null;
-                    }
-                    if (account instanceof Account) {
-                        // Add quest data to pokestop object
-                        account.parsePlayerData(data);
-                        playerDataSQL.push(account.toSql());
-                    }
+                    account = await Account.findByPk(this.username);
                 } catch (err) {
                     console.error('[Account] Error:', err);
                 }
+                if (account !== null) {
+                    account.parsePlayerData(data);
+                    await account.save();   // todo: handle race?
+                }
+            } catch (err) {
+                console.error('[Account] Error:', err);
             }
-
-            if (playerDataSQL.length > 0) {
-                let sqlUpdate = `INSERT INTO account (
-                    username, password, first_warning_timestamp, failed, level,
-                    last_encounter_lat, last_encounter_lon, last_encounter_time,
-                    spins, tutorial, creation_timestamp_ms, warn, warn_expire_ms,
-                    warn_message_acknowledged, suspended_message_acknowledged,
-                    was_suspended, banned, creation_timestamp, warn_expire_timestamp
-                ) VALUES
-                `;
-                sqlUpdate += playerDataSQL.join(',');
-                //console.log('sql:', sqlUpdate);
-                sqlUpdate += ` 
-                ON DUPLICATE KEY UPDATE
-                    password=VALUES(password),
-                    first_warning_timestamp=VALUES(first_warning_timestamp),
-                    failed=VALUES(failed),
-                    level=VALUES(level),
-                    last_encounter_lat=VALUES(last_encounter_lat),
-                    last_encounter_lon=VALUES(last_encounter_lon),
-                    last_encounter_time=VALUES(last_encounter_time),
-                    spins=VALUES(spins),
-                    tutorial=VALUES(tutorial),
-                    creation_timestamp_ms=VALUES(creation_timestamp_ms),
-                    warn=VALUES(warn),
-                    warn_expire_ms=VALUES(warn_expire_ms),
-                    warn_message_acknowledged=VALUES(warn_message_acknowledged),
-                    suspended_message_acknowledged=VALUES(suspended_message_acknowledged),
-                    was_suspended=VALUES(was_suspended),
-                    banned=VALUES(banned)
-                `;
-                let result = await db.query(sqlUpdate);
-                console.log('[PlayerData] Result:', result.affectedRows);
-            }
-        }
+        });
     }
 }
 

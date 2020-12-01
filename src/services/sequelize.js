@@ -51,8 +51,7 @@ DataTypes.JSONTEXT = Utils.classToInvokable(JSONTEXT);
 module.exports = new Sequelize(config.db.database, config.db.username, config.db.password, {
     host: config.db.host,
     port: config.db.port,
-    // TODO: customizable?
-    dialect: 'mysql',
+    dialect: config.db.type,
     dialectOptions: {
         supportBigNumbers: true,
     },

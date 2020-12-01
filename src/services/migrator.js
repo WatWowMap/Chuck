@@ -2,9 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const config = require('./config.js');
-const MySQLConnector = require('./mysql.js');
-const db = new MySQLConnector(config.db);
+const sequelize = require('./sequelize.js');
 const utils = require('./utils.js');
 
 const migrationsDir = path.resolve(__dirname, '../../migrations');
@@ -19,49 +17,32 @@ class Migrator {
     }
 
     async load() {
-        let count = 1;
-        let done = false;
-        while (!done) {
-            if (!db) {
-                console.error(`[DBController] Failed to connect to database (as root) while initializing. Try: ${count}/10`);
-                if (count === 10) {
-                    process.exit(-1);
-                }
-                count++;
-                await utils.snooze(2500);
-                continue;
-            }
-            done = true;
-        }
-        
         let version = 0;
         const createMetadataTableSQL = `
         CREATE TABLE IF NOT EXISTS metadata (
             \`key\` VARCHAR(50) PRIMARY KEY NOT NULL,
             \`value\` VARCHAR(50) DEFAULT NULL
         );`;
-        await db.query(createMetadataTableSQL)
-            .then(x => x)
-            .catch(err => {
-                console.error(`[DBController] Failed to create metadata table: (${err})`);
-                process.exit(-1);
-            });
+        try {
+            await sequelize.query(createMetadataTableSQL);
+        } catch (err) {
+            console.error(`[DBController] Failed to create metadata table: (${err})`);
+            process.exit(-1);
+        }
         
         const getDBVersionSQL = `
         SELECT \`value\`
         FROM metadata
         WHERE \`key\` = "DB_VERSION"
         LIMIT 1;`;
-        const results = await db.query(getDBVersionSQL)
-            .then(x => x)
+        const results = await sequelize.query(getDBVersionSQL)
+            .then(x => x[0])
             .catch(err => {
                 console.error(`[DBController] Failed to get current database version: (${err})`);
                 process.exit(-1);
             });
         if (results.length > 0) {
             version = parseInt(results[0].value);
-        } else {
-            version = 0;
         }
     
         const newestVersion = this.getNewestDbVersion();
@@ -72,12 +53,6 @@ class Migrator {
             await utils.snooze(30 * 1000);
         }
         this.migrate(version, newestVersion);
-    }
-
-    static async getEntries() {
-        const sql = 'SELECT `key`, `value` FROM metadata';
-        const results = await db.query(sql, []);
-        return results;
     }
 
     async migrate(fromVersion, toVersion) {
@@ -99,8 +74,8 @@ class Migrator {
                 const msql = sql.replace('&semi', ';').trim();
                 if (msql !== '') {
                     //console.log(`[DBController] Executing: ${msql}`);
-                    await db.query(msql)
-                        .then(x => x)
+                    await sequelize.query(msql)
+                        .then(x => x[0])
                         .catch(async err => {
                             console.error(`[DBController] Migration failed: ${err}`);
                         });
@@ -112,12 +87,12 @@ class Migrator {
             INSERT INTO metadata (\`key\`, \`value\`)
             VALUES("DB_VERSION", ${newVersion})
             ON DUPLICATE KEY UPDATE \`value\` = ${newVersion};`;
-            await db.query(updateVersionSQL)
-                .then(x => x)
-                .catch(err => {
-                    console.error(`[DBController] Migration failed: ${err}`);
-                    process.exit(-1);
-                });
+            try {
+                await sequelize.query(updateVersionSQL);
+            } catch (err) {
+                console.error(`[DBController] Migration failed: ${err}`);
+                process.exit(-1);
+            }
             console.log('[DBController] Migration successful');
             this.migrate(newVersion, toVersion);
         }
@@ -154,9 +129,10 @@ class Migrator {
         FROM metadata
         WHERE \`key\` = ?
         LIMIT 1;`;
-        const args = [key];
-        const results = await db.query(sql, args)
-            .then(x => x)
+        const results = await sequelize.query(sql, {
+            replacements: [key],
+        })
+            .then(x => x[0])
             .catch(err => {
                 console.error(`[DbController] Error: ${err}`);
                 return null;
@@ -174,9 +150,10 @@ class Migrator {
         VALUES(?, ?)
         ON DUPLICATE KEY UPDATE
         value=VALUES(value);`;
-        const args = [key, value];
-        const results = await db.query(sql, args)
-            .then(x => x)
+        const results = await sequelize.query(sql, {
+            replacements: [key, value],
+        })
+            .then(x => x[0])
             .catch(err => {
                 console.error(`[DbController] Error: ${err}`);
                 return null;

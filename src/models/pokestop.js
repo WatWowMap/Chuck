@@ -21,7 +21,6 @@ class Pokestop extends Model {
         'sponsorId',
         'enabled',
         'lastModifiedTimestamp',
-        'url',
         'cellId',
         'updated',
         'deleted',
@@ -30,6 +29,7 @@ class Pokestop extends Model {
         'incidentExpireTimestamp',
         'pokestopDisplay',
         'gruntType',
+        'arScanEligible',
     ];
     static fromFort(cellId, fort) {
         let ts = new Date().getTime() / 1000;
@@ -40,11 +40,11 @@ class Pokestop extends Model {
             sponsorId: fort.sponsor > 0 ? fort.sponsor : null,
             enabled: fort.enabled,
             lastModifiedTimestamp: fort.last_modified_timestamp_ms / 1000,
-            url: fort.image_url ? fort.image_url : null,
             cellId,
             firstSeenTimestamp: ts,
             updated: ts,
             deleted: false,
+            arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0 &&
             (fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK) ||
@@ -133,7 +133,7 @@ class Pokestop extends Model {
                     if (info.with_throw_type.throw_type > 0) {
                         infoData['throw_type_id'] = info.with_throw_type.throw_type;
                     }
-                    infoData['hit'] = info.with_throw_type.hit
+                    infoData['hit'] = info.with_throw_type.hit;
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_LOCATION:
                     infoData['cell_ids'] = info.s2_cell_id;
@@ -142,7 +142,7 @@ class Pokestop extends Model {
                     infoData['distance'] = info.distance_km;
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_ALIGNMENT:
-                    infoData['alignment_ids'] = info.pokemon_alignment.alignment.map(x => parseInt(x));
+                    infoData['alignment_ids'] = info.with_pokemon_alignment.alignment.map(x => parseInt(x));
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_INVASION_CHARACTER:
                     infoData['character_category_ids'] = info.with_invasion_character.category.map(x => parseInt(x));
@@ -162,10 +162,10 @@ class Pokestop extends Model {
                     }
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_DAILY_BUDDY_AFFECTION:
-                    infoData['min_buddy_affection_earned_today'] = info.daily_buddy_affection.min_buddy_affection_earned_today;
+                    infoData['min_buddy_affection_earned_today'] = info.with_daily_buddy_affection.min_buddy_affection_earned_today;
                     break;
                 case rpc.QuestConditionProto.ConditionType.WITH_TEMP_EVO_POKEMON:
-                    infoData['raid_pokemon_evolutions'] = info.with_mega_evo_pokemon.pokemon_evolution.map(x => parseInt(x));
+                    infoData['raid_pokemon_evolutions'] = info.with_temp_evo_id.mega_form.map(x => parseInt(x));
                     break;
                 default:
                     console.warn('Unhandled quest condition', condition.type);
@@ -267,7 +267,7 @@ class Pokestop extends Model {
         } catch { }
 
         if (oldPokestop === null) {
-            WebhookController.instance.addPokestopEvent(this.toJson('pokestop'));
+            WebhookController.instance.addPokestopEvent(this.toJson('pokestop', oldPokestop));
             oldPokestop = {};
         }
         if (updateQuest) {
@@ -277,14 +277,14 @@ class Pokestop extends Model {
             this.lat = oldPokestop.lat;
             this.lon = oldPokestop.lon;
             if (updateQuest && (this.questTimestamp || 0) > (oldPokestop.questTimestamp || 0)) {
-                WebhookController.instance.addQuestEvent(this.toJson('quest'));
+                WebhookController.instance.addQuestEvent(this.toJson('quest', oldPokestop));
             }
         } else {
             if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
-                WebhookController.instance.addLureEvent(this.toJson('lure'));
+                WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
             }
             if ((oldPokestop.incidentExpireTimestamp || 0) < (this.incidentExpireTimestamp || 0)) {
-                WebhookController.instance.addInvasionEvent(this.toJson('invasion'));
+                WebhookController.instance.addInvasionEvent(this.toJson('invasion', oldPokestop));
             }
         }
         return false;
@@ -361,7 +361,7 @@ class Pokestop extends Model {
      * Get Pokestop object as JSON object with correct property keys for webhook payload
      * @param {*} type 
      */
-    toJson(type) {
+    toJson(type, old) {
         switch (type) {
             case "quest": // Quest
                 return {
@@ -376,8 +376,8 @@ class Pokestop extends Model {
                         conditions: this.questConditions,
                         rewards: this.questRewards,
                         updated: this.questTimestamp,
-                        pokestop_name: this.name || "Unknown",
-                        pokestop_url: this.url || ""
+                        pokestop_name: this.name || old && old.name || "Unknown",
+                        url: this.url || old && old.url,
                     }
                 };
             case "invasion": // Invasion
@@ -387,8 +387,8 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        name: this.name || "Unknown",
-                        url: this.url || "",
+                        pokestop_name: this.name || old && old.name || "Unknown",
+                        url: this.url || old && old.url,
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
@@ -406,14 +406,15 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        name: this.name || "Unknown",
-                        url: this.url || "",
+                        pokestop_name: this.name || old && old.name || "Unknown",
+                        url: this.url || old && old.url,
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
                         lure_id: this.lureId || 0,
                         pokestop_display: this.pokestopDisplay || 0,
                         incident_expire_timestamp: this.incidentExpireTimestamp || 0,
+                        ar_scan_eligible: this.arScanEligible,
                         updated: this.updated || 1
                     }
                 };
@@ -515,6 +516,7 @@ Pokestop.init({
         type: DataTypes.SMALLINT(5).UNSIGNED,
         defaultValue: null,
     },
+    arScanEligible: DataTypes.BOOLEAN,
 }, {
     sequelize,
     timestamps: false,

@@ -46,7 +46,7 @@ class InstanceController {
             //console.log('[Redis] Event:', channel, message);
             switch (channel) {
                 case 'pokemon_add_queue':
-                    this.gotPokemon(new Pokemon(JSON.parse(message)));
+                    this.gotPokemon(Pokemon.build(JSON.parse(message)));
                     break;
             }
         });
