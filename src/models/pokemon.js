@@ -226,7 +226,7 @@ class Pokemon extends Model {
                 }
                 if (pokestop !== null && nearby.fort_image_url) {
                     pokestop.url = nearby.fort_image_url;
-                    pokestop.save();    // we intentionally do not await this Promise
+                    pokestop.save().catch(err => console.warn('[Nearby] Updating Pokestop image failed', err));
                 }
                 return pokestop;
             };
