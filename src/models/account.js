@@ -291,57 +291,6 @@ class Account extends Model {
         const results = await Account.count();
         return results || 0;
     }
-
-    async create() {
-        const results = await Account.create({
-            username: this.username,
-            password: this.password,
-            firstWarningTimestamp: this.firstWarningTimestamp,
-            failedTimestamp: this.failedTimestamp,
-            failed: this.failed,
-            level: this.level,
-            lastEncounterLat: this.lastEncounterLat,
-            lastEncounterLon: this.lastEncounterLon,
-            lastEncounterTime: this.lastEncounterTime,
-            spins: this.spins,
-            tutorial: this.tutorial,
-            creationTimestampMs: this.creationTimestampMs,
-            warn: this.warn,
-            warnExpireTimestamp: this.warnExpireTimestamp,
-            warnMessageAcknowledged: this.warn_message_acknowledged,
-            suspendedMessageAcknowledged: this.suspended_message_acknowledged,
-            wasSuspended: this.was_suspended,
-            banned: this.banned,
-        });
-        console.log('[Device] Insert:', results);
-    }
-
-    /**
-     * Save account.
-     */
-    async save() {
-        const results = await Account.update({
-            username: this.username,
-            password: this.password,
-            level: this.level,
-            firstWarningTimestamp: this.firstWarningTimestamp,
-            failedTimestamp: this.failedTimestamp,
-            failed: this.failed,
-            lastEncounterLat: this.lastEncounterLat,
-            lastEncounterLon: this.lastEncounterLon,
-            lastEncounterTime: this.lastEncounterTime,
-            spins: this.spins,
-            tutorial: this.tutorial,
-            creationTimestampMs: this.creationTimestampMs,
-            warn: this.warn,
-            warnExpireTimestamp: this.warnExpireTimestamp,
-            warnMessageAcknowledged: this.warnMessageAcknowledged,
-            suspendedMessageAcknowledged: this.suspendedMessageAcknowledged,
-            wasSuspended: this.wasSuspended,
-            banned: this.banned,
-        });
-        //console.log('[Account] Save:', result)
-    }
 }
 
 Account.init({
