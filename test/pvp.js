@@ -10,5 +10,7 @@ describe('PvP', () => {
     });
     it('calculateRanks', () => {
         assert.strictEqual(pvp.calculateRanks(masterfile.pokemon[26], 1500, 40).combinations[15][15][15].rank, 742, 'Hundo Raichu rank');
+        assert.strictEqual(pvp.calculateRanks(masterfile.pokemon[663], 2500, 51).combinations[13][15][15].rank, 1, 'Talonflame functionally perfect @15');
+        assert.strictEqual(pvp.calculateRanks(masterfile.pokemon[663], 2500, 51).combinations[13][15][14].rank, 1, 'Talonflame functionally perfect @14');
     });
 });
