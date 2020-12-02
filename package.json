@@ -8,8 +8,9 @@
     "controller": "node src/controller.js",
     "dataparser": "node src/dataparser.js",
     "create-locales": "node src/createLocales.js",
-    "test": "npx eslint src/**/*.js",
-    "test-fix": "npx eslint src/**/*.js --fix",
+    "test": "mocha",
+    "eslint": "npx eslint src/**/*.js",
+    "eslint-fix": "npx eslint src/**/*.js --fix",
     "update": "npm install && npm update pogo-translations && npm run create-locales"
   },
   "repository": {
@@ -43,5 +44,8 @@
     "redis": "^3.0.2",
     "s2-geometry": "^1.2.10",
     "sequelize": "^6.3.5"
+  },
+  "devDependencies": {
+    "mocha": "^8.2.1"
   }
 }
