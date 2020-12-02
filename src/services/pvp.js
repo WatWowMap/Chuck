@@ -112,7 +112,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     if (!masterPokemon || !masterPokemon.attack) {
         return result;
     }
-    const masterForm = masterPokemon.forms[formId] || masterPokemon;
+    const masterForm = formId ? masterPokemon.forms[formId] || masterPokemon : masterPokemon;
     const baseEntry = { pokemon: pokemonId };
     if (formId) {
         baseEntry.form = formId;
