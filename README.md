@@ -1,6 +1,8 @@
 # Chuck
  
-![Node.js CI](https://github.com/versx/ControllerJS/workflows/Node.js%20CI/badge.svg)
+![Node.js CI](https://github.com/WatWowMap/Chuck/workflows/Node.js%20CI/badge.svg)
+![Mocha](https://github.com/WatWowMap/Chuck/workflows/Mocha/badge.svg)  
+
 [![GitHub Release](https://img.shields.io/github/release/WatWowMap/Chuck.svg)](https://github.com/WatWowMap/Chuck/releases/)
 [![GitHub Contributors](https://img.shields.io/github/contributors/WatWowMap/Chuck.svg)](https://github.com/WatWowMap/Chuck/graphs/contributors/)
 [![Discord](https://img.shields.io/discord/552003258000998401.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/zZ9h9Xa)  
