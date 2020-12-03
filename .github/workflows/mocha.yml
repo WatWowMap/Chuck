@@ -16,14 +16,19 @@ jobs:
     test:
         # The type of runner that the job will run on
         runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [12.x]
         
         # Steps represent a sequence of tasks that will be executed as part of the job
         steps:
             # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
             - uses: actions/checkout@v2
               
-            - name: 'Install Node'
+            - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v1
+              with:
+                node-version: ${{ matrix.node-version }}
               
             - name: Install mocha
               run: npm install -g mocha
@@ -31,5 +36,5 @@ jobs:
             - name: Install dependencies
               run: npm install
               
-            - name: "Run PVP Stat Product Test"
-              run: mocha test/pvp.js
+            - name: "Run Project Tests"
+              run: npm test
