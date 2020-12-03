@@ -73,7 +73,6 @@ const calculateRanks = (stats, cpCap, lvCap) => {
             j = i;
         }
         entry.rank = j + 1;
-        entry.value = Math.floor(entry.value);
     }
     return { combinations, sortedRanks };
 };
@@ -139,6 +138,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
                 if (!result[leagueName]) {
                     result[leagueName] = [];
                 }
+                entry.value = Math.floor(entry.value);
                 result[leagueName].push(entry);
             }
         }
