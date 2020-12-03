@@ -32,7 +32,7 @@ require('./services/logger.js');
             await utils.snooze(1000);
         }
 
-        require('./services/pvp.js')(ipcMaster);
+        require('./services/pvp.js').initMaster(ipcMaster);
         
         // Fork workers
         for (let i = 0; i < instances; i++) {

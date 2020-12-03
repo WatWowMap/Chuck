@@ -48,6 +48,35 @@ const calculatePvPStat = (stats, attack, defense, stamina, cap, lvCap) => {
     return { value: calculateStatProduct(stats, attack, defense, stamina, lowest), level: lowest, cp: bestCP };
 };
 
+const calculateRanks = (stats, cpCap, lvCap) => {
+    const combinations = [];
+    const sortedRanks = [];
+    for (let a = 0; a <= 15; a++) {
+        const arrA = [];
+        for (let d = 0; d <= 15; d++) {
+            const arrD = [];
+            for (let s = 0; s <= 15; s++) {
+                const currentStat = calculatePvPStat(stats, a, d, s, cpCap, lvCap);
+                arrD.push(currentStat);
+                sortedRanks.push(currentStat);
+            }
+            arrA.push(arrD);
+        }
+        combinations.push(arrA);
+    }
+    sortedRanks.sort((a, b) => b.value - a.value);
+    const best = sortedRanks[0].value;
+    for (let i = 0, j = 0; i < sortedRanks.length; i++) {
+        const entry = sortedRanks[i];
+        entry.percentage = Number((entry.value / best).toFixed(5));
+        if (entry.value < sortedRanks[j].value) {
+            j = i;
+        }
+        entry.rank = j + 1;
+    }
+    return { combinations, sortedRanks };
+};
+
 const calculateAllRanks = (stats) => {
     const key = `${stats.attack},${stats.defense},${stats.stamina}`;
     let value = rankCache.get(key);
@@ -59,37 +88,11 @@ const calculateAllRanks = (stats) => {
                 if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
                     continue;   // not viable
                 }
-                const arrayToSort = [];
-                const combinations = [];
-                for (let a = 0; a <= 15; a++) {
-                    const arrA = [];
-                    for (let d = 0; d <= 15; d++) {
-                        const arrD = [];
-                        for (let s = 0; s <= 15; s++) {
-                            const currentStat = calculatePvPStat(stats, a, d, s, cpCap, lvCap);
-                            arrD.push(currentStat);
-                            arrayToSort.push(currentStat);
-                        }
-                        arrA.push(arrD);
-                    }
-                    combinations.push(arrA);
-                }
+                const { combinations } = calculateRanks(stats, cpCap, lvCap);
                 if (combinationIndex === undefined) {
                     combinationIndex = { [lvCap]: combinations };
                 } else {
                     combinationIndex[lvCap] = combinations;
-                }
-
-                arrayToSort.sort((a, b) => b.value - a.value);
-                const best = arrayToSort[0].value;
-                for (let i = 0, j = 0; i < arrayToSort.length; i++) {
-                    const entry = arrayToSort[i];
-                    entry.percentage = Number((entry.value / best).toFixed(5));
-                    if (entry.value < arrayToSort[j].value) {
-                        j = i;
-                    }
-                    entry.rank = j + 1;
-                    entry.value = Math.floor(entry.value);
                 }
                 // check if no more power up is possible: further increasing the cap will not be relevant
                 if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
@@ -135,6 +138,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
                 if (!result[leagueName]) {
                     result[leagueName] = [];
                 }
+                entry.value = Math.floor(entry.value);
                 result[leagueName].push(entry);
             }
         }
@@ -166,6 +170,13 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     return result;
 };
 
-module.exports = (ipcMaster) => {
-    ipcMaster.registerCallback('queryPvPRank', queryPvPRank);
+module.exports = {
+    initMaster: (ipcMaster) => {
+        ipcMaster.registerCallback('queryPvPRank', queryPvPRank);
+    },
+    _test: {
+        calculateStatProduct,
+        calculateCP,
+        calculateRanks,
+    },
 };
