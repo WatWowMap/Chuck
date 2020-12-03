@@ -61,7 +61,7 @@ class Pokemon extends Model {
                 this.form = display.form;
                 this.costume = display.costume;
             }
-            if (!this.isNewRecord && !!this.weather !== !!display.weather_boosted_condition) {
+            if (!this.isNewRecord && !this.weather !== !display.weather_boosted_condition) {
                 console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
                     'to', display.weather_boosted_condition, 'by', username, '- clearing IVs');
                 this.atkIv = null;
