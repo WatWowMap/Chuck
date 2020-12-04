@@ -105,7 +105,7 @@ This allows the devs to constantly add more config options in the future, withou
         "lureTime": 30,
         "pvp": {
             // A list of level caps that will be considered. Must be a strictly increasing sequence.
-            // CP multiplier up to level (maxLevelCap + .5) must all be defined.
+            // CP multiplier up to that level must all be defined.
             "levelCaps": [40, 41, 50, 51],
             "leagues": {
                 // additional leagues are not currently supported, please do not touch these until this message is removed!

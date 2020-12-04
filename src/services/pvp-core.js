@@ -7,6 +7,8 @@ const cpMultipliers = require('../../static/data/cp_multiplier.json');
  * Use ./pvp.js instead.
  */
 
+const maxLevel = Math.max.apply(null, Object.keys(cpMultipliers).map(x => parseFloat(x)));
+
 const calculateStatProduct = (stats, attack, defense, stamina, level) => {
     const multiplier = cpMultipliers[level];
     let hp = Math.floor((stamina + stats.stamina) * multiplier);
@@ -73,4 +75,4 @@ const calculateRanks = (stats, cpCap, lvCap) => {
     return { combinations, sortedRanks };
 };
 
-module.exports = { calculateCP, calculateRanks };
+module.exports = { calculateCP, calculateRanks, maxLevel };

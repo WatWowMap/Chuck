@@ -4,7 +4,7 @@ const LRU = require('lru-cache');
 const rpc = require('purified-protos');
 const masterfile = require('../../static/data/masterfile.json');
 const config = require('./config.js');
-const { calculateCP, calculateRanks } = require('./pvp-core.js');
+const { calculateCP, calculateRanks, maxLevel } = require('./pvp-core.js');
 
 const rankCache = new LRU({
     maxAge: config.dataparser.pvp.rankCacheAge,
@@ -28,7 +28,7 @@ const calculateAllRanks = (stats) => {
                     combinationIndex[lvCap] = combinations;
                 }
                 // check if no more power up is possible: further increasing the cap will not be relevant
-                if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
+                if (lvCap < maxLevel && calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
                     combinations.maxed = true;
                     break;
                 }
