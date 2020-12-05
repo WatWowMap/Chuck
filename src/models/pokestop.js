@@ -266,12 +266,8 @@ class Pokestop extends Model {
             oldPokestop = await Pokestop.findByPk(this.id);
         } catch { }
 
-        if (oldPokestop === null) {
-            WebhookController.instance.addPokestopEvent(this.toJson('pokestop', oldPokestop));
-            oldPokestop = {};
-        }
         if (updateQuest) {
-            if (!oldPokestop) {
+            if (oldPokestop === null) {
                 return true;
             }
             this.lat = oldPokestop.lat;
@@ -280,6 +276,10 @@ class Pokestop extends Model {
                 WebhookController.instance.addQuestEvent(this.toJson('quest', oldPokestop));
             }
         } else {
+            if (oldPokestop === null) {
+                WebhookController.instance.addPokestopEvent(this.toJson('pokestop', oldPokestop));
+                oldPokestop = {};
+            }
             if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
                 WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
             }
