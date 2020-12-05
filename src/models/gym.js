@@ -110,7 +110,7 @@ class Gym extends Model {
             if (this.raidSpawnTimestamp > 0 && (
                 oldGym.raidLevel !== this.raidLevel ||
                 oldGym.raidPokemonId !== this.raidPokemonId ||
-                oldGym.raidSpawnTimestamp !== this.raidSpawnTimestamp
+                oldGym.raidSpawnTimestamp !== Math.floor(this.raidSpawnTimestamp)
             )) {
                 let raidBattleTime = new Date((this.raidBattleTimestamp || 0) * 1000);
                 let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
@@ -178,9 +178,9 @@ class Gym extends Model {
                         latitude: this.lat,
                         longitude: this.lon,
                         team_id: this.teamId,
-                        spawn: Math.round(this.raidSpawnTimestamp),
-                        start: Math.round(this.raidBattleTimestamp),
-                        end: Math.round(this.raidEndTimestamp),
+                        spawn: Math.floor(this.raidSpawnTimestamp),
+                        start: Math.floor(this.raidBattleTimestamp),
+                        end: Math.floor(this.raidEndTimestamp),
                         level: this.raidLevel,
                         pokemon_id: this.raidPokemonId,
                         cp: this.raidPokemonCp,

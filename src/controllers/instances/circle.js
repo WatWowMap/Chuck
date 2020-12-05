@@ -81,7 +81,7 @@ class CircleInstanceController {
                 };
             case CircleType.Pokemon:
                 // Prevent leap frogging
-                let currentUuidIndex = this.lastUuidIndex[uuid] || Math.round(Math.random() % this.coords.length);
+                let currentUuidIndex = this.lastUuidIndex[uuid] || Math.floor(Math.random() % this.coords.length);
                 let shouldAdvance = true;
                 if (Math.random() % 100 < 5) {
                     // Use a light hand and 5% of the time try to space out devices

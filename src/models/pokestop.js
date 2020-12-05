@@ -51,17 +51,17 @@ class Pokestop extends Model {
                 fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_GLACIAL) ||
                 fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_MAGNETIC) ||
                 fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_MOSSY))) {
-            record.lureExpireTimestamp = record.lastModifiedTimestamp + Pokestop.LureTime;
+            record.lureExpireTimestamp = Math.floor(record.lastModifiedTimestamp + Pokestop.LureTime);
             record.lureId = fort.active_fort_modifier[0];
         }
         if (fort.pokestop_display) {
-            record.incidentExpireTimestamp = fort.pokestop_display.incident_expiration_ms / 1000;
+            record.incidentExpireTimestamp = Math.floor(fort.pokestop_display.incident_expiration_ms / 1000);
             if (fort.pokestop_display.character_display) {
                 record.pokestopDisplay = fort.pokestop_display.character_display.style;
                 record.gruntType = fort.pokestop_display.character_display.character;
             }
         } else if (fort.pokestop_displays && fort.pokestop_displays.length > 0) {
-            record.incidentExpireTimestamp = fort.pokestop_displays[0].incident_expiration_ms / 1000;
+            record.incidentExpireTimestamp = Math.floor(fort.pokestop_displays[0].incident_expiration_ms / 1000);
             if (fort.pokestop_displays[0].character_display) {
                 record.pokestopDisplay = fort.pokestop_displays[0].character_display.style;
                 record.gruntType = fort.pokestop_displays[0].character_display.character;
@@ -228,7 +228,7 @@ class Pokestop extends Model {
             questType: quest.quest_type,
             questTarget: quest.goal.target,
             questTemplate: quest.template_id.toLowerCase(),
-            questTimestamp: quest.last_update_timestamp_ms / 1000,
+            questTimestamp: Math.floor(quest.last_update_timestamp_ms / 1000),
             questConditions: conditions,
             questRewards: rewards,
             firstSeenTimestamp: ts,

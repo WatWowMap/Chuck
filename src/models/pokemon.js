@@ -108,7 +108,7 @@ class Pokemon extends Model {
             this.expireTimestampVerified = false;
         }
         if (wild.time_till_hidden_ms > 0 && wild.time_till_hidden_ms <= 90000) {
-            this.expireTimestamp = Math.round(this.updated + wild.time_till_hidden_ms / 1000);
+            this.expireTimestamp = Math.floor(this.updated + wild.time_till_hidden_ms / 1000);
             this.expireTimestampVerified = true;
             await Spawnpoint.upsertFromPokemon(this);
             return;
@@ -200,7 +200,7 @@ class Pokemon extends Model {
      */
     static updateFromWild(username, timestampMs, cellId, wild) {
         return Pokemon._attemptUpdate(wild.encounter_id.toString(), async function () {
-            this.updated = Math.round(timestampMs / 1000);
+            this.updated = Math.floor(timestampMs / 1000);
             this.cellId = cellId.toString();
             await this._addWildPokemon(wild, username);
         });
@@ -212,7 +212,7 @@ class Pokemon extends Model {
     static updateFromNearby(username, timestampMs, cellId, nearby) {
         const encounterId = nearby.encounter_id.toString();
         return Pokemon._attemptUpdate(encounterId, async function () {
-            this.updated = Math.round(timestampMs / 1000);
+            this.updated = Math.floor(timestampMs / 1000);
             console.assert(this.id === encounterId, 'unmatched encounterId');
             this._setPokemonDisplay(nearby.pokemon_id, nearby.pokemon_display, username);
             this.username = username;
