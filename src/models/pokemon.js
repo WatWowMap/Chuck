@@ -73,9 +73,6 @@ class Pokemon extends Model {
                 this.move1 = null;
                 this.move2 = null;
                 this.level = null;
-                this.capture1 = null;
-                this.capture2 = null;
-                this.capture3 = null;
                 this.pvpRankingsGreatLeague = null;
                 this.pvpRankingsUltraLeague = null;
             }
@@ -277,11 +274,6 @@ class Pokemon extends Model {
             this.defIv = encounter.wild_pokemon.pokemon_data.individual_defense;
             this.staIv = encounter.wild_pokemon.pokemon_data.individual_stamina;
             this.shiny = encounter.wild_pokemon.pokemon_data.pokemon_display.shiny;
-            if (encounter.capture_probability) {
-                this.capture1 = parseFloat(encounter.capture_probability.capture_probability[0]);
-                this.capture2 = parseFloat(encounter.capture_probability.capture_probability[1]);
-                this.capture3 = parseFloat(encounter.capture_probability.capture_probability[2]);
-            }
             let cpMultiplier = encounter.wild_pokemon.pokemon_data.cp_multiplier;
             let level;
             if (cpMultiplier < 0.734) {
@@ -380,9 +372,6 @@ class Pokemon extends Model {
                 shiny: this.shiny,
                 username: this.username,
                 display_pokemon_id: this.displayPokemonId,
-                capture_1: this.capture1,
-                capture_2: this.capture2,
-                capture_3: this.capture3,
                 pvp_rankings_great_league: this.pvpRankingsGreatLeague,
                 pvp_rankings_ultra_league: this.pvpRankingsUltraLeague,
             }
@@ -514,21 +503,6 @@ Pokemon.init({
     displayPokemonId: {
         type: DataTypes.SMALLINT(5).UNSIGNED,
         defaultValue: null,
-    },
-    capture1: {
-        type: DataTypes.DOUBLE(18, 14),
-        defaultValue: null,
-        field: 'capture_1',
-    },
-    capture2: {
-        type: DataTypes.DOUBLE(18, 14),
-        defaultValue: null,
-        field: 'capture_2',
-    },
-    capture3: {
-        type: DataTypes.DOUBLE(18, 14),
-        defaultValue: null,
-        field: 'capture_3',
     },
     pvpRankingsGreatLeague: {
         type: DataTypes.JSONTEXT,
