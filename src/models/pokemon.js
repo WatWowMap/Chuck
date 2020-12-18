@@ -299,7 +299,7 @@ class Pokemon extends Model {
 
             const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
             if (this.cp !== pvp.cp) {
-                console.warn(`Found inconsistent CP: ${this.cp} vs ${pvp.cp} for ` +
+                console.warn(`[Pokemon] Found inconsistent CP: ${this.cp} vs ${pvp.cp} for ` +
                     `${this.pokemonId}-${this.form}, L${this.level} - ${this.atkIv}/${this.defIv}/${this.staIv}`);
             }
             this.pvpRankingsGreatLeague = pvp.great || null;
