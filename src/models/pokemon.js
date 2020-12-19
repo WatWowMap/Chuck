@@ -39,9 +39,8 @@ class Pokemon extends Model {
     }
 
     _setPokemonDisplay(pokemonId, display, username) {
-        if (!this.isNewRecord && (!this.isDitto || this.displayPokemonId !== pokemonId) &&
-            (this.pokemonId !== pokemonId || this.gender !== display.gender ||
-            this.form !== display.form || this.costume !== display.costume)) {
+        if (!this.isNewRecord && ((this.isDitto ? this.displayPokemonId : this.pokemonId) !== pokemonId ||
+            this.gender !== display.gender || this.form !== display.form || this.costume !== display.costume)) {
             // if (this.username === username) {   // spawn change confirmed
             //     console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
             // } else {
@@ -323,9 +322,6 @@ class Pokemon extends Model {
     setDittoAttributes(displayPokemonId) {
         this.displayPokemonId = displayPokemonId;
         this.pokemonId = Pokemon.DittoPokemonId;
-        this.form = 0;
-        this.gender = 3;
-        this.costume = 0;
     }
 
     /**
