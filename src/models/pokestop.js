@@ -33,12 +33,12 @@ class Pokestop extends Model {
     static fromFort(cellId, fort) {
         let ts = new Date().getTime() / 1000;
         const record = {
-            id: fort.id,
+            id: fort.fort_id,
             lat: fort.latitude,
             lon: fort.longitude,
             sponsorId: fort.sponsor > 0 ? fort.sponsor : null,
             enabled: fort.enabled,
-            lastModifiedTimestamp: fort.last_modified_timestamp_ms / 1000,
+            lastModifiedTimestamp: fort.last_modified_ms / 1000,
             cellId,
             firstSeenTimestamp: ts,
             updated: ts,
@@ -46,10 +46,10 @@ class Pokestop extends Model {
             arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0 &&
-            (fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK) ||
-                fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_GLACIAL) ||
-                fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_MAGNETIC) ||
-                fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_MOSSY))) {
+            (fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK) ||
+                fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_GLACIAL) ||
+                fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MAGNETIC) ||
+                fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MOSSY))) {
             record.lureExpireTimestamp = Math.floor(record.lastModifiedTimestamp + Pokestop.LureTime);
             record.lureId = fort.active_fort_modifier[0];
         }
@@ -356,7 +356,7 @@ class Pokestop extends Model {
 
     /**
      * Get Pokestop object as JSON object with correct property keys for webhook payload
-     * @param {*} type 
+     * @param {*} type
      */
     toJson(type, old) {
         switch (type) {

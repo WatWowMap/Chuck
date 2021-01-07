@@ -41,14 +41,14 @@ class Gym extends Model {
     static fromFort(cellId, fort) {
         const ts = new Date().getTime() / 1000;
         const record = {
-            id: fort.id,
+            id: fort.fort_id,
             lat: fort.latitude,
             lon: fort.longitude,
             enabled: fort.enabled,
             guardingPokemonId: fort.guard_pokemon_id,
             teamId: fort.owned_by_team,
             availableSlots: fort.gym_display ? fort.gym_display.slots_available : 0,    // TODO: No slots available?
-            lastModifiedTimestamp: fort.last_modified_timestamp_ms / 1000,
+            lastModifiedTimestamp: fort.last_modified_ms / 1000,
             exRaidEligible: fort.is_ex_raid_eligible,
             inBattle: fort.is_in_battle,
             sponsorId: fort.sponsor > 0 ? fort.sponsor : 0,
@@ -94,8 +94,8 @@ class Gym extends Model {
             WebhookController.instance.addGymInfoEvent(this.toJson('gym-info', oldGym));
             let raidBattleTime = new Date((this.raidBattleTimestamp || 0) * 1000);
             let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
-            let now = new Date().getTime() / 1000;            
-            
+            let now = new Date().getTime() / 1000;
+
             if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
                 WebhookController.instance.addEggEvent(this.toJson('egg', oldGym));
             } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {
