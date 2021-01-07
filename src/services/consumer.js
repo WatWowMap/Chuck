@@ -53,7 +53,7 @@ class Consumer {
                 let fort = forts[i];
                 try {
                     switch (fort.data.type) {
-                        case POGOProtos.Map.Fort.FortType.GYM: {
+                        case POGOProtos.Rpc.FortType.GYM: {
                             if (!config.dataparser.parse.gym) {
                                 continue;
                             }
@@ -145,10 +145,10 @@ class Consumer {
                     firstSeenTimestamp: ts,
                 };
                 switch (details.type) {
-                    case POGOProtos.Map.Fort.FortType.GYM:
+                    case POGOProtos.Rpc.FortType.GYM:
                         updatedGyms.push(record);
                         break;
-                    case POGOProtos.Map.Fort.FortType.CHECKPOINT:
+                    case POGOProtos.Rpc.FortType.CHECKPOINT:
                         updatedPokestops.push(record);
                         break;
                 }
