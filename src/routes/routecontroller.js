@@ -1,7 +1,6 @@
 'use strict';
 
 const POGOProtos = require('pogo-protos');
-//const POGOProtos = require('../POGOProtos.Rpc_pb.js');
 
 const config = require('../services/config.js');
 const Account = require('../models/account.js');
@@ -10,13 +9,13 @@ const { sendResponse, base64_decode } = require('../services/utils.js');
 const Consumer = require('../services/consumer.js');
 
 const RpcMethod = {
-    GetPlayerResponse: 2,
-    GetHoloInventoryResponse: 4,
-    FortSearchResponse: 101,
-    EncounterResponse: 102,
-    FortDetailsResponse: 104,
-    GetMapObjectsResponse: 106,
-    GymGetInfoResponse: 156
+    GetPlayerOutProto: 2,
+    GetHoloholoInventoryOutProto: 4,
+    FortSearchOutProto: 101,
+    EncounterOutProto: 102,
+    FortDetailsOutProto: 104,
+    GetMapObjectsOutProto: 106,
+    GymGetInfoOutProto: 156
 };
 
 /**
@@ -157,9 +156,9 @@ class RouteController {
             }
 
             switch (method) {
-                case RpcMethod.GetPlayerResponse:
+                case RpcMethod.GetPlayerOutProto:
                     try {
-                        let gpr = POGOProtos.Networking.Responses.GetPlayerResponse.decode(base64_decode(data));
+                        let gpr = POGOProtos.Rpc.GetPlayerOutProto.decode(base64_decode(data));
                         if (gpr) {
                             if (gpr.success) {
                                 let data = gpr.player_data;
@@ -167,18 +166,19 @@ class RouteController {
                                 playerData.push(data);
                             }
                         } else {
-                            console.error('[Raw] Malformed GetPlayerResponse');
+                            console.error('[Raw] Malformed GetPlayerOutProto');
                         }
                     } catch (err) {
-                        console.error('[Raw] Unable to decode GetPlayerResponse');
+                        console.error('[Raw] Unable to decode GetPlayerOutProto');
                     }
                     break;
-                case RpcMethod.GetHoloInventoryResponse:
-                    // TODO: Parse GetHoloInventoryResponse
+                case RpcMethod.GetHoloholoInventoryOutProto:
+                    // TODO: Parse GetHoloholoInventoryOutProto
+                    // let ghi = POGOProtos.Rpc.GetHoloholoInventoryOutProto.decode(base64_decode(data));
                     break;
-                case RpcMethod.FortSearchResponse:
+                case RpcMethod.FortSearchOutProto:
                     try {
-                        let fsr = POGOProtos.Networking.Responses.FortSearchResponse.decode(base64_decode(data));
+                        let fsr = POGOProtos.Rpc.FortSearchOutProto.decode(base64_decode(data));
                         if (fsr) {
                             if (config.dataparser.parse.quests && fsr.challenge_quest && fsr.challenge_quest.quest) {
                                 let quest = fsr.challenge_quest.quest;
@@ -186,53 +186,53 @@ class RouteController {
                             }
                             fortSearch.push(fsr);
                         } else {
-                            console.error('[Raw] Malformed FortSearchResponse');
+                            console.error('[Raw] Malformed FortSearchOutProto');
                         }
                     } catch (err) {
-                        console.error('[Raw] Unable to decode FortSearchResponse');
+                        console.error('[Raw] Unable to decode FortSearchOutProto');
                     }
                     break;
-                case RpcMethod.EncounterResponse:
+                case RpcMethod.EncounterOutProto:
                     if (config.dataparser.parse.encounters && trainerLevel >= 30) {
                         try {
-                            let er = POGOProtos.Networking.Responses.EncounterResponse.decode(base64_decode(data));
-                            if (er && er.status === POGOProtos.Networking.Responses.EncounterResponse.Status.ENCOUNTER_SUCCESS) {
+                            let er = POGOProtos.Rpc.EncounterOutProto.decode(base64_decode(data));
+                            if (er && er.status === POGOProtos.Rpc.EncounterOutProto.Status.ENCOUNTER_SUCCESS) {
                                 encounters.push(er);
                             } else if (!er) {
-                                console.error('[Raw] Malformed EncounterResponse');
+                                console.error('[Raw] Malformed EncounterOutProto');
                             }
                         } catch (err) {
-                            console.error('[Raw] Unable to decode EncounterResponse');
+                            console.error('[Raw] Unable to decode EncounterOutProto');
                         }
                     }
                     break;
-                case RpcMethod.FortDetailsResponse:
+                case RpcMethod.FortDetailsOutProto:
                     try {
-                        let fdr = POGOProtos.Networking.Responses.FortDetailsResponse.decode(base64_decode(data));
+                        let fdr = POGOProtos.Rpc.FortDetailsOutProto.decode(base64_decode(data));
                         if (fdr) {
                             fortDetails.push(fdr);
                         } else {
-                            console.error('[Raw] Malformed FortDetailsResponse');
+                            console.error('[Raw] Malformed FortDetailsOutProto');
                         }
                     } catch (err) {
-                        console.error('[Raw] Unable to decode FortDetailsResponse');
+                        console.error('[Raw] Unable to decode FortDetailsOutProto');
                     }
                     break;
-                case RpcMethod.GetMapObjectsResponse:
+                case RpcMethod.GetMapObjectsOutProto:
                     containsGMO = true;
                     try {
-                        let gmo = POGOProtos.Networking.Responses.GetMapObjectsResponse.decode(base64_decode(data));
+                        let gmo = POGOProtos.Rpc.GetMapObjectsOutProto.decode(base64_decode(data));
                         if (gmo) {
                             isInvalidGMO = false;
-                            let mapCellsNew = gmo.map_cells;
+                            let mapCellsNew = gmo.map_cell;
                             if (mapCellsNew.length === 0) {
                                 console.debug(`[Raw] [${uuid}] Map cells are empty`);
                                 return res.sendStatus(400);
                             }
                             mapCellsNew.forEach(mapCell => {
                                 if (config.dataparser.parse.pokemon) {
-                                    let timestampMs = parseInt(BigInt(mapCell.current_timestamp_ms).toString());
-                                    let wildNew = mapCell.wild_pokemons;
+                                    let timestampMs = parseInt(BigInt(mapCell.as_of_time_ms).toString());
+                                    let wildNew = mapCell.wild_pokemon;
                                     wildNew.forEach((wildPokemon) => {
                                         wildPokemons.push({
                                             cell: mapCell.s2_cell_id,
@@ -240,7 +240,7 @@ class RouteController {
                                             timestampMs: timestampMs
                                         });
                                     });
-                                    let nearbyNew = mapCell.nearby_pokemons;
+                                    let nearbyNew = mapCell.nearby_pokemon;
                                     nearbyNew.forEach(nearbyPokemon => {
                                         nearbyPokemons.push({
                                             cell: mapCell.s2_cell_id,
@@ -249,7 +249,7 @@ class RouteController {
                                         });
                                     });
                                 }
-                                let fortsNew = mapCell.forts;
+                                let fortsNew = mapCell.fort;
                                 fortsNew.forEach(fort => {
                                     forts.push({
                                         cell: mapCell.s2_cell_id,
@@ -289,22 +289,22 @@ class RouteController {
                                 isEmptyGMO = false;
                             }
                         } else {
-                            console.error('[Raw] Malformed GetMapObjectsResponse');
+                            console.error('[Raw] Malformed GetMapObjectsOutProto');
                         }
                     } catch (err) {
-                        console.error('[Raw] Unable to decode GetMapObjectsResponse');
+                        console.error('[Raw] Unable to decode GetMapObjectsOutProto');
                     }
                     break;
-                case RpcMethod.GymGetInfoResponse:
+                case RpcMethod.GymGetInfoOutProto:
                     try {
-                        let ggi = POGOProtos.Networking.Responses.GymGetInfoResponse.decode(base64_decode(data));
+                        let ggi = POGOProtos.Rpc.GymGetInfoOutProto.decode(base64_decode(data));
                         if (ggi) {
                             gymInfos.push(ggi);
                         } else {
-                            console.error('[Raw] Malformed GymGetInfoResponse');
+                            console.error('[Raw] Malformed GymGetInfoOutProto');
                         }
                     } catch (err) {
-                        console.error('[Raw] Unable to decode GymGetInfoResponse');
+                        console.error('[Raw] Unable to decode GymGetInfoOutProto');
                     }
                     break;
                 default:
