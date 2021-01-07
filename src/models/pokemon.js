@@ -88,7 +88,7 @@ class Pokemon extends Model {
     async _addWildPokemon(wild, username) {
         //console.log('Wild Pokemon Data:', wild.pokemon_data);
         console.assert(this.id === wild.encounter_id.toString(), 'unmatched encounterId');
-        this._setPokemonDisplay(wild.pokemon_data.pokemon_id, wild.pokemon_data.pokemon_display, username);
+        this._setPokemonDisplay(wild.pokemon.pokemon_id, wild.pokemon.pokemon_display, username);
         this.lat = wild.latitude;
         this.lon = wild.longitude;
         if (this.lat === null || this.lon === null) {
@@ -211,7 +211,7 @@ class Pokemon extends Model {
         return Pokemon._attemptUpdate(encounterId, async function () {
             this.updated = Math.floor(timestampMs / 1000);
             console.assert(this.id === encounterId, 'unmatched encounterId');
-            this._setPokemonDisplay(nearby.pokemon_id, nearby.pokemon_display, username);
+            this._setPokemonDisplay(nearby.pokedex_number, nearby.pokemon_display, username);
             this.username = username;
             this.cellId = cellId.toString();
             const locatePokestop = async () => {
@@ -258,23 +258,23 @@ class Pokemon extends Model {
 
     /**
      * Add Pokemon encounter proto data.
-     * @param encounter 
-     * @param username 
+     * @param encounter
+     * @param username
      */
     static updateFromEncounter(encounter, username) {
-        return Pokemon._attemptUpdate(encounter.wild_pokemon.encounter_id.toString(), async function () {
+        return Pokemon._attemptUpdate(encounter.pokemon.encounter_id.toString(), async function () {
             this.changedTimestamp = this.updated = new Date().getTime() / 1000;
-            this._addWildPokemon(encounter.wild_pokemon, username);
-            this.cp = encounter.wild_pokemon.pokemon_data.cp;
-            this.move1 = encounter.wild_pokemon.pokemon_data.move_1;
-            this.move2 = encounter.wild_pokemon.pokemon_data.move_2;
-            this.size = encounter.wild_pokemon.pokemon_data.height_m;
-            this.weight = encounter.wild_pokemon.pokemon_data.weight_kg;
-            this.atkIv = encounter.wild_pokemon.pokemon_data.individual_attack;
-            this.defIv = encounter.wild_pokemon.pokemon_data.individual_defense;
-            this.staIv = encounter.wild_pokemon.pokemon_data.individual_stamina;
-            this.shiny = encounter.wild_pokemon.pokemon_data.pokemon_display.shiny;
-            let cpMultiplier = encounter.wild_pokemon.pokemon_data.cp_multiplier;
+            this._addWildPokemon(encounter.pokemon, username);
+            this.cp = encounter.pokemon.pokemon.cp;
+            this.move1 = encounter.pokemon.pokemon.move_1;
+            this.move2 = encounter.pokemon.pokemon.move_2;
+            this.size = encounter.pokemon.pokemon.height_m;
+            this.weight = encounter.pokemon.pokemon.weight_kg;
+            this.atkIv = encounter.pokemon.pokemon.individual_attack;
+            this.defIv = encounter.pokemon.pokemon.individual_defense;
+            this.staIv = encounter.pokemon.pokemon.individual_stamina;
+            this.shiny = encounter.pokemon.pokemon.pokemon_display.shiny;
+            let cpMultiplier = encounter.pokemon.pokemon.cp_multiplier;
             let level;
             if (cpMultiplier < 0.734) {
                 level = Math.round(58.35178527 * cpMultiplier * cpMultiplier - 2.838007664 * cpMultiplier + 0.8539209906);
@@ -296,7 +296,7 @@ class Pokemon extends Model {
 
     /**
      * Set default Ditto attributes.
-     * @param displayPokemonId 
+     * @param displayPokemonId
      */
     setDittoAttributes(displayPokemonId) {
         this.displayPokemonId = displayPokemonId;
@@ -320,7 +320,7 @@ class Pokemon extends Model {
 
     /**
      * Calculate despawn timer of spawnpoint
-     * @param spawnpoint 
+     * @param spawnpoint
      */
     getDespawnTimer(spawnpoint) {
         let despawnSecond = spawnpoint.despawnSecond;

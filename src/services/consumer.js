@@ -52,7 +52,7 @@ class Consumer {
             for (let i = 0; i < forts.length; i++) {
                 let fort = forts[i];
                 try {
-                    switch (fort.data.type) {
+                    switch (fort.data.fort_type) {
                         case POGOProtos.Rpc.FortType.GYM: {
                             if (!config.dataparser.parse.gym) {
                                 continue;
@@ -68,10 +68,10 @@ class Consumer {
                             if (!this.gymIdsPerCell[fort.cell]) {
                                 this.gymIdsPerCell[fort.cell] = [];
                             }
-                            this.gymIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
+                            this.gymIdsPerCell[fort.cell.toString()].push(fort.data.fort_id.toString());
                             break;
                         }
-                        case POGOProtos.Map.Fort.FortType.CHECKPOINT: {
+                        case POGOProtos.Rpc.FortType.CHECKPOINT: {
                             if (!config.dataparser.parse.pokestops) {
                                 continue;
                             }
@@ -82,7 +82,7 @@ class Consumer {
                             if (!this.stopsIdsPerCell[fort.cell]) {
                                 this.stopsIdsPerCell[fort.cell] = [];
                             }
-                            this.stopsIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
+                            this.stopsIdsPerCell[fort.cell.toString()].push(fort.data.fort_id.toString());
                             break;
                         }
                     }
@@ -140,7 +140,7 @@ class Consumer {
                     lat: details.latitude,
                     lon: details.longitude,
                     name: details.name ? details.name : '',
-                    url: details.image_urls.length > 0 ? details.image_urls[0] : '',
+                    url: details.image_url.length > 0 ? details.image_url[0] : '',
                     updated: ts,
                     firstSeenTimestamp: ts,
                 };
@@ -353,13 +353,13 @@ class Consumer {
                 } catch (err) {
                     console.error('[Cell] Error:', err);
                 }
-               
+
                 if (!this.gymIdsPerCell[cellId]) {
                     this.gymIdsPerCell[cellId] = [];
                 }
                 if (!this.stopsIdsPerCell[cellId]) {
                     this.stopsIdsPerCell[cellId] = [];
-                } 
+                }
             }
             let result = await Cell.bulkCreate(updatedCells, {
                 updateOnDuplicate: [
