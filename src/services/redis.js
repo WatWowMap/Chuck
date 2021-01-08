@@ -64,7 +64,7 @@ class Redis {
                     console.error('[Redis] Error:', err);
                     return reject(err);
                 }
-                console.log('[Redis] Reply:', reply);
+                //console.log('[Redis] Reply:', reply);
                 resolve();
             });
         });

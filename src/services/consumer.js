@@ -191,7 +191,7 @@ class Consumer {
                         console.error('[GymInfos] Invalid gym_status_and_defenders provided, skipping...', info);
                         continue;
                     }
-                    let id = info.gym_status_and_defenders.pokemon_fort_proto.id;
+                    let id = info.gym_status_and_defenders.pokemon_fort_proto.fort_id;
                     let gymDefenders = info.gym_status_and_defenders.gym_defender;
                     if (config.dataparser.parse.gymDefenders && gymDefenders) {
                         for (let i = 0; i < gymDefenders.length; i++) {
@@ -205,7 +205,7 @@ class Consumer {
                             (
                                 '${trainer.name}',
                                 ${trainer.level},
-                                ${trainer.team_color},
+                                ${trainer.team},
                                 ${trainer.battles_won},
                                 ${trainer.km_walked},
                                 ${trainer.caught_pokemon},
@@ -229,8 +229,8 @@ class Consumer {
                                 ${defender.pokemon.individual_attack},
                                 ${defender.pokemon.individual_defense},
                                 ${defender.pokemon.individual_stamina},
-                                ${defender.pokemon.move_1},
-                                ${defender.pokemon.move_2},
+                                ${defender.pokemon.move1},
+                                ${defender.pokemon.move2},
                                 ${defender.pokemon.battles_attacked || 0},
                                 ${defender.pokemon.battles_defended || 0},
                                 ${defender.pokemon.pokemon_display.gender},
