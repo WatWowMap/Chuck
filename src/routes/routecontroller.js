@@ -80,7 +80,7 @@ class RouteController {
 
                 contents.push({
                     'data': message['payload'],
-                    'method': parseInt(message['type']) || 106
+                    'method': parseInt(message['type']) || parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), //0
                 });
             }
             // handle iOS data
@@ -149,10 +149,10 @@ class RouteController {
         for (let i = 0; i < contents.length; i++) {
             const rawData = contents[i];
             let data = {};
-            let method = 0;
+            let method = parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), //0;
             if (rawData['data']) {
                 data = rawData['data'];
-                method = parseInt(rawData['method']) || 106;
+                method = parseInt(rawData['method']) || parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), //0;
             } else {
                 console.error('[Raw] Unhandled proto:', rawData);
                 return res.sendStatus(400);
