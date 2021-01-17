@@ -169,10 +169,8 @@ class RouteController {
 
         for (let i = 0; i < contents.length; i++) {
             const rawData = contents[i];
-
             let data = {};
             let method = parseInt(POGOProtos.Rpc.Method.METHOD_UNSET);
-
             if (rawData['data'] && rawData['method']) {
                 data = rawData['data'];
                 method = parseInt(rawData['method']);
