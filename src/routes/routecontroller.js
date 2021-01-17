@@ -169,8 +169,10 @@ class RouteController {
 
         for (let i = 0; i < contents.length; i++) {
             const rawData = contents[i];
+
             let data = {};
             let method = parseInt(POGOProtos.Rpc.Method.METHOD_UNSET);
+
             if (rawData['data'] && rawData['method']) {
                 data = rawData['data'];
                 method = parseInt(rawData['method']);
@@ -335,14 +337,17 @@ class RouteController {
                         let gmo = POGOProtos.Rpc.GetMapObjectsOutProto.decode(base64_decode(data));
                         if (gmo) {
                             isInvalidGMO = false;
+
                             let mapCellsNew = gmo.map_cell;
                             if (mapCellsNew.length === 0) {
                                 console.debug(`[Raw] [${uuid}] Map cells are empty`);
                                 return res.sendStatus(400);
                             }
+
                             mapCellsNew.forEach(mapCell => {
                                 if (config.dataparser.parse.pokemon) {
                                     let timestampMs = parseInt(BigInt(mapCell.as_of_time_ms).toString());
+
                                     let wildNew = mapCell.wild_pokemon;
                                     wildNew.forEach((wildPokemon) => {
                                         wildPokemons.push({
@@ -351,6 +356,7 @@ class RouteController {
                                             timestampMs: timestampMs
                                         });
                                     });
+
                                     let nearbyNew = mapCell.nearby_pokemon;
                                     nearbyNew.forEach(nearbyPokemon => {
                                         nearbyPokemons.push({
@@ -360,6 +366,7 @@ class RouteController {
                                         });
                                     });
                                 }
+
                                 let fortsNew = mapCell.fort;
                                 fortsNew.forEach(fort => {
                                     forts.push({
@@ -367,8 +374,10 @@ class RouteController {
                                         data: fort
                                     });
                                 });
+
                                 cells.push(mapCell.s2_cell_id);
                             });
+
                             if (config.dataparser.parse.weather) {
                                 let weather = gmo.client_weather;
                                 weather.forEach(wmapCell => {
@@ -378,6 +387,7 @@ class RouteController {
                                     });
                                 });
                             }
+
                             if (wildPokemons.length === 0 && nearbyPokemons.length === 0 && forts.length === 0) {
                                 cells.forEach(cell => {
                                     let count = this.emptyCells[cell];
@@ -386,6 +396,7 @@ class RouteController {
                                     } else {
                                         this.emptyCells[cell] = count + 1;
                                     }
+
                                     if (count === 3) {
                                         console.debug('[Raw] Cell', cell.toString(), 'was empty 3 times in a row. Assuming empty.');
                                         cells.push(cell);
