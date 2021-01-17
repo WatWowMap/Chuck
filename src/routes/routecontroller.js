@@ -191,7 +191,7 @@ class RouteController {
                                 console.error('[Raw] Malformed GetHoloholoInventoryOutProto');     
                             }
                         } catch (err) {
-                                console.error('[Raw] Unable to decode GetHoloholoInventoryOutProto');
+                            console.error('[Raw] Unable to decode GetHoloholoInventoryOutProto');
                         }
                     }
                     break;
