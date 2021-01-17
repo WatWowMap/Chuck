@@ -20,7 +20,8 @@
             "inventory": true,
             "gamemaster": true,
             "assetdigest": true,
-            "downloadsettings": true
+            "downloadsettings": true,
+            "getforgamemaster": true
         }
     },
     "db": {

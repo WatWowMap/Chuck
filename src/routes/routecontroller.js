@@ -18,7 +18,8 @@ const RpcMethod = {
     GymGetInfoOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GYM_GET_INFO), // 156
     DownloadGmTemplatesResponseProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), // 5004
     AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST), // 300
-    DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_SETTINGS) // 5
+    DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_SETTINGS), // 5
+    GetGameMasterClientTemplatesOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_ITEM_TEMPLATES) //6
 };
 
 /**
@@ -75,7 +76,7 @@ class RouteController {
 
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
-                if (![2, 5, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
+                if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
                     continue;
                 }
 
@@ -143,6 +144,7 @@ class RouteController {
         let playerData = [];
         let inventoryData = [];
         let gameMasterData = [];
+        let getItemTemplatesData = [];
         let assetDigestData = [];
         let settingsData = [];
         let isEmptyGMO = true;
@@ -246,6 +248,24 @@ class RouteController {
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode AssetDigestOutProto');
+                        }
+                    }
+                    break;
+                 case RpcMethod.GetGameMasterClientTemplatesOutProto:
+                    if (config.dataparser.parse.getforgamemaster) {
+                        try {
+                            let ggm = POGOProtos.Rpc.GetGameMasterClientTemplatesOutProto.decode(base64_decode(data));
+                            if (ggm) {
+                                if (ggm.result === POGOProtos.Rpc.GetGameMasterClientTemplatesOutProto.Result.SUCCESS) {
+                                    //TODO: Need //comment
+                                    console.debug('[Raw] GetItemTemplatesData:', ggm);
+                                    getItemTemplatesData.push(ggm);
+                                }
+                            } else {
+                                console.error('[Raw] Malformed GetGameMasterClientTemplatesOutProto');
+                            }
+                        } catch (err) {
+                            console.error('[Raw] Unable to decode GetGameMasterClientTemplatesOutProto');
                         }
                     }
                     break;
