@@ -17,7 +17,8 @@ const RpcMethod = {
     GetMapObjectsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_MAP_OBJECTS), //106
     GymGetInfoOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GYM_GET_INFO), //156
     DownloadGmTemplatesResponseProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), //5004
-    AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST) //300
+    AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST), //300
+    DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_SETTINGS) // 5
 };
 
 /**
@@ -74,7 +75,7 @@ class RouteController {
 
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
-                if (![2, 5004, 5005, 300, 106, 102, 104, 101, 156].includes(parseInt(message['type']))) {
+                if (![2, 5, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
                     continue;
                 }
 
@@ -143,6 +144,7 @@ class RouteController {
         let inventoryData = [];
         let gameMasterData = [];
         let assetDigestData = [];
+        let settingsData = [];
         let isEmptyGMO = true;
         let isInvalidGMO = true;
         let containsGMO = false;
@@ -208,6 +210,24 @@ class RouteController {
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode DownloadGmTemplatesResponseProto');
+                        }
+                    }
+                    break;
+                case RpcMethod.DownloadSettingsResponseProto:
+                    if (config.dataparser.parse.downloadsettings) {
+                        try {
+                            let ds = POGOProtos.Rpc.DownloadSettingsResponseProto.decode(base64_decode(data));
+                            if (ds) {
+                                if (ds.result === POGOProtos.Rpc.DownloadSettingsResponseProto.Result.SUCCESS) {
+                                    //TODO: Need //comment
+                                    console.debug('[Raw] GetSettingsData:', ds);                                    
+                                    settingsData.push(ds);
+                                }
+                            } else {
+                                console.error('[Raw] Malformed DownloadSettingsResponseProto');
+                            }
+                        } catch (err) {
+                            console.error('[Raw] Unable to decode DownloadSettingsResponseProto');
                         }
                     }
                     break;

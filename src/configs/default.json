@@ -19,7 +19,8 @@
             "weather": true,
             "inventory": true,
             "gamemaster": true,
-            "assetdigest": true
+            "assetdigest": true,
+            "downloadsettings": true
         },
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
