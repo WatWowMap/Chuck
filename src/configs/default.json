@@ -16,7 +16,8 @@
             "pokestops": true,
             "quests": true,
             "gymDefenders": true,
-            "weather": true
+            "weather": true,
+            "inventory": true
         },
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
