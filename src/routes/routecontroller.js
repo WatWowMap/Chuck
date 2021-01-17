@@ -180,7 +180,7 @@ class RouteController {
                             if (ghi) {
                                 if (ghi.success)
                                 {
-                                    let data = ghi.inventory_delta.inventory_item;
+                                    let data = ghi.inventory_delta;
                                     console.debug('[Raw] GetInventoryData:', data);
                                     inventoryData.push(data);
                                 }
