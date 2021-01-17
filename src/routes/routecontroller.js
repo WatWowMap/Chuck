@@ -73,7 +73,7 @@ class RouteController {
 
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
-                if (![2, 4, 106, 102, 104, 101, 156].includes(parseInt(message['type']))) {
+                if (![2, 5004, 5005, 106, 102, 104, 101, 156].includes(parseInt(message['type']))) {
                     continue;
                 }
 
@@ -202,7 +202,7 @@ class RouteController {
                                 if (gm.result == POGOProtos.Rpc.DownloadGmTemplatesResponseProto.Result.COMPLETE)
                                 {
                                     let data = gm;
-                                    console.debug('[Raw] GetInventoryData:', data);
+                                    console.debug('[Raw] GetGameMasterData:', data);
                                     gameMasterData.push(data);
                                 }
                             } else {
