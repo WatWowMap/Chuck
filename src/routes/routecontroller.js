@@ -151,12 +151,15 @@ class RouteController {
         let encounters = [];
         let cells = [];
         let playerData = [];
+
+        //Refs Added....
         let inventoryData = [];
         let gameMasterData = [];
         let getItemTemplatesData = [];
         let assetDigestData = [];
         let settingsData = [];
-        
+        //
+
         let isEmptyGMO = true;
         let isInvalidGMO = true;
         let containsGMO = false;
