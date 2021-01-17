@@ -9,15 +9,15 @@ const { sendResponse, base64_decode } = require('../services/utils.js');
 const Consumer = require('../services/consumer.js');
 
 const RpcMethod = {
-    GetPlayerOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_PLAYER), //2
-    GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY), //5005
-    FortSearchOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_SEARCH), //101
-    EncounterOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_ENCOUNTER), //102
-    FortDetailsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_DETAILS), //104
-    GetMapObjectsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_MAP_OBJECTS), //106
-    GymGetInfoOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GYM_GET_INFO), //156
-    DownloadGmTemplatesResponseProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), //5004
-    AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST), //300
+    GetPlayerOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_PLAYER), // 2
+    GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY), // 5005
+    FortSearchOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_SEARCH), // 101
+    EncounterOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_ENCOUNTER), // 102
+    FortDetailsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_DETAILS), // 104
+    GetMapObjectsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_MAP_OBJECTS), // 106
+    GymGetInfoOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GYM_GET_INFO), // 156
+    DownloadGmTemplatesResponseProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), // 5004
+    AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST), // 300
     DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_SETTINGS) // 5
 };
 
@@ -202,7 +202,7 @@ class RouteController {
                             if (gm) {
                                 if (gm.result === POGOProtos.Rpc.DownloadGmTemplatesResponseProto.Result.COMPLETE) {
                                     //TODO: Need //comment
-                                    console.debug('[Raw] GetGameMasterData:', gm);                                    
+                                    console.debug('[Raw] GetGameMasterData:', gm);
                                     gameMasterData.push(gm);
                                 }
                             } else {
@@ -220,7 +220,7 @@ class RouteController {
                             if (ds) {
                                 if (ds.result === POGOProtos.Rpc.DownloadSettingsResponseProto.Result.SUCCESS) {
                                     //TODO: Need //comment
-                                    console.debug('[Raw] GetSettingsData:', ds);                                    
+                                    console.debug('[Raw] GetSettingsData:', ds);
                                     settingsData.push(ds);
                                 }
                             } else {
