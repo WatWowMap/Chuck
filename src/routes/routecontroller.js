@@ -341,7 +341,6 @@ class RouteController {
                                 console.debug(`[Raw] [${uuid}] Map cells are empty`);
                                 return res.sendStatus(400);
                             }
-
                             mapCellsNew.forEach(mapCell => {
                                 if (config.dataparser.parse.pokemon) {
                                     let timestampMs = parseInt(BigInt(mapCell.as_of_time_ms).toString());
@@ -353,7 +352,6 @@ class RouteController {
                                             timestampMs: timestampMs
                                         });
                                     });
-
                                     let nearbyNew = mapCell.nearby_pokemon;
                                     nearbyNew.forEach(nearbyPokemon => {
                                         nearbyPokemons.push({
@@ -363,7 +361,6 @@ class RouteController {
                                         });
                                     });
                                 }
-
                                 let fortsNew = mapCell.fort;
                                 fortsNew.forEach(fort => {
                                     forts.push({
@@ -371,7 +368,6 @@ class RouteController {
                                         data: fort
                                     });
                                 });
-
                                 cells.push(mapCell.s2_cell_id);
                             });
 
