@@ -83,7 +83,7 @@ class RouteController {
                     'method': parseInt(message['type']) || 106
                 });
             }
-        // handle iOS data
+            // handle iOS data
         } else {
             if (json['payload']) {
                 json['contents'] = [json];
@@ -188,7 +188,7 @@ class RouteController {
                                     inventoryData.push(data);
                                 }
                             } else {
-                                console.error('[Raw] Malformed GetHoloholoInventoryOutProto');     
+                                console.error('[Raw] Malformed GetHoloholoInventoryOutProto');
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode GetHoloholoInventoryOutProto');
@@ -205,7 +205,7 @@ class RouteController {
                                     gameMasterData.push(gm);
                                 }
                             } else {
-                                console.error('[Raw] Malformed DownloadGmTemplatesResponseProto');     
+                                console.error('[Raw] Malformed DownloadGmTemplatesResponseProto');
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode DownloadGmTemplatesResponseProto');
@@ -222,7 +222,7 @@ class RouteController {
                                     assetDigestData.push(ad);
                                 }
                             } else {
-                                console.error('[Raw] Malformed AssetDigestOutProto');     
+                                console.error('[Raw] Malformed AssetDigestOutProto');
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode AssetDigestOutProto');
