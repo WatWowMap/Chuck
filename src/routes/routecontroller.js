@@ -84,9 +84,11 @@ class RouteController {
                 RpcMethod.forEach(function (item) {
                     responses.push(RpcMethod[item]);
                 });
+
                 if (!responses.includes(parseInt(message['type']))) {
                     continue;
                 }
+
                 contents.push({
                     'data': message['payload'],
                     'method': parseInt(message['type'])
@@ -97,6 +99,7 @@ class RouteController {
             if (json['payload']) {
                 json['contents'] = [json];
             }
+
             contents = json['contents'] || json['protos'] || json['gmo'];
             trainerLevel = parseInt(json['trainerlvl'] || json['trainerLevel']) || 0;
             username = json['username'];
