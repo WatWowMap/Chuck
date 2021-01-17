@@ -162,7 +162,7 @@ class RouteController {
                         let gpr = POGOProtos.Rpc.GetPlayerOutProto.decode(base64_decode(data));
                         if (gpr) {
                             if (gpr.success) {
-                                let data = gpr.player_data;
+                                let data = gpr.player;
                                 //console.debug('[Raw] GetPlayerData:', data);
                                 playerData.push(data);
                             }
