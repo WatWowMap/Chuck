@@ -59,7 +59,12 @@ SELECT name, type, data FROM rdmdb.instance;
             "pokestops": true,
             "quests": true,
             "gymDefenders": true,
-            "weather": true
+            "weather": true,
+            "inventory": true,
+            "gamemaster": true,
+            "assetdigest": true,
+            "downloadsettings": true,
+            "getforgamemaster": true
         }
     },
     // Database Connection
