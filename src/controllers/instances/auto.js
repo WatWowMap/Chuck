@@ -227,7 +227,7 @@ class AutoInstanceController {
                         if (this.bootstrapCellIDs.length === 0) {
                             // TODO: await this.bootstrap(); // <--- Causes bootstrap loop for some reason
                             //if (this.bootstrapCellIDs.length === 0) {
-                                await this.update();
+                            await this.update();
                             //}
                         }
                         return {
@@ -288,7 +288,7 @@ class AutoInstanceController {
                             //lastLon = Double(DBController.global.getValueForKey(key: "AIC_\(uuid)_last_lon") ?? "")
                             //lastTime = UInt32(DBController.global.getValueForKey(key: "AIC_\(uuid)_last_time") ?? "")
                         }
-    
+
                     } catch (err) {
                         console.error('[AutoInstanceController] Error:', err);
                     }
@@ -451,7 +451,7 @@ class AutoInstanceController {
                         percentageReal = 100;
                     }
                     return `Status: ${currentCountDb}|${currentCount}/${maxCount} (${percentageReal.toFixed(1)}|${percentage.toFixed(2)}%` +
-                    `${this.doneDate ? (`, Completed: @${doneDate.toString('HH:mm')}` || ')') : ')'}`;
+                        `${this.doneDate ? (`, Completed: @${doneDate.toString('HH:mm')}` || ')') : ')'}`;
                 }
         }
     }
