@@ -73,7 +73,7 @@ class RouteController {
                     console.warn(`Ignoring non-raw message from ${username}`);
                     continue;
                 }
-                
+
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
                 //if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
