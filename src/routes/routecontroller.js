@@ -16,7 +16,8 @@ const RpcMethod = {
     FortDetailsOutProto: 104,
     GetMapObjectsOutProto: 106,
     GymGetInfoOutProto: 156,
-    DownloadGmTemplatesResponseProto: 5004 //POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES
+    DownloadGmTemplatesResponseProto: 5004, //POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES
+    AssetDigestOutProto: 300 //POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST
 };
 
 /**
@@ -73,7 +74,7 @@ class RouteController {
 
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
-                if (![2, 5004, 5005, 106, 102, 104, 101, 156].includes(parseInt(message['type']))) {
+                if (![2, 5004, 5005, 300, 106, 102, 104, 101, 156].includes(parseInt(message['type']))) {
                     continue;
                 }
 
@@ -140,7 +141,8 @@ class RouteController {
         let cells = [];
         let playerData = [];
         let inventoryData = [];
-        let gameMasterData =[];
+        let gameMasterData = [];
+        let assetDigestData = [];
 
         let isEmptyGMO = true;
         let isInvalidGMO = true;
@@ -207,6 +209,23 @@ class RouteController {
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode DownloadGmTemplatesResponseProto');
+                        }
+                    }
+                    break;
+                case RpcMethod.AssetDigestOutProto:
+                    if (config.dataparser.parse.assetdigest) {
+                        try {
+                            let ad = POGOProtos.Rpc.AssetDigestOutProto.decode(base64_decode(data));
+                            if (ad) {
+                                if (ad.result === POGOProtos.Rpc.AssetDigestOutProto.Result.SUCCESS) {
+                                    console.debug('[Raw] GetAssetDigestData:', ad);
+                                    assetDigestData.push(ad);
+                                }
+                            } else {
+                                console.error('[Raw] Malformed AssetDigestOutProto');     
+                            }
+                        } catch (err) {
+                            console.error('[Raw] Unable to decode AssetDigestOutProto');
                         }
                     }
                     break;

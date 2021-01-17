@@ -18,7 +18,8 @@
             "gymDefenders": true,
             "weather": true,
             "inventory": true,
-            "gamemaster": true
+            "gamemaster": true,
+            "assetdigest": true
         }
     },
     "db": {
