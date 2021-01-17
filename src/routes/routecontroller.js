@@ -9,15 +9,15 @@ const { sendResponse, base64_decode } = require('../services/utils.js');
 const Consumer = require('../services/consumer.js');
 
 const RpcMethod = {
-    GetPlayerOutProto: 2,
-    GetHoloholoInventoryOutProto: 5005, //POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY
-    FortSearchOutProto: 101,
-    EncounterOutProto: 102,
-    FortDetailsOutProto: 104,
-    GetMapObjectsOutProto: 106,
-    GymGetInfoOutProto: 156,
-    DownloadGmTemplatesResponseProto: 5004, //POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES
-    AssetDigestOutProto: 300 //POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST
+    GetPlayerOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_PLAYER), //2
+    GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY), //5005
+    FortSearchOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_SEARCH), //101
+    EncounterOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_ENCOUNTER), //102
+    FortDetailsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_DETAILS), //104
+    GetMapObjectsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_MAP_OBJECTS), //106
+    GymGetInfoOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GYM_GET_INFO), //156
+    DownloadGmTemplatesResponseProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), //5004
+    AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST) //300
 };
 
 /**
