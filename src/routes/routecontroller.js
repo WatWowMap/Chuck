@@ -137,7 +137,6 @@ class RouteController {
                 this.levelCache[username] = trainerLevel;
             }
         }
-
         if (!contents) {
             console.error('[Raw] Invalid PROTO');
             return res.sendStatus(400);
@@ -161,7 +160,6 @@ class RouteController {
         let assetDigestData = [];
         let settingsData = [];
         //
-
         let isEmptyGMO = true;
         let isInvalidGMO = true;
         let containsGMO = false;
