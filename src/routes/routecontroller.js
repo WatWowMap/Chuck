@@ -335,7 +335,6 @@ class RouteController {
                         let gmo = POGOProtos.Rpc.GetMapObjectsOutProto.decode(base64_decode(data));
                         if (gmo) {
                             isInvalidGMO = false;
-
                             let mapCellsNew = gmo.map_cell;
                             if (mapCellsNew.length === 0) {
                                 console.debug(`[Raw] [${uuid}] Map cells are empty`);
@@ -389,12 +388,12 @@ class RouteController {
                                     } else {
                                         this.emptyCells[cell] = count + 1;
                                     }
-
                                     if (count === 3) {
                                         console.debug('[Raw] Cell', cell.toString(), 'was empty 3 times in a row. Assuming empty.');
                                         cells.push(cell);
                                     }
                                 });
+
                                 console.debug('[Raw] GMO is empty.');
                             } else {
                                 cells.forEach(cell => this.emptyCells[cell] = 0);
@@ -478,11 +477,9 @@ class RouteController {
 
         let endTime = process.hrtime(startTime);
         let ms = (endTime[0] * 1000000000 + endTime[1]) / 1000000;
-
         if (total > 0) {
             console.log(`[Raw] [${uuid}] Update Count: ${total} parsed in ${ms} ms`);
         }
-
         const responseData = {
             'nearby': nearbyPokemons.length,
             'wild': wildPokemons.length,
