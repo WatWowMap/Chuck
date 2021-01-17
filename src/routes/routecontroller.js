@@ -22,6 +22,7 @@ const RpcMethod = {
     AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST), // 300
     DownloadGmTemplatesResponseProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), // 5004
     GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY) // 5005
+    //demosocial: parseInt(POGOProtos.Rpc.SocialAction.SOCIAL_ACTION_ACCEPT_FRIEND_INVITE) // 10004
 
     /*
     * more types...
