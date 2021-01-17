@@ -79,6 +79,7 @@ class RouteController {
                 //if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
                 //    continue;
                 //}
+
                 let responses = [];
                 RpcMethod.forEach(function (item) {
                     responses.push(RpcMethod[item]);
@@ -133,10 +134,12 @@ class RouteController {
                 this.levelCache[username] = trainerLevel;
             }
         }
+
         if (!contents) {
-            console.error('[Raw] Invalid GMO');
+            console.error('[Raw] Invalid PROTO');
             return res.sendStatus(400);
         }
+
         let wildPokemons = [];
         let nearbyPokemons = [];
         let clientWeathers = [];
@@ -156,6 +159,7 @@ class RouteController {
         let isEmptyGMO = true;
         let isInvalidGMO = true;
         let containsGMO = false;
+
         for (let i = 0; i < contents.length; i++) {
             const rawData = contents[i];
             let data = {};
@@ -167,6 +171,7 @@ class RouteController {
                 console.error('[Raw] Unhandled proto:', rawData);
                 return res.sendStatus(400);
             }
+
             switch (method) {
                 case RpcMethod.GetPlayerOutProto:
                     try {
@@ -407,48 +412,64 @@ class RouteController {
                     console.error('[Raw] Invalid method or data provided:', method, data);
             }
         }
+
         if (!this.consumers[username]) {
             this.consumers[username] = new Consumer(username);
         }
+
         let total = wildPokemons.length + nearbyPokemons.length + clientWeathers.length + forts.length + fortDetails.length + gymInfos.length + quests.length + encounters.length + cells.length;
         let startTime = process.hrtime();
         let jobs = [];
+
         if (playerData.length > 0) {
             jobs = this.consumers[username].updatePlayerData(playerData);
         }
+
         if (clientWeathers.length > 0) {
             jobs.push(this.consumers[username].updateWeather(clientWeathers));
         }
+
         if (cells.length > 0) {
             await this.consumers[username].updateCells(cells);
         }
+
         if (wildPokemons.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateWildPokemon(wildPokemons));
         }
+
         if (nearbyPokemons.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateNearbyPokemon(nearbyPokemons));
         }
+
         if (encounters.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateEncounters(encounters));
         }
+
         if (forts.length > 0) {
             jobs.push(this.consumers[username].updateForts(forts));
         }
+
         if (fortDetails.length > 0) {
             jobs.push(this.consumers[username].updateFortDetails(fortDetails));
         }
+
         if (gymInfos.length > 0) {
             jobs.push(this.consumers[username].updateGymInfos(gymInfos));
         }
+
         if (quests.length > 0) {
             jobs.push(this.consumers[username].updateQuests(quests));
         }
+
         await Promise.all(jobs);
+
         let endTime = process.hrtime(startTime);
         let ms = (endTime[0] * 1000000000 + endTime[1]) / 1000000;
+
         if (total > 0) {
             console.log(`[Raw] [${uuid}] Update Count: ${total} parsed in ${ms} ms`);
         }
+
         const responseData = {
             'nearby': nearbyPokemons.length,
             'wild': wildPokemons.length,
@@ -461,6 +482,7 @@ class RouteController {
             'only_invalid_gmos': containsGMO && isInvalidGMO,
             'contains_gmos': containsGMO
         };
+
         sendResponse(res, 'ok', responseData);
     }
 }
