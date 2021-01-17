@@ -156,6 +156,7 @@ class RouteController {
         let getItemTemplatesData = [];
         let assetDigestData = [];
         let settingsData = [];
+        
         let isEmptyGMO = true;
         let isInvalidGMO = true;
         let containsGMO = false;
