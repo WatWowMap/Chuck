@@ -17,7 +17,8 @@
             "quests": true,
             "gymDefenders": true,
             "weather": true,
-            "inventory": true
+            "inventory": true,
+            "gamemaster": true
         },
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,

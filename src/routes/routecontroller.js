@@ -10,12 +10,13 @@ const Consumer = require('../services/consumer.js');
 
 const RpcMethod = {
     GetPlayerOutProto: 2,
-    GetHoloholoInventoryOutProto: 4,
+    GetHoloholoInventoryOutProto: 5005, //POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY
     FortSearchOutProto: 101,
     EncounterOutProto: 102,
     FortDetailsOutProto: 104,
     GetMapObjectsOutProto: 106,
-    GymGetInfoOutProto: 156
+    GymGetInfoOutProto: 156,
+    DownloadGmTemplatesResponseProto: 5004 //POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES
 };
 
 /**
@@ -139,6 +140,7 @@ class RouteController {
         let cells = [];
         let playerData = [];
         let inventoryData = [];
+        let gameMasterData =[];
 
         let isEmptyGMO = true;
         let isInvalidGMO = true;
@@ -188,7 +190,26 @@ class RouteController {
                                 console.error('[Raw] Malformed GetHoloholoInventoryOutProto');     
                             }
                         } catch (err) {
-                            console.error('[Raw] Unable to decode GetHoloholoInventoryOutProto');
+                                console.error('[Raw] Unable to decode GetHoloholoInventoryOutProto');
+                        }
+                    }
+                    break;
+                case RpcMethod.DownloadGmTemplatesResponseProto:
+                    if (config.dataparser.parse.gamemaster) {
+                        try {
+                            let gm = POGOProtos.Rpc.DownloadGmTemplatesResponseProto.decode(base64_decode(data));
+                            if (gm) {
+                                if (gm.result == POGOProtos.Rpc.DownloadGmTemplatesResponseProto.Result.COMPLETE)
+                                {
+                                    let data = gm;
+                                    console.debug('[Raw] GetInventoryData:', data);
+                                    gameMasterData.push(data);
+                                }
+                            } else {
+                                console.error('[Raw] Malformed DownloadGmTemplatesResponseProto');     
+                            }
+                        } catch (err) {
+                            console.error('[Raw] Unable to decode DownloadGmTemplatesResponseProto');
                         }
                     }
                     break;
