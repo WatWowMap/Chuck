@@ -72,7 +72,7 @@ class RouteController {
 
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
-                if (![2, 106, 102, 104, 101, 156].includes(parseInt(message['type']))) {
+                if (![2, 4, 106, 102, 104, 101, 156].includes(parseInt(message['type']))) {
                     continue;
                 }
 
@@ -138,6 +138,7 @@ class RouteController {
         let encounters = [];
         let cells = [];
         let playerData = [];
+        let inventoryData = [];
 
         let isEmptyGMO = true;
         let isInvalidGMO = true;
@@ -173,8 +174,15 @@ class RouteController {
                     }
                     break;
                 case RpcMethod.GetHoloholoInventoryOutProto:
-                    // TODO: Parse GetHoloholoInventoryOutProto
-                    // let ghi = POGOProtos.Rpc.GetHoloholoInventoryOutProto.decode(base64_decode(data));
+                    let ghi = POGOProtos.Rpc.GetHoloholoInventoryOutProto.decode(base64_decode(data));
+                    if (ghi) {
+                        if (ghi.success)
+                        {
+                            let data = ghi.inventory_delta.inventory_item;
+                            console.debug('[Raw] GetInventoryData:', data);
+                            inventoryData.push(data);
+                        }
+                    }
                     break;
                 case RpcMethod.FortSearchOutProto:
                     try {

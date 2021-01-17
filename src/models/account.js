@@ -154,16 +154,16 @@ class Account extends Model {
             let spinLimit = result.spin_limit || 0;
             let inUse = result.in_use || 0;
             stats.push({
-                "level": level,
-                "total": total,
-                "good": good,
-                "banned": banned,
-                "warning": warning,
-                "invalid": invalid,
-                "other": other,
-                "cooldown": cooldown,
-                "spin_limit": spinLimit,
-				"in_use": inUse,
+                'level': level,
+                'total': total,
+                'good': good,
+                'banned': banned,
+                'warning': warning,
+                'invalid': invalid,
+                'other': other,
+                'cooldown': cooldown,
+                'spin_limit': spinLimit,
+                'in_use': inUse,
             });
         }
         return stats;

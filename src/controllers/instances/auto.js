@@ -227,7 +227,7 @@ class AutoInstanceController {
                         if (this.bootstrapCellIDs.length === 0) {
                             // TODO: await this.bootstrap(); // <--- Causes bootstrap loop for some reason
                             //if (this.bootstrapCellIDs.length === 0) {
-                                await this.update();
+                            await this.update();
                             //}
                         }
                         return {
@@ -422,37 +422,37 @@ class AutoInstanceController {
 
     async getStatus() {
         switch (this.type) {
-        case AutoType.Quest:
-            if (this.bootstrapCellIDs.length > 0) {
-                let totalCount = this.bootstrapTotalCount;
-                let count = totalCount - this.bootstrapCellIDs.length;
-                let percentage;
-                if (totalCount > 0) {
-                    percentage = parseFloat(count) / parseFloat(totalCount) * 100;
+            case AutoType.Quest:
+                if (this.bootstrapCellIDs.length > 0) {
+                    let totalCount = this.bootstrapTotalCount;
+                    let count = totalCount - this.bootstrapCellIDs.length;
+                    let percentage;
+                    if (totalCount > 0) {
+                        percentage = parseFloat(count) / parseFloat(totalCount) * 100;
+                    } else {
+                        percentage = 100;
+                    }
+                    return `Bootstrapping ${count}/${totalCount} (${percentage.toFixed(2)}%)`;
                 } else {
-                    percentage = 100;
-                }
-                return `Bootstrapping ${count}/${totalCount} (${percentage.toFixed(2)}%)`;
-            } else {
-                let ids = this.allStops.map(x => x.id);
-                let currentCountDb = (await Pokestop.getQuestCountIn(ids)) || 0;
-                let maxCount = this.allStops.length || 0;
-                let currentCount = maxCount - (this.todayStops.length || 0);
-                let percentage;
-                if (maxCount > 0) {
-                    percentage = parseFloat(currentCount) / parseFloat(maxCount) * 100;
-                } else {
-                    percentage = 100;
-                }
-                let percentageReal;
-                if (maxCount > 0) {
-                    percentageReal = parseFloat(currentCountDb) / parseFloat(maxCount) * 100;
-                } else {
-                    percentageReal = 100;
-                }
-                return `Status: ${currentCountDb}|${currentCount}/${maxCount} (${percentageReal.toFixed(1)}|${percentage.toFixed(2)}%` +
+                    let ids = this.allStops.map(x => x.id);
+                    let currentCountDb = (await Pokestop.getQuestCountIn(ids)) || 0;
+                    let maxCount = this.allStops.length || 0;
+                    let currentCount = maxCount - (this.todayStops.length || 0);
+                    let percentage;
+                    if (maxCount > 0) {
+                        percentage = parseFloat(currentCount) / parseFloat(maxCount) * 100;
+                    } else {
+                        percentage = 100;
+                    }
+                    let percentageReal;
+                    if (maxCount > 0) {
+                        percentageReal = parseFloat(currentCountDb) / parseFloat(maxCount) * 100;
+                    } else {
+                        percentageReal = 100;
+                    }
+                    return `Status: ${currentCountDb}|${currentCount}/${maxCount} (${percentageReal.toFixed(1)}|${percentage.toFixed(2)}%` +
                     `${this.doneDate ? (`, Completed: @${doneDate.toString('HH:mm')}` || ')') : ')'}`;
-            }
+                }
         }
     }
 
