@@ -143,11 +143,9 @@ class RouteController {
         let inventoryData = [];
         let gameMasterData = [];
         let assetDigestData = [];
-
         let isEmptyGMO = true;
         let isInvalidGMO = true;
         let containsGMO = false;
-
         for (let i = 0; i < contents.length; i++) {
             const rawData = contents[i];
             let data = {};
@@ -159,7 +157,6 @@ class RouteController {
                 console.error('[Raw] Unhandled proto:', rawData);
                 return res.sendStatus(400);
             }
-
             switch (method) {
                 case RpcMethod.GetPlayerOutProto:
                     try {
@@ -311,7 +308,6 @@ class RouteController {
                                 });
                                 cells.push(mapCell.s2_cell_id);
                             });
-
                             if (config.dataparser.parse.weather) {
                                 let weather = gmo.client_weather;
                                 weather.forEach(wmapCell => {
@@ -321,7 +317,6 @@ class RouteController {
                                     });
                                 });
                             }
-
                             if (wildPokemons.length === 0 && nearbyPokemons.length === 0 && forts.length === 0) {
                                 cells.forEach(cell => {
                                     let count = this.emptyCells[cell];
@@ -335,7 +330,6 @@ class RouteController {
                                         cells.push(cell);
                                     }
                                 });
-
                                 console.debug('[Raw] GMO is empty.');
                             } else {
                                 cells.forEach(cell => this.emptyCells[cell] = 0);
@@ -364,57 +358,43 @@ class RouteController {
                     console.error('[Raw] Invalid method or data provided:', method, data);
             }
         }
-
         if (!this.consumers[username]) {
             this.consumers[username] = new Consumer(username);
         }
-
         let total = wildPokemons.length + nearbyPokemons.length + clientWeathers.length + forts.length + fortDetails.length + gymInfos.length + quests.length + encounters.length + cells.length;
         let startTime = process.hrtime();
         let jobs = [];
-
         if (playerData.length > 0) {
             jobs = this.consumers[username].updatePlayerData(playerData);
         }
-
         if (clientWeathers.length > 0) {
             jobs.push(this.consumers[username].updateWeather(clientWeathers));
         }
-
         if (cells.length > 0) {
             await this.consumers[username].updateCells(cells);
         }
-
         if (wildPokemons.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateWildPokemon(wildPokemons));
         }
-
         if (nearbyPokemons.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateNearbyPokemon(nearbyPokemons));
         }
-
         if (encounters.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateEncounters(encounters));
         }
-
         if (forts.length > 0) {
             jobs.push(this.consumers[username].updateForts(forts));
         }
-
         if (fortDetails.length > 0) {
             jobs.push(this.consumers[username].updateFortDetails(fortDetails));
         }
-
         if (gymInfos.length > 0) {
             jobs.push(this.consumers[username].updateGymInfos(gymInfos));
         }
-
         if (quests.length > 0) {
             jobs.push(this.consumers[username].updateQuests(quests));
         }
-
         await Promise.all(jobs);
-
         let endTime = process.hrtime(startTime);
         let ms = (endTime[0] * 1000000000 + endTime[1]) / 1000000;
         if (total > 0) {
