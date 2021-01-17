@@ -152,7 +152,7 @@ class RouteController {
             let method = parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), //0;
             if (rawData['data']) {
                 data = rawData['data'];
-                method = parseInt(rawData['method']) || parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), //0;
+                method = parseInt(rawData['method']) || parseInt(POGOProtos.Rpc.Method.METHOD_UNSET) //0;
             } else {
                 console.error('[Raw] Unhandled proto:', rawData);
                 return res.sendStatus(400);
