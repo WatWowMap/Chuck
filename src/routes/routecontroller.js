@@ -199,9 +199,8 @@ class RouteController {
                             let gm = POGOProtos.Rpc.DownloadGmTemplatesResponseProto.decode(base64_decode(data));
                             if (gm) {
                                 if (gm.result === POGOProtos.Rpc.DownloadGmTemplatesResponseProto.Result.COMPLETE) {
-                                    let data = gm;
-                                    console.debug('[Raw] GetGameMasterData:', data);
-                                    gameMasterData.push(data);
+                                    console.debug('[Raw] GetGameMasterData:', gm);
+                                    gameMasterData.push(gm);
                                 }
                             } else {
                                 console.error('[Raw] Malformed DownloadGmTemplatesResponseProto');     
