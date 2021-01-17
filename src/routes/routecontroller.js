@@ -345,7 +345,6 @@ class RouteController {
                             mapCellsNew.forEach(mapCell => {
                                 if (config.dataparser.parse.pokemon) {
                                     let timestampMs = parseInt(BigInt(mapCell.as_of_time_ms).toString());
-
                                     let wildNew = mapCell.wild_pokemon;
                                     wildNew.forEach((wildPokemon) => {
                                         wildPokemons.push({
@@ -433,7 +432,9 @@ class RouteController {
             this.consumers[username] = new Consumer(username);
         }
 
-        let total = wildPokemons.length + nearbyPokemons.length + clientWeathers.length + forts.length + fortDetails.length + gymInfos.length + quests.length + encounters.length + cells.length;
+        let total = wildPokemons.length + nearbyPokemons.length + clientWeathers.length + forts.length + fortDetails.length
+            + gymInfos.length + quests.length + encounters.length + cells.length + inventoryData.length + gameMasterData.length
+            + getItemTemplatesData.length + settingsData.length + assetDigestData.length;
         let startTime = process.hrtime();
         let jobs = [];
 
