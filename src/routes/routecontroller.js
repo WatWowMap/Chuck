@@ -174,14 +174,20 @@ class RouteController {
                     }
                     break;
                 case RpcMethod.GetHoloholoInventoryOutProto:
-                    let ghi = POGOProtos.Rpc.GetHoloholoInventoryOutProto.decode(base64_decode(data));
-                    if (ghi) {
-                        if (ghi.success)
-                        {
-                            let data = ghi.inventory_delta.inventory_item;
-                            console.debug('[Raw] GetInventoryData:', data);
-                            inventoryData.push(data);
+                    try {
+                        let ghi = POGOProtos.Rpc.GetHoloholoInventoryOutProto.decode(base64_decode(data));
+                        if (ghi) {
+                            if (ghi.success)
+                            {
+                                let data = ghi.inventory_delta.inventory_item;
+                                console.debug('[Raw] GetInventoryData:', data);
+                                inventoryData.push(data);
+                            }
+                        } else {
+                            console.error('[Raw] Malformed GetHoloholoInventoryOutProto');     
                         }
+                    } catch (err) {
+                        console.error('[Raw] Unable to decode GetHoloholoInventoryOutProto');
                     }
                     break;
                 case RpcMethod.FortSearchOutProto:
