@@ -76,10 +76,16 @@ class RouteController {
 
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
-                if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
+                //if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
+                //    continue;
+                //}
+                let responses = [];
+                RpcMethod.forEach(function (item) {
+                    responses.push(RpcMethod[item]);
+                });
+                if (!responses.includes(parseInt(message['type']))) {
                     continue;
                 }
-
                 contents.push({
                     'data': message['payload'],
                     'method': parseInt(message['type'])
@@ -251,7 +257,7 @@ class RouteController {
                         }
                     }
                     break;
-                 case RpcMethod.GetGameMasterClientTemplatesOutProto:
+                case RpcMethod.GetGameMasterClientTemplatesOutProto:
                     if (config.dataparser.parse.getforgamemaster) {
                         try {
                             let ggm = POGOProtos.Rpc.GetGameMasterClientTemplatesOutProto.decode(base64_decode(data));
