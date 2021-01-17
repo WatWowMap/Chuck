@@ -80,7 +80,7 @@ class RouteController {
 
                 contents.push({
                     'data': message['payload'],
-                    'method': parseInt(message['type']) || parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), //0
+                    'method': parseInt(message['type'])
                 });
             }
             // handle iOS data
@@ -149,10 +149,10 @@ class RouteController {
         for (let i = 0; i < contents.length; i++) {
             const rawData = contents[i];
             let data = {};
-            let method = parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), //0;
-            if (rawData['data']) {
+            let method = parseInt(POGOProtos.Rpc.Method.METHOD_UNSET);
+            if (rawData['data'] && rawData['method']) {
                 data = rawData['data'];
-                method = parseInt(rawData['method']) || parseInt(POGOProtos.Rpc.Method.METHOD_UNSET) //0;
+                method = parseInt(rawData['method']);
             } else {
                 console.error('[Raw] Unhandled proto:', rawData);
                 return res.sendStatus(400);
@@ -181,6 +181,7 @@ class RouteController {
                             if (ghi) {
                                 if (ghi.success) {
                                     let data = ghi.inventory_delta;
+                                    //TODO: Need //comment
                                     console.debug('[Raw] GetInventoryData:', data);
                                     inventoryData.push(data);
                                 }
@@ -198,7 +199,8 @@ class RouteController {
                             let gm = POGOProtos.Rpc.DownloadGmTemplatesResponseProto.decode(base64_decode(data));
                             if (gm) {
                                 if (gm.result === POGOProtos.Rpc.DownloadGmTemplatesResponseProto.Result.COMPLETE) {
-                                    console.debug('[Raw] GetGameMasterData:', gm);
+                                    //TODO: Need //comment
+                                    console.debug('[Raw] GetGameMasterData:', gm);                                    
                                     gameMasterData.push(gm);
                                 }
                             } else {
@@ -215,6 +217,7 @@ class RouteController {
                             let ad = POGOProtos.Rpc.AssetDigestOutProto.decode(base64_decode(data));
                             if (ad) {
                                 if (ad.result === POGOProtos.Rpc.AssetDigestOutProto.Result.SUCCESS) {
+                                    //TODO: Need //comment
                                     console.debug('[Raw] GetAssetDigestData:', ad);
                                     assetDigestData.push(ad);
                                 }
