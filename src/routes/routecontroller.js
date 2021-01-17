@@ -73,6 +73,7 @@ class RouteController {
                     console.warn(`Ignoring non-raw message from ${username}`);
                     continue;
                 }
+                
                 // PD is sending more then we actually need.
                 // let's only care about certain protos
                 //if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
@@ -421,9 +422,11 @@ class RouteController {
             this.consumers[username] = new Consumer(username);
         }
 
-        let total = wildPokemons.length + nearbyPokemons.length + clientWeathers.length + forts.length + fortDetails.length
-            + gymInfos.length + quests.length + encounters.length + cells.length + inventoryData.length + gameMasterData.length
-            + getItemTemplatesData.length + settingsData.length + assetDigestData.length;
+        let total = wildPokemons.length + nearbyPokemons.length + clientWeathers.length
+            + forts.length + fortDetails.length + gymInfos.length
+            + quests.length + encounters.length + cells.length
+            + inventoryData.length + gameMasterData.length + getItemTemplatesData.length
+            + settingsData.length + assetDigestData.length;
         let startTime = process.hrtime();
         let jobs = [];
 

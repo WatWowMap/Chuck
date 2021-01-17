@@ -227,7 +227,7 @@ class AutoInstanceController {
                         if (this.bootstrapCellIDs.length === 0) {
                             // TODO: await this.bootstrap(); // <--- Causes bootstrap loop for some reason
                             //if (this.bootstrapCellIDs.length === 0) {
-                            await this.update();
+                                await this.update();
                             //}
                         }
                         return {
