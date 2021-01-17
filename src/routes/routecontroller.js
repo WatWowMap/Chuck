@@ -142,7 +142,6 @@ class RouteController {
             console.error('[Raw] Invalid PROTO');
             return res.sendStatus(400);
         }
-
         let wildPokemons = [];
         let nearbyPokemons = [];
         let clientWeathers = [];
@@ -492,7 +491,6 @@ class RouteController {
             'only_invalid_gmos': containsGMO && isInvalidGMO,
             'contains_gmos': containsGMO
         };
-
         sendResponse(res, 'ok', responseData);
     }
 }
