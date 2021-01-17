@@ -180,8 +180,7 @@ class RouteController {
                         try {
                             let ghi = POGOProtos.Rpc.GetHoloholoInventoryOutProto.decode(base64_decode(data));
                             if (ghi) {
-                                if (ghi.success)
-                                {
+                                if (ghi.success) {
                                     let data = ghi.inventory_delta;
                                     console.debug('[Raw] GetInventoryData:', data);
                                     inventoryData.push(data);
@@ -199,8 +198,7 @@ class RouteController {
                         try {
                             let gm = POGOProtos.Rpc.DownloadGmTemplatesResponseProto.decode(base64_decode(data));
                             if (gm) {
-                                if (gm.result == POGOProtos.Rpc.DownloadGmTemplatesResponseProto.Result.COMPLETE)
-                                {
+                                if (gm.result === POGOProtos.Rpc.DownloadGmTemplatesResponseProto.Result.COMPLETE) {
                                     let data = gm;
                                     console.debug('[Raw] GetGameMasterData:', data);
                                     gameMasterData.push(data);
