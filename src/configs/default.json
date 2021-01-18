@@ -21,7 +21,8 @@
             "gamemaster": true,
             "assetdigest": true,
             "downloadsettings": true,
-            "getforgamemaster": true
+            "getforgamemaster": true,
+            "remoteconfig": true
         },
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
