@@ -9,7 +9,7 @@ const { sendResponse, base64_decode } = require('../services/utils.js');
 const Consumer = require('../services/consumer.js');
 
 const RpcMethod = {
-    Unset: parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), // 0
+    UnSet: parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), // 0
     GetPlayerOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_PLAYER), // 2
     UnUsed_GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_HOLOHOLO_INVENTORY), // 4
     DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_SETTINGS), // 5
@@ -462,7 +462,7 @@ class RouteController {
             }
 
             switch (method) {
-                case RpcMethod.Unset:
+                case RpcMethod.UnSet:
                     return res.sendStatus(400);
                 case RpcMethod.GetPlayerOutProto:
                     try {
