@@ -754,7 +754,7 @@ class RouteController {
             + forts.length + fortDetails.length + gymInfos.length
             + quests.length + encounters.length + cells.length
             + inventoryData.length + gameMasterData.length + getItemTemplatesData.length
-            + settingsData.length + assetDigestData.length;
+            + settingsData.length + assetDigestData.length + remoteConfigData.length;
         let startTime = process.hrtime();
         let jobs = [];
 
