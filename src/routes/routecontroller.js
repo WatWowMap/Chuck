@@ -13,7 +13,8 @@ const RpcMethod = {
     GetPlayerOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_PLAYER), // 2
     UnUsed_GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_HOLOHOLO_INVENTORY), // 4
     DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_SETTINGS), // 5
-    GetGameMasterClientTemplatesOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_ITEM_TEMPLATES), //6
+    GetGameMasterClientTemplatesOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_ITEM_TEMPLATES), // 6
+    GetRemoteConfigVersionsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_REMOTE_CONFIG_VERSION), // 7
     FortSearchOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_SEARCH), // 101
     EncounterOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_ENCOUNTER), // 102
     FortDetailsOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_DETAILS), // 104
@@ -28,7 +29,6 @@ const RpcMethod = {
     /*
     * more types...
     *
-            METHOD_DOWNLOAD_REMOTE_CONFIG_VERSION = 7,
             METHOD_REGISTER_BACKGROUND_DEVICE = 8,
             METHOD_GET_PLAYER_DAY = 9,
             METHOD_ACKNOWLEDGE_PUNISHMENT = 10,
@@ -534,6 +534,24 @@ class RouteController {
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode DownloadGmTemplatesResponseProto');
+                        }
+                    }
+                    break;
+                case RpcMethod.GetRemoteConfigVersionsOutProto:
+                    if (config.dataparser.parse.remoteconfig) {
+                        try {
+                            let rc = POGOProtos.Rpc.GetRemoteConfigVersionsOutProto.decode(base64_decode(data));
+                            if (rc) {
+                                if (rc.result === POGOProtos.Rpc.GetRemoteConfigVersionsOutProto.SUCCESS) {
+                                    //TODO: Need //comment
+                                    console.debug('[Raw] GetRemoteConfigData:', rc);
+                                    remoteConfigData.push(rc);
+                                }
+                            } else {
+                                console.error('[Raw] Malformed GetRemoteConfigVersionsOutProto');
+                            }
+                        } catch (err) {
+                            console.error('[Raw] Unable to decode GetRemoteConfigVersionsOutProto');
                         }
                     }
                     break;
