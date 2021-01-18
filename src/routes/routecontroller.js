@@ -9,9 +9,9 @@ const { sendResponse, base64_decode } = require('../services/utils.js');
 const Consumer = require('../services/consumer.js');
 
 const RpcMethod = {
-    //Unset: parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), // 0
+    Unset: parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), // 0
     GetPlayerOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_PLAYER), // 2
-    //UnUsed_GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_HOLOHOLO_INVENTORY), // 4
+    UnUsed_GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_HOLOHOLO_INVENTORY), // 4
     DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_SETTINGS), // 5
     GetGameMasterClientTemplatesOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_DOWNLOAD_ITEM_TEMPLATES), //6
     FortSearchOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_FORT_SEARCH), // 101
@@ -21,8 +21,9 @@ const RpcMethod = {
     GymGetInfoOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GYM_GET_INFO), // 156
     AssetDigestOutProto: parseInt(POGOProtos.Rpc.Method.METHOD_GET_ASSET_DIGEST), // 300
     DownloadGmTemplatesResponseProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), // 5004
-    GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY) // 5005
-    //demosocial: parseInt(POGOProtos.Rpc.SocialAction.SOCIAL_ACTION_ACCEPT_FRIEND_INVITE) // 10004
+    GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.ClientAction.CLIENT_ACTION_GET_INVENTORY), // 5005
+    //Demo for others..
+    DemoSocial: parseInt(POGOProtos.Rpc.SocialAction.SOCIAL_ACTION_ACCEPT_FRIEND_INVITE) // 10004
 
     /*
     * more types...
@@ -364,6 +365,7 @@ class RouteController {
                 //if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
                 //    continue;
                 //}
+
                 let responses = [];
                 RpcMethod.forEach(function (item) {
                     responses.push(RpcMethod[item]);
@@ -460,6 +462,8 @@ class RouteController {
             }
 
             switch (method) {
+                case RpcMethod.Unset:
+                    return res.sendStatus(400);
                 case RpcMethod.GetPlayerOutProto:
                     try {
                         let gpr = POGOProtos.Rpc.GetPlayerOutProto.decode(base64_decode(data));
@@ -492,6 +496,25 @@ class RouteController {
                             }
                         } catch (err) {
                             console.error('[Raw] Unable to decode GetHoloholoInventoryOutProto');
+                        }
+                    }
+                    break;
+                case RpcMethod.UnUsed_GetHoloholoInventoryOutProto:
+                    if (config.dataparser.parse.inventory) {
+                        try {
+                            let ghi = POGOProtos.Rpc.GetHoloholoInventoryOutProto.decode(base64_decode(data));
+                            if (ghi) {
+                                if (ghi.success) {
+                                    let data = ghi.inventory_delta;
+                                    //TODO: Need //comment
+                                    console.debug('[Raw] GetInventoryData:', data);
+                                    inventoryData.push(data);
+                                }
+                            } else {
+                                console.error('[Raw] Malformed UnUsed_GetHoloholoInventoryOutProto');
+                            }
+                        } catch (err) {
+                            console.error('[Raw] Unable to decode UnUsed_GetHoloholoInventoryOutProto');
                         }
                     }
                     break;
