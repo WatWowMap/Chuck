@@ -444,6 +444,7 @@ class RouteController {
         let getItemTemplatesData = [];
         let assetDigestData = [];
         let settingsData = [];
+        let remoteConfigData = [];
         //
         let isEmptyGMO = true;
         let isInvalidGMO = true;
