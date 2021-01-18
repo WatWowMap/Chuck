@@ -17,7 +17,7 @@ class InstanceController {
         this.devices = {};
         this.instances = {};
 
-        (async() => {
+        (async () => {
             await this.init();
         })().catch(err => {
             console.error('[InstanceController] Error:', err);
@@ -104,8 +104,8 @@ class InstanceController {
             case InstanceType.PokemonIV: {
                 let areaArray = [];
                 if (instance.data['area']) {
-                //    areaArray = instance.data['area']; //[[Coord]]
-                //} else {
+                    //    areaArray = instance.data['area']; //[[Coord]]
+                    //} else {
                     let areas = instance.data['area']; //[[[String: Double]]]
                     for (let i = 0; i < areas.length; i++) {
                         let coords = areas[i];
@@ -118,7 +118,7 @@ class InstanceController {
                         }
                     }
                 }
-                let timezoneOffset = parseInt(instance.data['timezone_offset'] || 0);    
+                let timezoneOffset = parseInt(instance.data['timezone_offset'] || 0);
                 let areaArrayEmptyInner = [];//[[[CLLocationCoordinate2D]]]()
                 for (let i = 0; i < areaArray.length; i++) {
                     let coords = areaArray[i];

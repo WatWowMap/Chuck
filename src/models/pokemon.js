@@ -41,7 +41,7 @@ class Pokemon extends Model {
     _setPokemonDisplay(pokemonId, display, username) {
         if (!this.isNewRecord && (!this.isDitto || this.displayPokemonId !== pokemonId) &&
             (this.pokemonId !== pokemonId || this.gender !== display.gender ||
-            this.form !== display.form || this.costume !== display.costume)) {
+                this.form !== display.form || this.costume !== display.costume)) {
             if (this.username === username) {   // spawn change confirmed
                 console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
                 this.isDitto = false;
@@ -137,7 +137,7 @@ class Pokemon extends Model {
 
     static async _attemptUpdate(id, work) {
         let retry = 5, pokemon, changed;
-        for (;;) {
+        for (; ;) {
             const transaction = await sequelize.transaction({
                 // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
                 // the lower transaction level (compared to REPEATABLE_READ) is ok since we do not perform range queries

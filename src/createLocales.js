@@ -44,9 +44,9 @@ fs.readdir(appLocalesFolder, (err, files) => {
 
         fs.writeFile(
             path.resolve(appLocalesFolder, localeFile),
-            JSON.stringify(translations, null, 2), 
-            'utf8', 
-            () => {}
+            JSON.stringify(translations, null, 2),
+            'utf8',
+            () => { }
         );
         console.log(localeFile, 'file saved.');
     });

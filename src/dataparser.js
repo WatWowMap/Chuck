@@ -33,7 +33,7 @@ require('./services/logger.js');
         }
 
         require('./services/pvp.js').initMaster(ipcMaster);
-        
+
         // Fork workers
         for (let i = 0; i < instances; i++) {
             ipcMaster.setup(cluster.fork());
@@ -46,7 +46,7 @@ require('./services/logger.js');
             ipcMaster.setup(newWorker);
             console.log('[Cluster] New worker started with process id %s', newWorker.process.pid);
         });
-    
+
         cluster.on('online', function (worker) {
             console.log(`[Cluster] New worker online with id ${worker.id}`);
         });

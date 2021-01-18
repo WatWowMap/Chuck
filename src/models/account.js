@@ -61,7 +61,7 @@ class Account extends Model {
                 level: { [Op.gte]: minLevel, [Op.lte]: maxLevel },
                 failed: { [Op.eq]: null },
                 lastEncounterTime: { [Op.eq]: null },//, [Op.gte]: 7200 },
-                
+
             }
         });
         return results;
@@ -139,7 +139,7 @@ class Account extends Model {
         GROUP BY level
         ORDER BY level DESC
         `;
-        let results = await db.query(sql);        
+        let results = await db.query(sql);
         let stats = [];
         for (let i = 0; i < results.length; i++) {
             let result = results[i];
