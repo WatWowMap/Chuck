@@ -64,7 +64,8 @@ SELECT name, type, data FROM rdmdb.instance;
             "gamemaster": true,
             "assetdigest": true,
             "downloadsettings": true,
-            "getforgamemaster": true
+            "getforgamemaster": true,
+            "remoteconfig": true
         }
     },
     // Database Connection
