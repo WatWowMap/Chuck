@@ -463,6 +463,7 @@ class RouteController {
 
             switch (method) {
                 case RpcMethod.UnSet:
+                case RpcMethod.DemoSocial:
                     return res.sendStatus(400);
                 case RpcMethod.GetPlayerOutProto:
                     try {
