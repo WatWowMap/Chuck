@@ -29,7 +29,7 @@ const routes = new DeviceController();
 
     // Initialize localzation handler
     i18n.configure({
-        locales:['en', 'es', 'de'],
+        locales: ['en', 'es', 'de'],
         // TODO: Why does it look for .js translation files??!?!!
         extension: '.json',
         syncFiles: true,
@@ -43,7 +43,7 @@ const routes = new DeviceController();
         res.locals.__ = () => {
             /* eslint-disable no-unused-vars */
             return (text, render) => {
-            /* eslint-enable no-unused-vars */
+                /* eslint-enable no-unused-vars */
                 return i18n.__.routerly(req, arguments);
             };
         };
