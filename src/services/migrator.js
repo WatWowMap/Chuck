@@ -29,7 +29,7 @@ class Migrator {
             console.error(`[DBController] Failed to create metadata table: (${err})`);
             process.exit(-1);
         }
-        
+
         const getDBVersionSQL = `
         SELECT \`value\`
         FROM metadata
@@ -44,7 +44,7 @@ class Migrator {
         if (results.length > 0) {
             version = parseInt(results[0].value);
         }
-    
+
         const newestVersion = this.getNewestDbVersion();
         console.log(`[DBController] Current: ${version}, Latest: ${newestVersion}`);
         if (version < newestVersion) {
@@ -81,7 +81,7 @@ class Migrator {
                         });
                 }
             }
-            
+
             const newVersion = fromVersion + 1;
             const updateVersionSQL = `
             INSERT INTO metadata (\`key\`, \`value\`)

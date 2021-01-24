@@ -72,7 +72,7 @@ router.use('/assignment/add', async (req, res) => {
         if (instances) {
             instances.forEach(instance => {
                 instancesData.push({
-                    name: instance.name, 
+                    name: instance.name,
                     selected: false,
                     selected_source: false
                 });
@@ -328,7 +328,7 @@ router.use('/instance/edit/:name', async (req, res) => {
                     break;
                 case InstanceType.GatherToken:
                 case InstanceType.Leveling:
-                    break;                
+                    break;
             }
         }
         res.render('instance-edit', data);
@@ -372,9 +372,9 @@ const addAccounts = (req, res) => {
         res.redirect('/accounts');
     }
     accounts = accounts.replace('<br>', '')
-                       .replace('\r\n', '\n')
-                       .replace(';', ',')
-                       .replace(':', ',');
+        .replace('\r\n', '\n')
+        .replace(';', ',')
+        .replace(':', ',');
 
     let data = req.body;
     data['accounts'] = accounts;
@@ -427,12 +427,12 @@ const addInstancePost = async (req, res) => {
     let maxLevel = parseInt(req.body.max_level || 29);
     let timezoneOffset = parseInt(req.body.timezone_offset || 0);
     let pokemonIDsText = req.body.pokemon_ids
-                                .split('<br>').join(',')
-                                .split('\n').join(',');
+        .split('<br>').join(',')
+        .split('\n').join(',');
 
     let pokemonIDs = [];
     if (pokemonIDsText.trim() === '*') {
-        pokemonIDs = Array.from({length: 999}, (v, k) => k + 1);
+        pokemonIDs = Array.from({ length: 999 }, (v, k) => k + 1);
     } else {
         let pokemonIDsSplit = pokemonIDsText.split(',');
         if (pokemonIDsSplit) {
@@ -521,10 +521,10 @@ const addInstancePost = async (req, res) => {
                     }
                     coordArray[currentIndex].push({ lat, lon });
                 }
-            } else if (areaRow.includes('[') && 
-                       areaRow.includes(']') &&
-                       coordArray.length > currentIndex && 
-                       coordArray[currentIndex].length !== 0) {
+            } else if (areaRow.includes('[') &&
+                areaRow.includes(']') &&
+                coordArray.length > currentIndex &&
+                coordArray[currentIndex].length !== 0) {
                 currentIndex++;
             }
         });
@@ -596,7 +596,7 @@ const addInstancePost = async (req, res) => {
         } else if (type === InstanceType.AutoQuest) {
             instanceData['spin_limit'] = spinLimit;
         }
-        
+
         try {
             const instance = Instance.build({
                 name,
