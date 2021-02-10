@@ -366,6 +366,13 @@ class RouteController {
                 //    continue;
                 //}
 
+                //Remove demo
+                if (parseInt(message['type']) == 10004)
+                {
+                    continue;
+                }
+                //
+
                 let responses = [];
                 RpcMethod.forEach(function (item) {
                     responses.push(RpcMethod[item]);
@@ -740,7 +747,7 @@ class RouteController {
                     } catch (err) {
                         console.error('[Raw] Unable to decode GymGetInfoOutProto');
                     }
-                    break;
+                    break;                
                 default:
                     console.error('[Raw] Invalid method or data provided:', method, data);
             }
