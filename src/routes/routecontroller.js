@@ -364,18 +364,6 @@ class RouteController {
                 //if (![2, 5, 6, 101, 102, 104, 106, 156, 300, 5004, 5005].includes(parseInt(message['type']))) {
                 //    continue;
                 //}
-                //pass undefined
-                if (parseInt(message['type']) == 0)
-                {
-                    continue;
-                }
-                //
-                //Remove this if demo is implemented
-                if (parseInt(message['type']) == 10004)
-                {
-                    continue;
-                }
-                //
                 let responses = [];
                 RpcMethod.forEach(function (item) {
                     responses.push(RpcMethod[item]);
@@ -383,7 +371,16 @@ class RouteController {
                 if (!responses.includes(parseInt(message['type']))) {
                     continue;
                 }
-
+                //pass undefined or not implemented
+                if (parseInt(message['type']) == 0) {
+                    continue;
+                }
+                //               
+                //Remove this if demo is implemented
+                if (parseInt(message['type']) == 10004) {
+                    continue;
+                }
+                //            
                 contents.push({
                     'data': message['payload'],
                     'method': parseInt(message['type'])
