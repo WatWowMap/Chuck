@@ -61,7 +61,7 @@ class Account extends Model {
                 level: { [Op.gte]: minLevel, [Op.lte]: maxLevel },
                 failed: { [Op.eq]: null },
                 lastEncounterTime: { [Op.eq]: null },//, [Op.gte]: 7200 },
-                
+
             }
         });
         return results;
@@ -139,7 +139,7 @@ class Account extends Model {
         GROUP BY level
         ORDER BY level DESC
         `;
-        let results = await db.query(sql);        
+        let results = await db.query(sql);
         let stats = [];
         for (let i = 0; i < results.length; i++) {
             let result = results[i];
@@ -154,16 +154,16 @@ class Account extends Model {
             let spinLimit = result.spin_limit || 0;
             let inUse = result.in_use || 0;
             stats.push({
-                "level": level,
-                "total": total,
-                "good": good,
-                "banned": banned,
-                "warning": warning,
-                "invalid": invalid,
-                "other": other,
-                "cooldown": cooldown,
-                "spin_limit": spinLimit,
-				"in_use": inUse,
+                'level': level,
+                'total': total,
+                'good': good,
+                'banned': banned,
+                'warning': warning,
+                'invalid': invalid,
+                'other': other,
+                'cooldown': cooldown,
+                'spin_limit': spinLimit,
+                'in_use': inUse,
             });
         }
         return stats;

@@ -52,8 +52,8 @@ class Consumer {
             for (let i = 0; i < forts.length; i++) {
                 let fort = forts[i];
                 try {
-                    switch (fort.data.type) {
-                        case POGOProtos.Map.Fort.FortType.GYM: {
+                    switch (fort.data.fort_type) {
+                        case POGOProtos.Rpc.FortType.GYM: {
                             if (!config.dataparser.parse.gym) {
                                 continue;
                             }
@@ -68,10 +68,10 @@ class Consumer {
                             if (!this.gymIdsPerCell[fort.cell]) {
                                 this.gymIdsPerCell[fort.cell] = [];
                             }
-                            this.gymIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
+                            this.gymIdsPerCell[fort.cell.toString()].push(fort.data.fort_id.toString());
                             break;
                         }
-                        case POGOProtos.Map.Fort.FortType.CHECKPOINT: {
+                        case POGOProtos.Rpc.FortType.CHECKPOINT: {
                             if (!config.dataparser.parse.pokestops) {
                                 continue;
                             }
@@ -82,7 +82,7 @@ class Consumer {
                             if (!this.stopsIdsPerCell[fort.cell]) {
                                 this.stopsIdsPerCell[fort.cell] = [];
                             }
-                            this.stopsIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
+                            this.stopsIdsPerCell[fort.cell.toString()].push(fort.data.fort_id.toString());
                             break;
                         }
                     }
@@ -140,15 +140,15 @@ class Consumer {
                     lat: details.latitude,
                     lon: details.longitude,
                     name: details.name ? details.name : '',
-                    url: details.image_urls.length > 0 ? details.image_urls[0] : '',
+                    url: details.image_url.length > 0 ? details.image_url[0] : '',
                     updated: ts,
                     firstSeenTimestamp: ts,
                 };
                 switch (details.type) {
-                    case POGOProtos.Map.Fort.FortType.GYM:
+                    case POGOProtos.Rpc.FortType.GYM:
                         updatedGyms.push(record);
                         break;
-                    case POGOProtos.Map.Fort.FortType.CHECKPOINT:
+                    case POGOProtos.Rpc.FortType.CHECKPOINT:
                         updatedPokestops.push(record);
                         break;
                 }
@@ -191,7 +191,7 @@ class Consumer {
                         console.error('[GymInfos] Invalid gym_status_and_defenders provided, skipping...', info);
                         continue;
                     }
-                    let id = info.gym_status_and_defenders.pokemon_fort_proto.id;
+                    let id = info.gym_status_and_defenders.pokemon_fort_proto.fort_id;
                     let gymDefenders = info.gym_status_and_defenders.gym_defender;
                     if (config.dataparser.parse.gymDefenders && gymDefenders) {
                         for (let i = 0; i < gymDefenders.length; i++) {
@@ -205,7 +205,7 @@ class Consumer {
                             (
                                 '${trainer.name}',
                                 ${trainer.level},
-                                ${trainer.team_color},
+                                ${trainer.team},
                                 ${trainer.battles_won},
                                 ${trainer.km_walked},
                                 ${trainer.caught_pokemon},
@@ -229,8 +229,8 @@ class Consumer {
                                 ${defender.pokemon.individual_attack},
                                 ${defender.pokemon.individual_defense},
                                 ${defender.pokemon.individual_stamina},
-                                ${defender.pokemon.move_1},
-                                ${defender.pokemon.move_2},
+                                ${defender.pokemon.move1},
+                                ${defender.pokemon.move2},
                                 ${defender.pokemon.battles_attacked || 0},
                                 ${defender.pokemon.battles_defended || 0},
                                 ${defender.pokemon.pokemon_display.gender},
@@ -353,13 +353,13 @@ class Consumer {
                 } catch (err) {
                     console.error('[Cell] Error:', err);
                 }
-               
+
                 if (!this.gymIdsPerCell[cellId]) {
                     this.gymIdsPerCell[cellId] = [];
                 }
                 if (!this.stopsIdsPerCell[cellId]) {
                     this.stopsIdsPerCell[cellId] = [];
-                } 
+                }
             }
             let result = await Cell.bulkCreate(updatedCells, {
                 updateOnDuplicate: [

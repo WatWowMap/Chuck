@@ -65,7 +65,7 @@ class Weather extends Model {
         let polygon = [];
         for (let i = 0; i <= 3; i++) {
             let vertex = s2cell.getVertex(i);
-            polygon.push([ vertex.x, vertex.y ]);
+            polygon.push([vertex.x, vertex.y]);
         }
         return {
             type: 'weather',

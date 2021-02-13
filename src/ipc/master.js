@@ -5,7 +5,7 @@ const callbacks = {};
 module.exports = {
     setup: (worker) => {
         worker.on('message', async function (message) {
-            const {token, name, args} = message;
+            const { token, name, args } = message;
             const callback = callbacks[name];
             if (callback === undefined) {
                 this.send({
