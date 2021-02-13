@@ -42,15 +42,17 @@ class InstanceController {
         console.log('[InstanceController] Done starting instances');
 
         // Register redis client subscription on event handler
-        await RedisClient.onEvent('message', (channel, message) => {
-            //console.log('[Redis] Event:', channel, message);
-            switch (channel) {
-                case 'pokemon_add_queue':
-                    this.gotPokemon(Pokemon.build(JSON.parse(message)));
-                    break;
-            }
-        });
-        await RedisClient.subscribe('pokemon_add_queue');
+        if (RedisClient) {
+            await RedisClient.onEvent('message', (channel, message) => {
+                //console.log('[Redis] Event:', channel, message);
+                switch (channel) {
+                    case 'pokemon_add_queue':
+                        this.gotPokemon(Pokemon.build(JSON.parse(message)));
+                        break;
+                }
+            });
+            await RedisClient.subscribe('pokemon_add_queue');
+        }
     }
 
     getInstanceController(uuid) {
