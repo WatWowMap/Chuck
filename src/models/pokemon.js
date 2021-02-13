@@ -122,7 +122,7 @@ class Pokemon extends Model {
                 this.expireTimestampVerified = true;
             }
         } catch (err) {
-            console.warn('[Pokemon] Spawnpoint update error:', err.stack);
+            console.warn('[Pokemon] Spawnpoint update error:', err);
         }
     }
 
@@ -164,7 +164,7 @@ class Pokemon extends Model {
                 // succeed updating the row in the second attempt as expected.
                 if (!(error instanceof UniqueConstraintError)) {
                     console.warn('[Pokemon] Encountered error, retrying transaction', transaction.id,
-                        retry, 'attempts left:', error.stack);
+                        retry, 'attempts left:', error);
                 }
             }
         }

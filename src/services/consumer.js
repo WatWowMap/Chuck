@@ -29,7 +29,7 @@ class Consumer {
             try {
                 await Pokemon.updateFromWild(this.username, wild.timestampMs, wild.cell, wild.data);
             } catch (err) {
-                console.error('[Wild] Error:', err.stack);
+                console.error('[Wild] Error:', err);
             }
         });
     }
@@ -39,7 +39,7 @@ class Consumer {
             try {
                 await Pokemon.updateFromNearby(this.username, nearby.timestampMs, nearby.cell, nearby.data);
             } catch (err) {
-                console.error('[Nearby] Error:', err.stack);
+                console.error('[Nearby] Error:', err);
             }
         });
     }
@@ -87,7 +87,7 @@ class Consumer {
                         }
                     }
                 } catch (err) {
-                    console.error('[Forts] Error:', err.stack);
+                    console.error('[Forts] Error:', err);
                 }
             }
             if (updatedGyms.length > 0 || updatedGymsWithUrl.length > 0) {
@@ -161,7 +161,7 @@ class Consumer {
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
-                    console.error('[FortDetails] Error:', err.stack);
+                    console.error('[FortDetails] Error:', err);
                 }
             }
 
@@ -172,7 +172,7 @@ class Consumer {
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
-                    console.error('[FortDetails] Error:', err.stack);
+                    console.error('[FortDetails] Error:', err);
                 }
             }
         }
@@ -423,7 +423,7 @@ class Consumer {
                     });
                     //console.log('[Quest] Result:', result.length);
                 } catch (err) {
-                    console.error('[Quest] Error:', err.stack);
+                    console.error('[Quest] Error:', err);
                 }
             }
         }

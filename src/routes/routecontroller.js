@@ -490,7 +490,7 @@ class RouteController {
                                 if (ghi.success) {
                                     let data = ghi.inventory_delta;
                                     //TODO: Need //comment
-                                    console.debug('[Raw] GetInventoryData:', data);
+                                    // console.debug('[Raw] GetInventoryData:', data);
                                     inventoryData.push(data);
                                 }
                             } else {
@@ -509,7 +509,7 @@ class RouteController {
                                 if (ghi.success) {
                                     let data = ghi.inventory_delta;
                                     //TODO: Need //comment
-                                    console.debug('[Raw] GetInventoryData:', data);
+                                    // console.debug('[Raw] GetInventoryData:', data);
                                     inventoryData.push(data);
                                 }
                             } else {
