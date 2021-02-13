@@ -23,8 +23,6 @@ client.on('error', (error) => {
 });
 
 class Redis {
-    static instance = new Redis();
-
     constructor() {
     }
 
@@ -92,4 +90,4 @@ class Redis {
     }
 }
 
-module.exports = Redis.instance;
+module.exports = new Redis();
