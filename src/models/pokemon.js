@@ -85,7 +85,7 @@ class Pokemon extends Model {
         }
     }
 
-    async _addWildPokemon(wild, username) {
+    async _addWildPokemon(wild, username, transaction) {
         //console.log('Wild Pokemon Data:', wild.pokemon_data);
         console.assert(this.id === wild.encounter_id.toString(), 'unmatched encounterId');
         this._setPokemonDisplay(wild.pokemon.pokemon_id, wild.pokemon.pokemon_display, username);
@@ -107,7 +107,7 @@ class Pokemon extends Model {
         if (wild.time_till_hidden_ms > 0 && wild.time_till_hidden_ms <= 90000) {
             this.expireTimestamp = Math.floor(this.updated + wild.time_till_hidden_ms / 1000);
             this.expireTimestampVerified = true;
-            await Spawnpoint.upsertFromPokemon(this);
+            await Spawnpoint.upsertFromPokemon(this, transaction);
             return;
         }
         if (this.spawnId === oldSpawnId) {
@@ -116,7 +116,7 @@ class Pokemon extends Model {
         try {
             const spawnpoint = await Spawnpoint.findByPk(this.spawnId);
             if (spawnpoint === null) {
-                await Spawnpoint.upsertFromPokemon(this);
+                await Spawnpoint.upsertFromPokemon(this, transaction);
             } else if (spawnpoint.despawnSecond !== null) {
                 this.expireTimestamp = this.getDespawnTimer(spawnpoint);
                 this.expireTimestampVerified = true;
@@ -200,10 +200,10 @@ class Pokemon extends Model {
      * Update Pokemon object from WildPokemon.
      */
     static updateFromWild(username, timestampMs, cellId, wild) {
-        return Pokemon._attemptUpdate(wild.encounter_id.toString(), async function () {
+        return Pokemon._attemptUpdate(wild.encounter_id.toString(), async function (transaction) {
             this.updated = Math.floor(timestampMs / 1000);
             this.cellId = cellId.toString();
-            await this._addWildPokemon(wild, username);
+            await this._addWildPokemon(wild, username, transaction);
         });
     }
 
@@ -266,9 +266,9 @@ class Pokemon extends Model {
      * @param username
      */
     static updateFromEncounter(encounter, username) {
-        return Pokemon._attemptUpdate(encounter.pokemon.encounter_id.toString(), async function () {
+        return Pokemon._attemptUpdate(encounter.pokemon.encounter_id.toString(), async function (transaction) {
             this.changedTimestamp = this.updated = new Date().getTime() / 1000;
-            this._addWildPokemon(encounter.pokemon, username);
+            await this._addWildPokemon(encounter.pokemon, username, transaction);
             this.cp = encounter.pokemon.pokemon.cp;
             this.move1 = encounter.pokemon.pokemon.move_1;
             this.move2 = encounter.pokemon.pokemon.move_2;
