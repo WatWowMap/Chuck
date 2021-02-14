@@ -46,7 +46,7 @@ class Pokemon extends Model {
             // } else {
             // TODO: handle A/B spawn?
             console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
-                'to', pokemonId, 'by', username, '- unhandled');
+                'to', pokemonId, 'by', username);
             // TODO: repopulate weight/size?
             this.weight = null;
             this.size = null;
