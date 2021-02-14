@@ -51,7 +51,7 @@ class Gym extends Model {
             lastModifiedTimestamp: fort.last_modified_ms / 1000,
             exRaidEligible: fort.is_ex_raid_eligible,
             inBattle: fort.is_in_battle,
-            sponsorId: fort.sponsor > 0 ? fort.sponsor : 0,
+            sponsorId: fort.partner_id !== '' ? fort.partner_id : null,
             totalCp: fort.owned_by_team ? fort.gym_display.total_gym_cp : 0,
             cellId,
             deleted: false,
@@ -317,7 +317,7 @@ Gym.init({
         defaultValue: null,
     },
     sponsorId: {
-        type: DataTypes.SMALLINT(5).UNSIGNED,
+        type: DataTypes.STRING(25),
         defaultValue: null,
     },
     raidPokemonCostume: {

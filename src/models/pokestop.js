@@ -36,7 +36,7 @@ class Pokestop extends Model {
             id: fort.fort_id,
             lat: fort.latitude,
             lon: fort.longitude,
-            sponsorId: fort.sponsor > 0 ? fort.sponsor : null,
+            sponsorId: fort.partner_id !== '' ? fort.partner_id : null,
             enabled: fort.enabled,
             lastModifiedTimestamp: fort.last_modified_ms / 1000,
             cellId,
@@ -510,7 +510,7 @@ Pokestop.init({
         defaultValue: 0,
     },
     sponsorId: {
-        type: DataTypes.SMALLINT(5).UNSIGNED,
+        type: DataTypes.STRING(25),
         defaultValue: null,
     },
     arScanEligible: DataTypes.BOOLEAN,
