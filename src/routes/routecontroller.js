@@ -770,6 +770,10 @@ class RouteController {
             await this.consumers[username].updateCells(cells);
         }
 
+        if (forts.length > 0) {
+            await this.consumers[username].updateForts(forts);
+        }
+
         if (wildPokemons.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateWildPokemon(wildPokemons));
         }
@@ -780,10 +784,6 @@ class RouteController {
 
         if (encounters.length > 0) {
             jobs = jobs.concat(this.consumers[username].updateEncounters(encounters));
-        }
-
-        if (forts.length > 0) {
-            jobs.push(this.consumers[username].updateForts(forts));
         }
 
         if (fortDetails.length > 0) {
