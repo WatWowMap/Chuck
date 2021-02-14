@@ -114,7 +114,7 @@ class Pokemon extends Model {
             return;
         }
         try {
-            const spawnpoint = await Spawnpoint.findByPk(this.spawnId);
+            const spawnpoint = await Spawnpoint.findByPk(this.spawnId, { transaction });
             if (spawnpoint === null) {
                 await Spawnpoint.upsertFromPokemon(this, transaction);
             } else if (spawnpoint.despawnSecond !== null) {
