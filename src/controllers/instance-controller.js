@@ -17,7 +17,7 @@ class InstanceController {
         this.devices = {};
         this.instances = {};
 
-        (async() => {
+        (async () => {
             await this.init();
         })().catch(err => {
             console.error('[InstanceController] Error:', err);
@@ -42,15 +42,17 @@ class InstanceController {
         console.log('[InstanceController] Done starting instances');
 
         // Register redis client subscription on event handler
-        await RedisClient.onEvent('message', (channel, message) => {
-            //console.log('[Redis] Event:', channel, message);
-            switch (channel) {
-                case 'pokemon_add_queue':
-                    this.gotPokemon(Pokemon.build(JSON.parse(message)));
-                    break;
-            }
-        });
-        await RedisClient.subscribe('pokemon_add_queue');
+        if (RedisClient) {
+            await RedisClient.onEvent('message', (channel, message) => {
+                //console.log('[Redis] Event:', channel, message);
+                switch (channel) {
+                    case 'pokemon_add_queue':
+                        this.gotPokemon(Pokemon.build(JSON.parse(message)));
+                        break;
+                }
+            });
+            await RedisClient.subscribe('pokemon_add_queue');
+        }
     }
 
     getInstanceController(uuid) {
@@ -104,8 +106,8 @@ class InstanceController {
             case InstanceType.PokemonIV: {
                 let areaArray = [];
                 if (instance.data['area']) {
-                //    areaArray = instance.data['area']; //[[Coord]]
-                //} else {
+                    //    areaArray = instance.data['area']; //[[Coord]]
+                    //} else {
                     let areas = instance.data['area']; //[[[String: Double]]]
                     for (let i = 0; i < areas.length; i++) {
                         let coords = areas[i];
@@ -118,7 +120,7 @@ class InstanceController {
                         }
                     }
                 }
-                let timezoneOffset = parseInt(instance.data['timezone_offset'] || 0);    
+                let timezoneOffset = parseInt(instance.data['timezone_offset'] || 0);
                 let areaArrayEmptyInner = [];//[[[CLLocationCoordinate2D]]]()
                 for (let i = 0; i < areaArray.length; i++) {
                     let coords = areaArray[i];

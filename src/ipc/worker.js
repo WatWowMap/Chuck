@@ -8,7 +8,7 @@ module.exports = new Proxy({}, {
         return function (...args) {
             if (nextToken === undefined) {
                 process.on('message', function (message) {
-                    const {token, error, result} = message;
+                    const { token, error, result } = message;
                     const promise = pending[token];
                     if (delete pending[token]) {
                         (error ? promise.reject : promise.resolve)(result);

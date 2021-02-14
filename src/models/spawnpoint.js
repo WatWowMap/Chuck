@@ -7,7 +7,7 @@ const sequelize = require('../services/sequelize.js');
  * Spawnpoint model class.
  */
 class Spawnpoint extends Model {
-    static upsertFromPokemon(pokemon) {
+    static upsertFromPokemon(pokemon, transaction = null) {
         let despawnSecond = null;
         if (pokemon.expireTimestampVerified && pokemon.expireTimestamp !== null) {
             const date = new Date(pokemon.expireTimestamp * 1000);
@@ -21,6 +21,7 @@ class Spawnpoint extends Model {
             despawnSecond,
         }, {
             fields: despawnSecond === null ? ['lat', 'lon', 'updated'] : undefined,
+            transaction,
         });
     }
 }

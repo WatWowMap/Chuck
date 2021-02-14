@@ -1,7 +1,7 @@
 'use strict';
 
 const LRU = require('lru-cache');
-const rpc = require('purified-protos');
+const POGOProtos = require('pogo-protos');
 const masterfile = require('../../static/data/masterfile.json');
 const config = require('./config.js');
 const { calculateCP, calculateRanks } = require('./pvp-core.js');
@@ -80,7 +80,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     pushAllEntries(masterForm.attack ? masterForm : masterPokemon);
     let canEvolve = true;
     if (costumeId) {
-        const costumeName = (await rpc()).PokemonDisplayProto.Costume[costumeId];
+        const costumeName = POGOProtos.Rpc.PokemonDisplayProto.Costume[costumeId];
         canEvolve = costumeName.endsWith('_NOEVOLVE') || costumeName.endsWith('_NO_EVOLVE');
     }
     if (canEvolve && masterForm.evolutions) {

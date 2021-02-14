@@ -91,10 +91,10 @@ class Pokemon extends Model {
         }
     }
 
-    async _addWildPokemon(wild, username) {
+    async _addWildPokemon(wild, username, transaction) {
         //console.log('Wild Pokemon Data:', wild.pokemon_data);
         console.assert(this.id === wild.encounter_id.toString(), 'unmatched encounterId');
-        this._setPokemonDisplay(wild.pokemon_data.pokemon_id, wild.pokemon_data.pokemon_display, username);
+        this._setPokemonDisplay(wild.pokemon.pokemon_id, wild.pokemon.pokemon_display, username);
         this.lat = wild.latitude;
         this.lon = wild.longitude;
         if (this.lat === null || this.lon === null) {
@@ -113,22 +113,22 @@ class Pokemon extends Model {
         if (wild.time_till_hidden_ms > 0 && wild.time_till_hidden_ms <= 90000) {
             this.expireTimestamp = Math.floor(this.updated + wild.time_till_hidden_ms / 1000);
             this.expireTimestampVerified = true;
-            await Spawnpoint.upsertFromPokemon(this);
+            await Spawnpoint.upsertFromPokemon(this, transaction);
             return;
         }
         if (this.spawnId === oldSpawnId) {
             return;
         }
         try {
-            const spawnpoint = await Spawnpoint.findByPk(this.spawnId);
+            const spawnpoint = await Spawnpoint.findByPk(this.spawnId, { transaction });
             if (spawnpoint === null) {
-                await Spawnpoint.upsertFromPokemon(this);
+                await Spawnpoint.upsertFromPokemon(this, transaction);
             } else if (spawnpoint.despawnSecond !== null) {
                 this.expireTimestamp = this.getDespawnTimer(spawnpoint);
                 this.expireTimestampVerified = true;
             }
         } catch (err) {
-            console.warn('[Pokemon] Spawnpoint update error:', err.stack);
+            console.warn('[Pokemon] Spawnpoint update error:', err);
         }
     }
 
@@ -143,7 +143,7 @@ class Pokemon extends Model {
 
     static async _attemptUpdate(id, work) {
         let retry = 5, pokemon, changed;
-        for (;;) {
+        for (; ;) {
             const transaction = await sequelize.transaction({
                 // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
                 // the lower transaction level (compared to REPEATABLE_READ) is ok since we do not perform range queries
@@ -170,20 +170,24 @@ class Pokemon extends Model {
                 // succeed updating the row in the second attempt as expected.
                 if (!(error instanceof UniqueConstraintError)) {
                     console.warn('[Pokemon] Encountered error, retrying transaction', transaction.id,
-                        retry, 'attempts left:', error.stack);
+                        retry, 'attempts left:', error);
                 }
             }
         }
         if (changed) {
             if (['pokemonId', 'gender', 'form', 'weather', 'costume'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
-                await RedisClient.publish('pokemon_add_queue', JSON.stringify(pokemon.toJSON()));
-                if (pokemon.atkIv !== null) {
-                    await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon.toJSON()));
+                if (RedisClient) {
+                    await RedisClient.publish('pokemon_add_queue', JSON.stringify(pokemon.toJSON()));
+                    if (pokemon.atkIv !== null) {
+                        await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon.toJSON()));
+                    }
                 }
             } else if (['level', 'atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
-                await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon.toJSON()));
+                if (RedisClient) {
+                    await RedisClient.publish('pokemon_got_iv', JSON.stringify(pokemon.toJSON()));
+                }
             }
         }
         return pokemon;
@@ -202,10 +206,10 @@ class Pokemon extends Model {
      * Update Pokemon object from WildPokemon.
      */
     static updateFromWild(username, timestampMs, cellId, wild) {
-        return Pokemon._attemptUpdate(wild.encounter_id.toString(), async function () {
+        return Pokemon._attemptUpdate(wild.encounter_id.toString(), async function (transaction) {
             this.updated = Math.floor(timestampMs / 1000);
             this.cellId = cellId.toString();
-            await this._addWildPokemon(wild, username);
+            await this._addWildPokemon(wild, username, transaction);
             await this.populateAuxFields();
         });
     }
@@ -215,16 +219,16 @@ class Pokemon extends Model {
      */
     static updateFromNearby(username, timestampMs, cellId, nearby) {
         const encounterId = nearby.encounter_id.toString();
-        return Pokemon._attemptUpdate(encounterId, async function () {
+        return Pokemon._attemptUpdate(encounterId, async function (transaction) {
             this.updated = Math.floor(timestampMs / 1000);
             console.assert(this.id === encounterId, 'unmatched encounterId');
-            this._setPokemonDisplay(nearby.pokemon_id, nearby.pokemon_display, username);
+            this._setPokemonDisplay(nearby.pokedex_number, nearby.pokemon_display, username);
             this.username = username;
             this.cellId = cellId.toString();
             const locatePokestop = async () => {
                 let pokestop = null;
                 try {
-                    pokestop = await Pokestop.findByPk(nearby.fort_id);
+                    pokestop = await Pokestop.findByPk(nearby.fort_id, { transaction });
                 } catch (err) {
                     console.error('[Pokemon] InitNearby Error:', err);
                 }
@@ -266,23 +270,23 @@ class Pokemon extends Model {
 
     /**
      * Add Pokemon encounter proto data.
-     * @param encounter 
-     * @param username 
+     * @param encounter
+     * @param username
      */
     static updateFromEncounter(encounter, username) {
-        return Pokemon._attemptUpdate(encounter.wild_pokemon.encounter_id.toString(), async function () {
+        return Pokemon._attemptUpdate(encounter.pokemon.encounter_id.toString(), async function (transaction) {
             this.changedTimestamp = this.updated = new Date().getTime() / 1000;
-            this._addWildPokemon(encounter.wild_pokemon, username);
-            this.cp = encounter.wild_pokemon.pokemon_data.cp;
-            this.move1 = encounter.wild_pokemon.pokemon_data.move_1;
-            this.move2 = encounter.wild_pokemon.pokemon_data.move_2;
-            this.size = encounter.wild_pokemon.pokemon_data.height_m;
-            this.weight = encounter.wild_pokemon.pokemon_data.weight_kg;
-            this.atkIv = encounter.wild_pokemon.pokemon_data.individual_attack;
-            this.defIv = encounter.wild_pokemon.pokemon_data.individual_defense;
-            this.staIv = encounter.wild_pokemon.pokemon_data.individual_stamina;
-            this.shiny = encounter.wild_pokemon.pokemon_data.pokemon_display.shiny;
-            let cpMultiplier = encounter.wild_pokemon.pokemon_data.cp_multiplier;
+            await this._addWildPokemon(encounter.pokemon, username, transaction);
+            this.cp = encounter.pokemon.pokemon.cp;
+            this.move1 = encounter.pokemon.pokemon.move_1;
+            this.move2 = encounter.pokemon.pokemon.move_2;
+            this.size = encounter.pokemon.pokemon.height_m;
+            this.weight = encounter.pokemon.pokemon.weight_kg;
+            this.atkIv = encounter.pokemon.pokemon.individual_attack;
+            this.defIv = encounter.pokemon.pokemon.individual_defense;
+            this.staIv = encounter.pokemon.pokemon.individual_stamina;
+            this.shiny = encounter.pokemon.pokemon.pokemon_display.shiny;
+            let cpMultiplier = encounter.pokemon.pokemon.cp_multiplier;
             let level;
             if (cpMultiplier < 0.734) {
                 level = Math.round(58.35178527 * cpMultiplier * cpMultiplier - 2.838007664 * cpMultiplier + 0.8539209906);
@@ -317,7 +321,7 @@ class Pokemon extends Model {
 
     /**
      * Set default Ditto attributes.
-     * @param displayPokemonId 
+     * @param displayPokemonId
      */
     setDittoAttributes(displayPokemonId) {
         this.displayPokemonId = displayPokemonId;
@@ -338,7 +342,7 @@ class Pokemon extends Model {
 
     /**
      * Calculate despawn timer of spawnpoint
-     * @param spawnpoint 
+     * @param spawnpoint
      */
     getDespawnTimer(spawnpoint) {
         let despawnSecond = spawnpoint.despawnSecond;

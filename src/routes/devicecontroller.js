@@ -161,11 +161,11 @@ class DeviceController {
                 let oldAccount = await Account.getWithUsername(device.accountUsername);
                 console.log(`[Controller] [${device.uuid}] GetOldAccount: ${oldAccount ? JSON.stringify(oldAccount) : null}`);
                 account = oldAccount;
-                if (oldAccount instanceof Account && 
+                if (oldAccount instanceof Account &&
                     oldAccount.level >= minLevel &&
                     oldAccount.level <= maxLevel &&
-                    !oldAccount.firstWarningTimestamp && 
-                    !oldAccount.failed && 
+                    !oldAccount.firstWarningTimestamp &&
+                    !oldAccount.failed &&
                     !oldAccount.failedTimestamp) {
                     sendResponse(res, 'ok', {
                         username: oldAccount.username.trim(),
