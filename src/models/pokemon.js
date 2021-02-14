@@ -212,7 +212,7 @@ class Pokemon extends Model {
      */
     static updateFromNearby(username, timestampMs, cellId, nearby) {
         const encounterId = nearby.encounter_id.toString();
-        return Pokemon._attemptUpdate(encounterId, async function () {
+        return Pokemon._attemptUpdate(encounterId, async function (transaction) {
             this.updated = Math.floor(timestampMs / 1000);
             console.assert(this.id === encounterId, 'unmatched encounterId');
             this._setPokemonDisplay(nearby.pokedex_number, nearby.pokemon_display, username);
@@ -221,7 +221,7 @@ class Pokemon extends Model {
             const locatePokestop = async () => {
                 let pokestop = null;
                 try {
-                    pokestop = await Pokestop.findByPk(nearby.fort_id);
+                    pokestop = await Pokestop.findByPk(nearby.fort_id, { transaction });
                 } catch (err) {
                     console.error('[Pokemon] InitNearby Error:', err);
                 }
