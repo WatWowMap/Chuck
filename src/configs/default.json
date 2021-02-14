@@ -26,19 +26,6 @@
         },
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
-        "dittoDisguises": [
-            46,
-            163,
-            165,
-            167,
-            187,
-            223,
-            293,
-            316,
-            322,
-            399,
-            590
-        ],
         "lureTime": 30,
         "pvp": {
             "rankCacheAge": 86400000,

@@ -107,7 +107,6 @@ This allows the devs to constantly add more config options in the future, withou
 ```js
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
-        "dittoDisguises": [ 46,163,165,167,187,223,293,316,322,399,590 ],
         "lureTime": 30,
         "pvp": {
             // A list of level caps that will be considered. Must be a strictly increasing sequence.
