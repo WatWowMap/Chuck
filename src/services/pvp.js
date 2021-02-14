@@ -53,6 +53,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     if (formId) {
         baseEntry.form = formId;
     }
+    result.cp = calculateCP(masterForm.attack ? masterForm : masterPokemon, attack, defense, stamina, level);
     const pushAllEntries = (stats, evolution = 0) => {
         const allRanks = calculateAllRanks(stats);
         for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
@@ -91,6 +92,9 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
             const evolvedRanks = await queryPvPRank(evolution.pokemon, evolution.form || 0, 0,
                 attack, defense, stamina, level, gender);
             for (const [leagueName, results] of Object.entries(evolvedRanks)) {
+                if (leagueName === 'cp') {
+                    continue;
+                }
                 result[leagueName] = result[leagueName] ? result[leagueName].concat(results) : results;
             }
         }

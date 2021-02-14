@@ -26,7 +26,7 @@ module.exports = {
                 this.send({
                     token,
                     error: true,
-                    result: err,
+                    result: err.stack,
                 });
             }
         });

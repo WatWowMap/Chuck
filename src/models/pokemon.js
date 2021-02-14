@@ -39,18 +39,24 @@ class Pokemon extends Model {
     }
 
     _setPokemonDisplay(pokemonId, display, username) {
-        if (!this.isNewRecord && (!this.isDitto || this.displayPokemonId !== pokemonId) &&
-            (this.pokemonId !== pokemonId || this.gender !== display.gender ||
-                this.form !== display.form || this.costume !== display.costume)) {
-            if (this.username === username) {   // spawn change confirmed
-                console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
-                this.isDitto = false;
-                this.displayPokemonId = null;
-            } else {
-                console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
-                    'to', pokemonId, 'by', username, '- unhandled');
-                // TODO: handle A/B spawn?
-            }
+        if (!this.isNewRecord && ((this.isDitto ? this.displayPokemonId : this.pokemonId) !== pokemonId ||
+            this.gender !== display.gender || this.form !== display.form || this.costume !== display.costume)) {
+            // if (this.username === username) {   // spawn change confirmed
+            //     console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
+            // } else {
+            // TODO: handle A/B spawn?
+            console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
+                'to', pokemonId, 'by', username);
+            // TODO: repopulate weight/size?
+            this.weight = null;
+            this.size = null;
+            this.move1 = null;
+            this.move2 = null;
+            this.cp = null;
+            this.isDitto = false;
+            this.displayPokemonId = null;
+            this.pvpRankingsGreatLeague = null;
+            this.pvpRankingsUltraLeague = null;
         }
         if (this.isNewRecord || !this.isDitto) {
             this.pokemonId = pokemonId;
@@ -204,6 +210,7 @@ class Pokemon extends Model {
             this.updated = Math.floor(timestampMs / 1000);
             this.cellId = cellId.toString();
             await this._addWildPokemon(wild, username, transaction);
+            await this.populateAuxFields();
         });
     }
 
@@ -257,6 +264,7 @@ class Pokemon extends Model {
                 this.lon = (this.lon + pokestop.lon) / 2;
             }
             this.pokestopId = nearby.fort_id;
+            await this.populateAuxFields();
         });
     }
 
@@ -286,16 +294,29 @@ class Pokemon extends Model {
                 level = Math.round(171.0112688 * cpMultiplier - 95.20425243);
             }
             this.level = level;
-            this.isDitto = this.isDittoDisguised();
-            if (this.isDitto) {
-                console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
-                this.setDittoAttributes(this.pokemonId);
-            }
-
-            const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.atkIv, this.defIv, this.staIv, this.level, this.gender);
-            this.pvpRankingsGreatLeague = pvp.great || null;
-            this.pvpRankingsUltraLeague = pvp.ultra || null;
+            await this.populateAuxFields(true);
         });
+    }
+
+    async populateAuxFields(fromEncounter = false) {
+        if (!fromEncounter && (this.atkIv === null || !(this.changed('pokemonId') || this.changed('form') ||
+            this.changed('gender') || this.changed('costume')))) {
+            return;
+        }
+        if ((this.isDitto = this.isDittoDisguised())) {
+            console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
+            this.setDittoAttributes(this.pokemonId);
+        }
+        const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume,
+            this.atkIv, this.defIv, this.staIv, this.level, this.gender);
+        if (!fromEncounter) {
+            this.cp = pvp.cp || null;
+        } else if (!this.isDitto && this.cp !== pvp.cp) {
+            console.warn(`[Pokemon] Found inconsistent CP: ${this.cp} vs ${pvp.cp} for`,
+                `${this.pokemonId}-${this.form}, L${this.level} - ${this.atkIv}/${this.defIv}/${this.staIv}`);
+        }
+        this.pvpRankingsGreatLeague = pvp.great || null;
+        this.pvpRankingsUltraLeague = pvp.ultra || null;
     }
 
     /**
@@ -305,9 +326,6 @@ class Pokemon extends Model {
     setDittoAttributes(displayPokemonId) {
         this.displayPokemonId = displayPokemonId;
         this.pokemonId = Pokemon.DittoPokemonId;
-        this.form = 0;
-        this.gender = 3;
-        this.costume = 0;
     }
 
     /**
