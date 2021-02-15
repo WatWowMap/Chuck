@@ -20,8 +20,6 @@ class Consumer {
 
     constructor(username) {
         this.username = username;
-        this.gymIdsPerCell = {};
-        this.stopsIdsPerCell = {};
     }
 
     updateWildPokemon(wildPokemon) {
@@ -64,11 +62,6 @@ class Consumer {
                             } else {
                                 updatedGyms.push(gym.toJSON());
                             }
-
-                            if (!this.gymIdsPerCell[fort.cell]) {
-                                this.gymIdsPerCell[fort.cell] = [];
-                            }
-                            this.gymIdsPerCell[fort.cell.toString()].push(fort.data.fort_id.toString());
                             break;
                         }
                         case POGOProtos.Rpc.FortType.CHECKPOINT: {
@@ -78,11 +71,6 @@ class Consumer {
                             const pokestop = Pokestop.fromFort(fort.cell, fort.data);
                             await pokestop.triggerWebhook(false);
                             updatedPokestops.push(pokestop.toJSON());
-
-                            if (!this.stopsIdsPerCell[fort.cell]) {
-                                this.stopsIdsPerCell[fort.cell] = [];
-                            }
-                            this.stopsIdsPerCell[fort.cell.toString()].push(fort.data.fort_id.toString());
                             break;
                         }
                     }
@@ -352,13 +340,6 @@ class Consumer {
                     });
                 } catch (err) {
                     console.error('[Cell] Error:', err);
-                }
-
-                if (!this.gymIdsPerCell[cellId]) {
-                    this.gymIdsPerCell[cellId] = [];
-                }
-                if (!this.stopsIdsPerCell[cellId]) {
-                    this.stopsIdsPerCell[cellId] = [];
                 }
             }
             let result = await Cell.bulkCreate(updatedCells, {
