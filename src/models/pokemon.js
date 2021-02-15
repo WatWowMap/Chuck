@@ -44,7 +44,8 @@ class Pokemon extends Model {
             //     console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
             // } else {
             // TODO: handle A/B spawn?
-            console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon', this.pokemonId, 'by', this.username,
+            console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon',
+                this.isDitto ? this.displayPokemonId : this.pokemonId, 'by', this.username,
                 'to', pokemonId, 'by', username);
             // TODO: repopulate weight/size?
             this.weight = null;
@@ -66,7 +67,8 @@ class Pokemon extends Model {
                 this.form = display.form;
                 this.costume = display.costume;
             }
-            if (!this.isNewRecord && !this.weather !== !display.weather_boosted_condition) {
+            // TODO: handle ditto weather change? (we do not know whether it is currently partly cloudy)
+            if (!this.isNewRecord && !this.isDitto && !this.weather !== !display.weather_boosted_condition) {
                 console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
                     'to', display.weather_boosted_condition, 'by', username, '- clearing IVs');
                 this.atkIv = null;
@@ -302,7 +304,7 @@ class Pokemon extends Model {
             this.changed('gender') || this.changed('costume')))) {
             return;
         }
-        if ((this.isDitto = this.isDittoDisguised())) {
+        if (!this.isDitto && (this.isDitto = this.isDittoDisguised())) {
             console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
             this.setDittoAttributes(this.pokemonId);
         }
