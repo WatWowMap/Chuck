@@ -719,7 +719,7 @@ class RouteController {
 
                                 console.debug('[Raw] GMO is empty.');
                             } else {
-                                cells.forEach(cell => this.emptyCells[cell] = 0);
+                                cells.forEach(cell => delete this.emptyCells[cell]);
                                 isEmptyGMO = false;
                             }
                         } else {
