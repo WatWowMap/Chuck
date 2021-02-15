@@ -278,8 +278,8 @@ class Pokemon extends Model {
             this.changedTimestamp = this.updated = new Date().getTime() / 1000;
             await this._addWildPokemon(encounter.pokemon, username, transaction);
             this.cp = encounter.pokemon.pokemon.cp;
-            this.move1 = encounter.pokemon.pokemon.move_1;
-            this.move2 = encounter.pokemon.pokemon.move_2;
+            this.move1 = encounter.pokemon.pokemon.move1;
+            this.move2 = encounter.pokemon.pokemon.move2;
             this.size = encounter.pokemon.pokemon.height_m;
             this.weight = encounter.pokemon.pokemon.weight_kg;
             this.atkIv = encounter.pokemon.pokemon.individual_attack;
