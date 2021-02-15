@@ -13,6 +13,9 @@ const sequelize = require('./sequelize.js');
 const Cell = require('../models/cell');
 const Weather = require('../models/weather');
 
+// this needs to be an arbitrary fixed order in order to prevent deadlocks
+const stringCompare = (field) => (a, b) => (a[field] > b[field]) - (a[field] < b[field]);
+
 /**
  * Consumer database class
  */
@@ -80,11 +83,11 @@ class Consumer {
             }
             if (updatedGyms.length > 0 || updatedGymsWithUrl.length > 0) {
                 try {
-                    let result = await Gym.bulkCreate(updatedGyms, {
+                    let result = await Gym.bulkCreate(updatedGyms.sort(stringCompare('id')), {
                         updateOnDuplicate: Gym.fromFortFields,
                     });
                     //console.log('[Gym] Result:', result.length);
-                    await Gym.bulkCreate(updatedGymsWithUrl, {
+                    await Gym.bulkCreate(updatedGymsWithUrl.sort(stringCompare('id')), {
                         updateOnDuplicate: ['url'].concat(Gym.fromFortFields),
                     });
                 } catch (err) {
@@ -95,7 +98,7 @@ class Consumer {
             }
             if (updatedPokestops.length > 0) {
                 try {
-                    let result = await Pokestop.bulkCreate(updatedPokestops, {
+                    let result = await Pokestop.bulkCreate(updatedPokestops.sort(stringCompare('id')), {
                         updateOnDuplicate: Pokestop.fromFortFields,
                     });
                     //console.log('[Pokestop] Result:', result.length);
@@ -144,7 +147,7 @@ class Consumer {
 
             if (updatedGyms.length > 0) {
                 try {
-                    const result = await Gym.bulkCreate(updatedGyms, {
+                    const result = await Gym.bulkCreate(updatedGyms.sort(stringCompare('id')), {
                         updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
@@ -155,7 +158,7 @@ class Consumer {
 
             if (updatedPokestops.length > 0) {
                 try {
-                    const result = await Pokestop.bulkCreate(updatedPokestops, {
+                    const result = await Pokestop.bulkCreate(updatedPokestops.sort(stringCompare('id')), {
                         updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
@@ -247,7 +250,7 @@ class Consumer {
             }
             if (updatedGyms.length > 0) {
                 try {
-                    const result = await Gym.bulkCreate(updatedGyms, {
+                    const result = await Gym.bulkCreate(updatedGyms.sort(stringCompare('id')), {
                         updateOnDuplicate: fortColumns,
                     });
                     //console.log('[GymInfos] Result:', result.length);
@@ -343,7 +346,7 @@ class Consumer {
                 }
             }
             try {
-                let result = await Cell.bulkCreate(updatedCells, {
+                let result = await Cell.bulkCreate(updatedCells.sort(stringCompare('id')), {
                     updateOnDuplicate: [
                         'level',
                         'centerLat',
@@ -372,7 +375,7 @@ class Consumer {
                     console.error('[Weather] Error:', err);
                 }
             }
-            let result = await Weather.bulkCreate(updatedWeather, {
+            let result = await Weather.bulkCreate(updatedWeather.sort(stringCompare('id')), {
                 updateOnDuplicate: Weather.fromClientWeatherFields,
             });
             //console.log('[Weather] Result:', result.length);
@@ -403,7 +406,7 @@ class Consumer {
             }
             if (updatedPokestops.length > 0) {
                 try {
-                    let result = await Pokestop.bulkCreate(updatedPokestops, {
+                    let result = await Pokestop.bulkCreate(updatedPokestops.sort(stringCompare('id')), {
                         updateOnDuplicate: Pokestop.fromQuestFields,
                     });
                     //console.log('[Quest] Result:', result.length);
