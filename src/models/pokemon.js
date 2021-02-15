@@ -15,7 +15,6 @@ const config = require('../services/config.js');
  * Pokemon model class.
  */
 class Pokemon extends Model {
-    static DittoPokemonId = 132;
     static WeatherBoostMinLevel = 6;
     static WeatherBoostMinIvStat = 4;
     static PokemonTimeUnseen = config.dataparser.pokemonTimeUnseen * 60;
@@ -325,7 +324,7 @@ class Pokemon extends Model {
      */
     setDittoAttributes(displayPokemonId) {
         this.displayPokemonId = displayPokemonId;
-        this.pokemonId = Pokemon.DittoPokemonId;
+        this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
     }
 
     /**
