@@ -342,15 +342,19 @@ class Consumer {
                     console.error('[Cell] Error:', err);
                 }
             }
-            let result = await Cell.bulkCreate(updatedCells, {
-                updateOnDuplicate: [
-                    'level',
-                    'centerLat',
-                    'centerLon',
-                    'updated',
-                ],
-            });
-            //console.log('[Cell] Result:', result.length);
+            try {
+                let result = await Cell.bulkCreate(updatedCells, {
+                    updateOnDuplicate: [
+                        'level',
+                        'centerLat',
+                        'centerLon',
+                        'updated',
+                    ],
+                });
+                //console.log('[Cell] Result:', result.length);
+            } catch (err) {
+                console.error('[Cell] Error:', err);
+            }
         }
     }
 
