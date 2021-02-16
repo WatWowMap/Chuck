@@ -2,6 +2,7 @@
 
 const { DataTypes, Model, Transaction, UniqueConstraintError } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
+const POGOProtos = require('pogo-protos');
 
 const Cell = require('./cell.js');
 const Pokestop = require('./pokestop.js');
