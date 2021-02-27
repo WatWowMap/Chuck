@@ -74,6 +74,7 @@ class Gym extends Model {
                 record.raidPokemonForm = fort.raid_info.raid_pokemon.pokemon_display.form;
                 record.raidPokemonGender = fort.raid_info.raid_pokemon.pokemon_display.gender;
                 record.raidPokemonEvolution = fort.raid_info.raid_pokemon.pokemon_display.current_temp_evolution;
+                record.raidPokemonCostume = fort.raid_info.raid_pokemon.pokemon_display.costume;
             }
         }
         return Gym.build(record);
