@@ -36,6 +36,7 @@ class Gym extends Model {
         'raidPokemonForm',
         'raidPokemonGender',
         'raidPokemonEvolution',
+        'raidPokemonCostume',
         'arScanEligible',
     ];
     static fromFort(cellId, fort) {
@@ -46,13 +47,13 @@ class Gym extends Model {
             lon: fort.longitude,
             enabled: fort.enabled,
             guardingPokemonId: fort.guard_pokemon_id,
-            teamId: fort.owned_by_team,
+            teamId: fort.team,
             availableSlots: fort.gym_display ? fort.gym_display.slots_available : 0,    // TODO: No slots available?
             lastModifiedTimestamp: fort.last_modified_ms / 1000,
             exRaidEligible: fort.is_ex_raid_eligible,
             inBattle: fort.is_in_battle,
             sponsorId: fort.partner_id !== '' ? fort.partner_id : null,
-            totalCp: fort.owned_by_team ? fort.gym_display.total_gym_cp : 0,
+            totalCp: fort.team ? fort.gym_display.total_gym_cp : 0,
             cellId,
             deleted: false,
             firstSeenTimestamp: ts,
@@ -68,8 +69,8 @@ class Gym extends Model {
             record.raidIsExclusive = fort.raid_info.is_exclusive;
             if (fort.raid_info.raid_pokemon) {
                 record.raidPokemonId = fort.raid_info.raid_pokemon.pokemon_id;
-                record.raidPokemonMove1 = fort.raid_info.raid_pokemon.move_1;
-                record.raidPokemonMove2 = fort.raid_info.raid_pokemon.move_2;
+                record.raidPokemonMove1 = fort.raid_info.raid_pokemon.move1;
+                record.raidPokemonMove2 = fort.raid_info.raid_pokemon.move2;
                 record.raidPokemonCp = fort.raid_info.raid_pokemon.cp;
                 record.raidPokemonForm = fort.raid_info.raid_pokemon.pokemon_display.form;
                 record.raidPokemonGender = fort.raid_info.raid_pokemon.pokemon_display.gender;
