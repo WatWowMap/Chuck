@@ -251,7 +251,7 @@ class Consumer {
             if (updatedGyms.length > 0) {
                 try {
                     const result = await Gym.bulkCreate(updatedGyms.sort(stringCompare('id')), {
-                        updateOnDuplicate: fortColumns,
+                        updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[GymInfos] Result:', result.length);
                 } catch (err) {
