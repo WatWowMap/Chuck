@@ -87,10 +87,28 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
         let isEevee = false;
         let sylveonPatched = false;
         for (const evolution of masterForm.evolutions) {
-            if (evolution.pokemon === POGOProtos.Rpc.HoloPokemonId.VAPOREON) {
-                isEevee = true;
-            } else if (evolution.pokemon === POGOProtos.Rpc.HoloPokemonId.SYLVEON) {
-                sylveonPatched = true;
+            switch (evolution.pokemon) {
+                case POGOProtos.Rpc.HoloPokemonId.HITMONLEE:
+                    if (attack < defense || attack < stamina) {
+                        continue;
+                    }
+                    break;
+                case POGOProtos.Rpc.HoloPokemonId.HITMONCHAN:
+                    if (defense < attack || defense < stamina) {
+                        continue;
+                    }
+                    break;
+                case POGOProtos.Rpc.HoloPokemonId.VAPOREON:
+                    isEevee = true;
+                    break;
+                case POGOProtos.Rpc.HoloPokemonId.HITMONTOP:
+                    if (stamina < attack || stamina < defense) {
+                        continue;
+                    }
+                    break;
+                case POGOProtos.Rpc.HoloPokemonId.SYLVEON:
+                    sylveonPatched = true;
+                    break;
             }
             if (evolution.gender_requirement && gender !== evolution.gender_requirement) {
                 continue;
