@@ -227,6 +227,7 @@ class Pokemon extends Model {
             this._setPokemonDisplay(nearby.pokedex_number, nearby.pokemon_display, username);
             this.username = username;
             this.cellId = cellId.toString();
+            await this.populateAuxFields();
             const locatePokestop = async () => {
                 let pokestop = null;
                 try {
@@ -266,7 +267,6 @@ class Pokemon extends Model {
                 this.lon = (this.lon + pokestop.lon) / 2;
             }
             this.pokestopId = nearby.fort_id;
-            await this.populateAuxFields();
         });
     }
 
