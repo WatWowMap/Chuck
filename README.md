@@ -77,7 +77,7 @@ SELECT name, type, data FROM rdmdb.instance;
         "password": "userPassword",
         "database": "databaseSchema",
         "charset": "utf8mb4",
-        "connectionLimit": 1000
+        "connectionLimit": 16
     },
     // Redis Connection
     "redis": {
