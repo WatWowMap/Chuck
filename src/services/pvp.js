@@ -62,7 +62,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
             for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
                 const ivEntry = combinations[attack][defense][stamina];
                 if (lvCap >= maxLevel) {
-                    const [lastEntry] = result[leagueName].slice(-1);
+                    const [lastEntry] = (result[leagueName] || []).slice(-1);
                     if (lastEntry && ivEntry.level === lastEntry.level && ivEntry.rank === lastEntry.rank) {
                         lastEntry.capped = true;
                     }
