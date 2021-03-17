@@ -7,8 +7,8 @@ const cpMultipliers = require('../../static/data/cp_multiplier.json');
  * Use ./pvp.js instead.
  */
 
-const calculateCpMultiplier = (level) => {
-    if (level < 40) {
+const calculateCpMultiplier = (level, test = false) => {
+    if (test ? level < 40 : level <= 55) {
         return cpMultipliers[level];
     }
     const baseLevel = Math.floor(level);

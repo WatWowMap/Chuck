@@ -12,7 +12,7 @@ describe('PvP', () => {
                 continue;
             }
             // predicted CP multiplier must be consistent for L40+
-            assert.strictEqual(calculateCpMultiplier(level).toFixed(13), value.toFixed(13), 'CP multiplier at level ' + level);
+            assert.strictEqual(calculateCpMultiplier(level, true).toFixed(13), value.toFixed(13), 'CP multiplier at level ' + level);
         }
     });
     it('calculateCP', () => {
