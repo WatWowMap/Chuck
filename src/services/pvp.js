@@ -11,15 +11,14 @@ const rankCache = new LRU({
     updateAgeOnGet: true,
 });
 const maxLevel = 100;
-const levelCaps = config.dataparser.pvp.levelCaps.concat([maxLevel]);
 const calculateAllRanks = (stats) => {
     const key = `${stats.attack},${stats.defense},${stats.stamina}`;
     let value = rankCache.get(key);
     if (value === undefined) {
         value = {};
         for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
-            let combinationIndex;
-            for (const lvCap of levelCaps) {
+            let combinationIndex, maxed = false;
+            for (const lvCap of config.dataparser.pvp.levelCaps) {
                 if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
                     continue;   // not viable
                 }
@@ -30,12 +29,17 @@ const calculateAllRanks = (stats) => {
                     combinationIndex[lvCap] = combinations;
                 }
                 // check if no more power up is possible: further increasing the cap will not be relevant
-                if (lvCap >= maxLevel || calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
-                    combinations.maxed = true;
+                if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
+                    maxed = combinations.maxed = true;
                     break;
                 }
             }
             if (combinationIndex !== undefined) {
+                if (!maxed) {
+                    const { combinations } = calculateRanks(stats, cpCap, maxLevel);
+                    combinations.maxed = true;
+                    combinationIndex[maxLevel] = combinations;
+                }
                 value[leagueName] = combinationIndex;
             }
         }
