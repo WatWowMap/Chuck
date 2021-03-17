@@ -10,6 +10,8 @@ const rankCache = new LRU({
     maxAge: config.dataparser.pvp.rankCacheAge,
     updateAgeOnGet: true,
 });
+const maxLevel = 100;
+const levelCaps = config.dataparser.pvp.levelCaps.concat([maxLevel]);
 const calculateAllRanks = (stats) => {
     const key = `${stats.attack},${stats.defense},${stats.stamina}`;
     let value = rankCache.get(key);
@@ -17,7 +19,7 @@ const calculateAllRanks = (stats) => {
         value = {};
         for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
             let combinationIndex;
-            for (const lvCap of config.dataparser.pvp.levelCaps) {
+            for (const lvCap of levelCaps) {
                 if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
                     continue;   // not viable
                 }
@@ -28,7 +30,7 @@ const calculateAllRanks = (stats) => {
                     combinationIndex[lvCap] = combinations;
                 }
                 // check if no more power up is possible: further increasing the cap will not be relevant
-                if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
+                if (lvCap >= maxLevel || calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
                     combinations.maxed = true;
                     break;
                 }
@@ -59,6 +61,13 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
         for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
             for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
                 const ivEntry = combinations[attack][defense][stamina];
+                if (lvCap >= maxLevel) {
+                    const [lastEntry] = result[leagueName].slice(-1);
+                    if (lastEntry && ivEntry.level === lastEntry.level && ivEntry.rank === lastEntry.rank) {
+                        lastEntry.capped = true;
+                    }
+                    break;
+                }
                 if (level > ivEntry.level) {
                     continue;
                 }
