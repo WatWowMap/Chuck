@@ -1,9 +1,20 @@
 const assert = require('assert');
-const { calculateCP, calculateRanks } = require('../src/services/pvp-core.js');
+const { calculateCpMultiplier, calculateCP, calculateRanks } = require('../src/services/pvp-core.js');
 
+const cpMultipliers = require('../static/data/cp_multiplier.json');
 const masterfile = require('../static/data/masterfile.json');
 
 describe('PvP', () => {
+    it('calculateCpMultiplier', () => {
+        for (const [key, value] of Object.entries(cpMultipliers)) {
+            const level = parseFloat(key);
+            if (level < 40) {
+                continue;
+            }
+            // predicted CP multiplier must be consistent for L40+
+            assert.strictEqual(calculateCpMultiplier(level).toFixed(13), value.toFixed(13), 'CP multiplier at level ' + level);
+        }
+    });
     it('calculateCP', () => {
         assert.strictEqual(calculateCP(masterfile.pokemon[150], 15, 15, 15, 40), 4178, 'Mewtwo CP');
         assert.strictEqual(calculateCP(masterfile.pokemon[618], 15, 15, 15, 51), 2474, 'Stunfisk CP');
