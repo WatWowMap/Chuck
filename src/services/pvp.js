@@ -89,10 +89,10 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
             if (last.cap < maxLevel) {
                 last.capped = true;
             } else {
-                entries.pop();
-                if (entries.length === 0) {
+                if (entries.length === 1) {
                     continue;
                 }
+                entries.pop();
             }
             result[leagueName] = result[leagueName] ? result[leagueName].concat(entries) : entries;
         }
