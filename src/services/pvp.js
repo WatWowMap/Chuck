@@ -30,15 +30,13 @@ const calculateAllRanks = (stats) => {
                 }
                 // check if no more power up is possible: further increasing the cap will not be relevant
                 if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
-                    maxed = combinations.maxed = true;
+                    maxed = true;
                     break;
                 }
             }
             if (combinationIndex !== undefined) {
                 if (!maxed) {
-                    const { combinations } = calculateRanks(stats, cpCap, maxLevel);
-                    combinations.maxed = true;
-                    combinationIndex[maxLevel] = combinations;
+                    combinationIndex[maxLevel] = calculateRanks(stats, cpCap, maxLevel).combinations;
                 }
                 value[leagueName] = combinationIndex;
             }
@@ -63,15 +61,9 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     const pushAllEntries = (stats, evolution = 0) => {
         const allRanks = calculateAllRanks(stats);
         for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
+            const entries = [];
             for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
                 const ivEntry = combinations[attack][defense][stamina];
-                if (lvCap >= maxLevel) {
-                    const [lastEntry] = (result[leagueName] || []).slice(-1);
-                    if (lastEntry && ivEntry.level === lastEntry.level && ivEntry.rank === lastEntry.rank) {
-                        lastEntry.capped = true;
-                    }
-                    break;
-                }
                 if (level > ivEntry.level) {
                     continue;
                 }
@@ -79,15 +71,30 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
                 if (evolution) {
                     entry.evolution = evolution;
                 }
-                if (combinations.maxed) {
-                    entry.capped = true;
-                }
-                if (!result[leagueName]) {
-                    result[leagueName] = [];
-                }
                 entry.value = Math.floor(entry.value);
-                result[leagueName].push(entry);
+                entries.push(entry);
             }
+            if (entries.length === 0) {
+                continue;
+            }
+            let last = entries[entries.length - 1];
+            while (entries.length >= 2) {   // remove duplicate ranks at highest caps
+                const secondLast = entries[entries.length - 2];
+                if (secondLast.level !== last.level || secondLast.rank !== last.rank) {
+                    break;
+                }
+                entries.pop();
+                last = secondLast;
+            }
+            if (last.cap < maxLevel) {
+                last.capped = true;
+            } else {
+                entries.pop();
+                if (entries.length === 0) {
+                    continue;
+                }
+            }
+            result[leagueName] = result[leagueName] ? result[leagueName].concat(entries) : entries;
         }
     };
     pushAllEntries(masterForm.attack ? masterForm : masterPokemon);
