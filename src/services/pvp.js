@@ -10,13 +10,14 @@ const rankCache = new LRU({
     maxAge: config.dataparser.pvp.rankCacheAge,
     updateAgeOnGet: true,
 });
+const maxLevel = 100;
 const calculateAllRanks = (stats) => {
     const key = `${stats.attack},${stats.defense},${stats.stamina}`;
     let value = rankCache.get(key);
     if (value === undefined) {
         value = {};
         for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
-            let combinationIndex;
+            let combinationIndex, maxed = false;
             for (const lvCap of config.dataparser.pvp.levelCaps) {
                 if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
                     continue;   // not viable
@@ -29,11 +30,14 @@ const calculateAllRanks = (stats) => {
                 }
                 // check if no more power up is possible: further increasing the cap will not be relevant
                 if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
-                    combinations.maxed = true;
+                    maxed = true;
                     break;
                 }
             }
             if (combinationIndex !== undefined) {
+                if (!maxed) {
+                    combinationIndex[maxLevel] = calculateRanks(stats, cpCap, maxLevel).combinations;
+                }
                 value[leagueName] = combinationIndex;
             }
         }
@@ -57,6 +61,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     const pushAllEntries = (stats, evolution = 0) => {
         const allRanks = calculateAllRanks(stats);
         for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
+            const entries = [];
             for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
                 const ivEntry = combinations[attack][defense][stamina];
                 if (level > ivEntry.level) {
@@ -66,15 +71,30 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
                 if (evolution) {
                     entry.evolution = evolution;
                 }
-                if (combinations.maxed) {
-                    entry.capped = true;
-                }
-                if (!result[leagueName]) {
-                    result[leagueName] = [];
-                }
                 entry.value = Math.floor(entry.value);
-                result[leagueName].push(entry);
+                entries.push(entry);
             }
+            if (entries.length === 0) {
+                continue;
+            }
+            let last = entries[entries.length - 1];
+            while (entries.length >= 2) {   // remove duplicate ranks at highest caps
+                const secondLast = entries[entries.length - 2];
+                if (secondLast.level !== last.level || secondLast.rank !== last.rank) {
+                    break;
+                }
+                entries.pop();
+                last = secondLast;
+            }
+            if (last.cap < maxLevel) {
+                last.capped = true;
+            } else {
+                if (entries.length === 1) {
+                    continue;
+                }
+                entries.pop();
+            }
+            result[leagueName] = result[leagueName] ? result[leagueName].concat(entries) : entries;
         }
     };
     pushAllEntries(masterForm.attack ? masterForm : masterPokemon);

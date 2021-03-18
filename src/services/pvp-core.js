@@ -7,8 +7,21 @@ const cpMultipliers = require('../../static/data/cp_multiplier.json');
  * Use ./pvp.js instead.
  */
 
+const calculateCpMultiplier = (level, test = false) => {
+    if (test ? level < 40 : level <= 55) {
+        return cpMultipliers[level];
+    }
+    const baseLevel = Math.floor(level);
+    const baseCpm = Math.fround(0.5903 + baseLevel * 0.005);
+    if (baseLevel === level) {
+        return Math.fround(baseCpm);
+    }
+    const nextCpm = Math.fround(0.5903 + (baseLevel + 1) * 0.005);
+    return Math.sqrt((baseCpm * baseCpm + nextCpm * nextCpm) / 2);
+};
+
 const calculateStatProduct = (stats, attack, defense, stamina, level) => {
-    const multiplier = cpMultipliers[level];
+    const multiplier = calculateCpMultiplier(level);
     let hp = Math.floor((stamina + stats.stamina) * multiplier);
     if (hp < 10) {
         hp = 10;
@@ -19,7 +32,7 @@ const calculateStatProduct = (stats, attack, defense, stamina, level) => {
 };
 
 const calculateCP = (stats, attack, defense, stamina, level) => {
-    const multiplier = cpMultipliers[level];
+    const multiplier = calculateCpMultiplier(level);
 
     const a = stats.attack + attack;
     const d = stats.defense + defense;
@@ -73,4 +86,4 @@ const calculateRanks = (stats, cpCap, lvCap) => {
     return { combinations, sortedRanks };
 };
 
-module.exports = { calculateCP, calculateRanks };
+module.exports = { calculateCpMultiplier, calculateCP, calculateRanks };
