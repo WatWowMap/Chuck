@@ -318,6 +318,7 @@ class Pokemon extends Model {
                 this.displayPokemonId = this.pokemonId;
                 this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
                 this.atkIv = this.defIv = this.staIv = null;    // see also: #47
+                this.level -= 5;
             }
         }
         const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume,
