@@ -16,8 +16,6 @@ const config = require('../services/config.js');
  * Pokemon model class.
  */
 class Pokemon extends Model {
-    static WeatherBoostMinLevel = 6;
-    static WeatherBoostMinIvStat = 4;
     static PokemonTimeUnseen = config.dataparser.pokemonTimeUnseen * 60;
     static PokemonTimeReseen = config.dataparser.pokemonTimeReseen * 60;
 
@@ -305,9 +303,22 @@ class Pokemon extends Model {
             this.changed('gender') || this.changed('costume')))) {
             return;
         }
-        if (!this.isDitto && (this.isDitto = this.isDittoDisguised())) {
-            console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
-            this.setDittoAttributes(this.pokemonId);
+        if (!this.isDitto) {
+            if (this.weather > 0) {
+                if (this.level <= 5 || this.atkIv < 4 || this.defIv < 4 || this.staIv < 4) {
+                    console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
+                    this.isDitto = true;
+                    this.displayPokemonId = this.pokemonId;
+                    this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
+                }
+            } else if (this.level > 30) {
+                console.log('[POKEMON] Pokemon', this.id, 'weather boosted Ditto found, disguised as', this.pokemonId,
+                    'IV', this.atkIv, this.defIv, this.staIv);
+                this.isDitto = true;
+                this.displayPokemonId = this.pokemonId;
+                this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
+                this.atkIv = this.defIv = this.staIv = null;    // see also: #47
+            }
         }
         const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume,
             this.atkIv, this.defIv, this.staIv, this.level, this.gender);
@@ -319,27 +330,6 @@ class Pokemon extends Model {
         }
         this.pvpRankingsGreatLeague = pvp.great || null;
         this.pvpRankingsUltraLeague = pvp.ultra || null;
-    }
-
-    /**
-     * Set default Ditto attributes.
-     * @param displayPokemonId
-     */
-    setDittoAttributes(displayPokemonId) {
-        this.displayPokemonId = displayPokemonId;
-        this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
-    }
-
-    /**
-     * Check if Pokemon is Ditto disguised.
-     */
-    isDittoDisguised() {
-        let isUnderLevelBoosted = this.level > 0 && this.level < Pokemon.WeatherBoostMinLevel;
-        let isUnderIvStatBoosted = this.level > 0 && (this.atkIv < Pokemon.WeatherBoostMinIvStat ||
-            this.defIv < Pokemon.WeatherBoostMinIvStat ||
-            this.staIv < Pokemon.WeatherBoostMinIvStat);
-        let isWeatherBoosted = this.weather > 0;
-        return (isWeatherBoosted ? isUnderLevelBoosted || isUnderIvStatBoosted : this.level > 30);
     }
 
     /**
