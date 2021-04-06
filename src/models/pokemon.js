@@ -179,7 +179,7 @@ class Pokemon extends Model {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 if (RedisClient) {
                     await RedisClient.publish('pokemon:added', JSON.stringify(pokemon.toJSON()));
-                    if (pokemon.atkIv !== null) {
+                    if (pokemon.level !== null) {
                         await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
                     }
                 }
@@ -299,7 +299,7 @@ class Pokemon extends Model {
     }
 
     async populateAuxFields(fromEncounter = false) {
-        if (!fromEncounter && (this.atkIv === null || !(this.changed('pokemonId') || this.changed('form') ||
+        if (!fromEncounter && (this.level === null || !(this.changed('pokemonId') || this.changed('form') ||
             this.changed('gender') || this.changed('costume')))) {
             return;
         }
@@ -319,6 +319,7 @@ class Pokemon extends Model {
                 this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
                 this.atkIv = this.defIv = this.staIv = null;    // see also: #47
                 this.level -= 5;
+                return;
             }
         }
         const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume,
