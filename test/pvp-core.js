@@ -21,6 +21,7 @@ describe('PvP', () => {
     });
     it('calculateRanks', () => {
         assert.strictEqual(calculateRanks(masterfile.pokemon[26], 1500, 40).combinations[15][15][15].rank, 742, 'Hundo Raichu rank');
+        assert.strictEqual(calculateRanks(masterfile.pokemon[351], 1500, 51).combinations[4][14][15].rank, 56, 'Weather boosted Castform rank');
         assert.strictEqual(calculateRanks(masterfile.pokemon[660], 1500, 100).combinations[0][15][11].rank, 1, 'Diggersby uncapped rank');
         assert.strictEqual(calculateRanks(masterfile.pokemon[663], 2500, 51).combinations[13][15][15].rank, 1, 'Talonflame functionally perfect @15');
         assert.strictEqual(calculateRanks(masterfile.pokemon[663], 2500, 51).combinations[13][15][14].rank, 1, 'Talonflame functionally perfect @14');
