@@ -101,7 +101,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     let canEvolve = true;
     if (costumeId) {
         const costumeName = POGOProtos.Rpc.PokemonDisplayProto.Costume[costumeId];
-        canEvolve = costumeName.endsWith('_NOEVOLVE') || costumeName.endsWith('_NO_EVOLVE');
+        canEvolve = !costumeName.endsWith('_NOEVOLVE') && !costumeName.endsWith('_NO_EVOLVE');
     }
     if (canEvolve && masterForm.evolutions) {
         let isEevee = false;
