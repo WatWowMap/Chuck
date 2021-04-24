@@ -45,12 +45,17 @@ class Pokestop extends Model {
             deleted: false,
             arScanEligible: fort.is_ar_scan_eligible,
         };
-        if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0 &&
-            (fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK) ||
-                fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_GLACIAL) ||
-                fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MAGNETIC) ||
-                fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MOSSY))) {
+        if (!fort.active_fort_modifier || fort.active_fort_modifier.length <= 0 ||
+            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK) &&
+            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_GLACIAL) &&
+            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MAGNETIC) &&
+            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MOSSY)) {
+            record.lureExpireTimestamp = 0;
+        } else if (record.lureExpireTimestamp < ts || record.lureId !== fort.active_fort_modifier[0]) {
             record.lureExpireTimestamp = Math.floor(record.lastModifiedTimestamp + Pokestop.LureTime);
+            if (record.lureExpireTimestamp < ts) {  // event extended lure duration
+                record.lureExpireTimestamp = Math.floor(ts + Pokestop.LureTime);
+            }
             record.lureId = fort.active_fort_modifier[0];
         }
         if (fort.pokestop_display) {
