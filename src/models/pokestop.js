@@ -46,10 +46,8 @@ class Pokestop extends Model {
             arScanEligible: fort.is_ar_scan_eligible,
         };
         if (!fort.active_fort_modifier || fort.active_fort_modifier.length <= 0 ||
-            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK) &&
-            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_GLACIAL) &&
-            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MAGNETIC) &&
-            !fort.active_fort_modifier.includes(POGOProtos.Rpc.Item.ITEM_TROY_DISK_MOSSY)) {
+            fort.active_fort_modifier.every((mod) =>
+                mod < POGOProtos.Rpc.Item.ITEM_TROY_DISK || mod >= POGOProtos.Rpc.Item.ITEM_TROY_DISK + 99)) {
             record.lureExpireTimestamp = 0;
         } else if (record.lureExpireTimestamp < ts || record.lureId !== fort.active_fort_modifier[0]) {
             record.lureExpireTimestamp = Math.floor(record.lastModifiedTimestamp + Pokestop.LureTime);
