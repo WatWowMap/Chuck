@@ -33,6 +33,26 @@ class Instance extends Model {
 
         //console.log('[Instance] DeleteByName:', results);
     }
+
+    static fromString(type) {
+        switch (type) {
+            case 'circle_pokemon':
+            case 'circlepokemon':
+                return 'Circle Pokemon';
+            case 'circle_raid':
+            case 'circleraid':
+                return 'Circle Raid';
+            case 'circle_smart_raid':
+                return 'Smart Circle Raid';
+            case 'auto_quest':
+            case 'autoquest':
+                return 'Auto Quest';
+            case 'pokemon_iv':
+            case 'pokemoniv':
+                return 'Pokemon IV';
+        }
+        return null;
+    }
 }
 
 Instance.init({
