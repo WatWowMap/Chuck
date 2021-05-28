@@ -31,11 +31,14 @@
             "rankCacheAge": 86400000,
             "levelCaps": [
                 40,
-                41,
                 50,
                 51
             ],
+            "v1": true,
+            "v2": true,
+            "v2Webhook": false,
             "leagues": {
+                "little": 500,
                 "great": 1500,
                 "ultra": 2500
             }
