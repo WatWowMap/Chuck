@@ -399,8 +399,9 @@ class Pokemon extends Model {
                 ultra: this.pvpRankingsUltraLeague,
             };
         } else {
-            message.pvp_rankings_great_league = config.dataparser.pvp.v2 ? this.pvp.great : this.pvpRankingsGreatLeague;
-            message.pvp_rankings_ultra_league = config.dataparser.pvp.v2 ? this.pvp.ultra : this.pvpRankingsUltraLeague;
+            const pvp = this.pvp || {};
+            message.pvp_rankings_great_league = config.dataparser.pvp.v2 ? pvp.great : this.pvpRankingsGreatLeague;
+            message.pvp_rankings_ultra_league = config.dataparser.pvp.v2 ? pvp.ultra : this.pvpRankingsUltraLeague;
         }
         return {
             type: 'pokemon',
