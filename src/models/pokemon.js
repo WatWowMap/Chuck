@@ -398,10 +398,13 @@ class Pokemon extends Model {
                 great: this.pvpRankingsGreatLeague,
                 ultra: this.pvpRankingsUltraLeague,
             };
-        } else {
+        } else if (config.dataparser.pvp.v2) {
             const pvp = this.pvp || {};
-            message.pvp_rankings_great_league = config.dataparser.pvp.v2 ? pvp.great : this.pvpRankingsGreatLeague;
-            message.pvp_rankings_ultra_league = config.dataparser.pvp.v2 ? pvp.ultra : this.pvpRankingsUltraLeague;
+            message.pvp_rankings_great_league = pvp.great;
+            message.pvp_rankings_ultra_league = pvp.ultra;
+        } else {
+            message.pvp_rankings_great_league = this.pvpRankingsGreatLeague;
+            message.pvp_rankings_ultra_league = this.pvpRankingsUltraLeague;
         }
         return {
             type: 'pokemon',
