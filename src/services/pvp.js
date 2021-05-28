@@ -11,39 +11,34 @@ const rankCache = new LRU({
     updateAgeOnGet: true,
 });
 const maxLevel = 100;
-const calculateAllRanks = (stats) => {
-    const key = `${stats.attack},${stats.defense},${stats.stamina}`;
-    let value = rankCache.get(key);
-    if (value === undefined) {
-        value = {};
-        for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
-            let combinationIndex, maxed = false;
-            for (const lvCap of config.dataparser.pvp.levelCaps) {
-                if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
-                    continue;   // not viable
-                }
-                const { combinations } = calculateRanks(stats, cpCap, lvCap);
-                if (combinationIndex === undefined) {
-                    combinationIndex = { [lvCap]: combinations };
-                } else {
-                    combinationIndex[lvCap] = combinations;
-                }
-                // check if no more power up is possible: further increasing the cap will not be relevant
-                if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
-                    maxed = true;
-                    break;
-                }
+const calculateAllRanks = (stats, cpCap) => {
+    const key = `${stats.attack},${stats.defense},${stats.stamina},${cpCap}`;
+    let combinationIndex = rankCache.get(key);
+    if (combinationIndex === undefined) {
+        combinationIndex = null;
+        let maxed = false;
+        for (const lvCap of config.dataparser.pvp.levelCaps) {
+            if (calculateCP(stats, 15, 15, 15, lvCap) <= cpCap) {
+                continue;   // not viable
             }
-            if (combinationIndex !== undefined) {
-                if (!maxed) {
-                    combinationIndex[maxLevel] = calculateRanks(stats, cpCap, maxLevel).combinations;
-                }
-                value[leagueName] = combinationIndex;
+            const { combinations } = calculateRanks(stats, cpCap, lvCap);
+            if (combinationIndex === null) {
+                combinationIndex = { [lvCap]: combinations };
+            } else {
+                combinationIndex[lvCap] = combinations;
+            }
+            // check if no more power up is possible: further increasing the cap will not be relevant
+            if (calculateCP(stats, 0, 0, 0, lvCap + .5) > cpCap) {
+                maxed = true;
+                break;
             }
         }
-        rankCache.set(key, value);
+        if (combinationIndex !== null && !maxed) {
+            combinationIndex[maxLevel] = calculateRanks(stats, cpCap, maxLevel).combinations;
+        }
+        rankCache.set(key, combinationIndex);
     }
-    return value;
+    return combinationIndex;
 };
 
 const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stamina, level, gender) => {
@@ -59,8 +54,14 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     }
     result.cp = calculateCP(masterForm.attack ? masterForm : masterPokemon, attack, defense, stamina, level);
     const pushAllEntries = (stats, evolution = 0) => {
-        const allRanks = calculateAllRanks(stats);
-        for (const [leagueName, combinationIndex] of Object.entries(allRanks)) {
+        for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
+            if (leagueName.startsWith('little') && !(stats.little || masterPokemon.little)) {
+                continue;
+            }
+            const combinationIndex = calculateAllRanks(stats, cpCap);
+            if (combinationIndex === null) {
+                continue;
+            }
             const entries = [];
             for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
                 const ivEntry = combinations[attack][defense][stamina];

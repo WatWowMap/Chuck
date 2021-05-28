@@ -330,8 +330,14 @@ class Pokemon extends Model {
             console.warn(`[Pokemon] Found inconsistent CP: ${this.cp} vs ${pvp.cp} for`,
                 `${this.pokemonId}-${this.form}, L${this.level} - ${this.atkIv}/${this.defIv}/${this.staIv}`);
         }
-        this.pvpRankingsGreatLeague = pvp.great || null;
-        this.pvpRankingsUltraLeague = pvp.ultra || null;
+        if (config.dataparser.pvp.v1) {
+            this.pvpRankingsGreatLeague = pvp.great || null;
+            this.pvpRankingsUltraLeague = pvp.ultra || null;
+        }
+        if (config.dataparser.pvp.v2) {
+            delete pvp.cp;
+            this.pvp = pvp;
+        }
     }
 
     /**
@@ -359,39 +365,47 @@ class Pokemon extends Model {
      * Get Pokemon object as JSON object with correct property keys for webhook payload
      */
     toJson() {
+        const message = {
+            spawnpoint_id: this.spawnId !== null ? this.spawnId.toString(16) : 'None',
+            pokestop_id: this.pokestopId === null ? 'None' : this.pokestopId,
+            encounter_id: this.id,
+            pokemon_id: this.pokemonId,
+            latitude: this.lat,
+            longitude: this.lon,
+            disappear_time: this.expireTimestamp === null ? 0 : this.expireTimestamp,
+            disappear_time_verified: this.expireTimestampVerified,
+            first_seen: this.firstSeenTimestamp,
+            last_modified_time: this.updated === null ? 0 : this.updated,
+            gender: this.gender,
+            cp: this.cp,
+            form: this.form,
+            costume: this.costume,
+            individual_attack: this.atkIv,
+            individual_defense: this.defIv,
+            individual_stamina: this.staIv,
+            pokemon_level: this.level,
+            move_1: this.move1,
+            move_2: this.move2,
+            weight: this.weight,
+            height: this.size,
+            weather: this.weather,
+            shiny: this.shiny,
+            username: this.username,
+            display_pokemon_id: this.displayPokemonId,
+        };
+        if (config.dataparser.pvp.v2Webhook) {
+            message.pvp = config.dataparser.pvp.v2 ? this.pvp : {
+                great: this.pvpRankingsGreatLeague,
+                ultra: this.pvpRankingsUltraLeague,
+            };
+        } else {
+            message.pvp_rankings_great_league = config.dataparser.pvp.v2 ? this.pvp.great : this.pvpRankingsGreatLeague;
+            message.pvp_rankings_ultra_league = config.dataparser.pvp.v2 ? this.pvp.ultra : this.pvpRankingsUltraLeague;
+        }
         return {
             type: 'pokemon',
-            message: {
-                spawnpoint_id: this.spawnId !== null ? this.spawnId.toString(16) : 'None',
-                pokestop_id: this.pokestopId === null ? 'None' : this.pokestopId,
-                encounter_id: this.id,
-                pokemon_id: this.pokemonId,
-                latitude: this.lat,
-                longitude: this.lon,
-                disappear_time: this.expireTimestamp === null ? 0 : this.expireTimestamp,
-                disappear_time_verified: this.expireTimestampVerified,
-                first_seen: this.firstSeenTimestamp,
-                last_modified_time: this.updated === null ? 0 : this.updated,
-                gender: this.gender,
-                cp: this.cp,
-                form: this.form,
-                costume: this.costume,
-                individual_attack: this.atkIv,
-                individual_defense: this.defIv,
-                individual_stamina: this.staIv,
-                pokemon_level: this.level,
-                move_1: this.move1,
-                move_2: this.move2,
-                weight: this.weight,
-                height: this.size,
-                weather: this.weather,
-                shiny: this.shiny,
-                username: this.username,
-                display_pokemon_id: this.displayPokemonId,
-                pvp_rankings_great_league: this.pvpRankingsGreatLeague,
-                pvp_rankings_ultra_league: this.pvpRankingsUltraLeague,
-            }
-        }
+            message: message
+        };
     }
 }
 Pokemon.init({
@@ -525,6 +539,10 @@ Pokemon.init({
         defaultValue: null,
     },
     pvpRankingsUltraLeague: {
+        type: DataTypes.JSONTEXT,
+        defaultValue: null,
+    },
+    pvp: {
         type: DataTypes.JSONTEXT,
         defaultValue: null,
     },
