@@ -4,7 +4,7 @@ const LRU = require('lru-cache');
 const POGOProtos = require('pogo-protos');
 const masterfile = require('../../static/data/masterfile.json');
 const config = require('./config.js');
-const { calculateCP, calculateRanks } = require('./pvp-core.js');
+const { calculateHP, calculateCP, calculateRanks } = require('./pvp-core.js');
 
 const rankCache = new LRU({
     maxAge: config.dataparser.pvp.rankCacheAge,
@@ -55,47 +55,58 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
     result.cp = calculateCP(masterForm.attack ? masterForm : masterPokemon, attack, defense, stamina, level);
     const pushAllEntries = (stats, evolution = 0) => {
         for (const [leagueName, cpCap] of Object.entries(config.dataparser.pvp.leagues)) {
-            if (leagueName.startsWith('little') && !(stats.little || masterPokemon.little)) {
-                continue;
-            }
-            const combinationIndex = calculateAllRanks(stats, cpCap);
-            if (combinationIndex === null) {
-                continue;
-            }
             const entries = [];
-            for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
-                const ivEntry = combinations[attack][defense][stamina];
-                if (level > ivEntry.level) {
+            if (cpCap !== null) {
+                if (leagueName.startsWith('little') && !(stats.little || masterPokemon.little)) {
                     continue;
                 }
-                const entry = { ...baseEntry, cap: parseFloat(lvCap), ...ivEntry };
-                if (evolution) {
-                    entry.evolution = evolution;
-                }
-                entry.value = Math.floor(entry.value);
-                entries.push(entry);
-            }
-            if (entries.length === 0) {
-                continue;
-            }
-            let last = entries[entries.length - 1];
-            while (entries.length >= 2) {   // remove duplicate ranks at highest caps
-                const secondLast = entries[entries.length - 2];
-                if (secondLast.level !== last.level || secondLast.rank !== last.rank) {
-                    break;
-                }
-                entries.pop();
-                last = secondLast;
-            }
-            if (last.cap < maxLevel) {
-                last.capped = true;
-            } else {
-                if (entries.length === 1) {
+                const combinationIndex = calculateAllRanks(stats, cpCap);
+                if (combinationIndex === null) {
                     continue;
                 }
-                entries.pop();
+                for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
+                    const ivEntry = combinations[attack][defense][stamina];
+                    if (level > ivEntry.level) {
+                        continue;
+                    }
+                    const entry = {...baseEntry, cap: parseFloat(lvCap), ...ivEntry};
+                    if (evolution) {
+                        entry.evolution = evolution;
+                    }
+                    entry.value = Math.floor(entry.value);
+                    entries.push(entry);
+                }
+                if (entries.length === 0) {
+                    continue;
+                }
+                let last = entries[entries.length - 1];
+                while (entries.length >= 2) {   // remove duplicate ranks at highest caps
+                    const secondLast = entries[entries.length - 2];
+                    if (secondLast.level !== last.level || secondLast.rank !== last.rank) {
+                        break;
+                    }
+                    entries.pop();
+                    last = secondLast;
+                }
+                if (last.cap < maxLevel) {
+                    last.capped = true;
+                } else {
+                    if (entries.length === 1) {
+                        continue;
+                    }
+                    entries.pop();
+                }
+            } else if (!evolution && attack === 15 && defense === 15 && stamina < 15) {
+                // Temporary evolutions always preserve HP
+                for (const lvCap of config.dataparser.pvp.levelCaps) {
+                    if (calculateHP(stats, stamina, lvCap) === calculateHP(stats, 15, lvCap)) {
+                        entries.push({...baseEntry, level: parseFloat(lvCap), rank: 1, percentage: 1});
+                    }
+                }
             }
-            result[leagueName] = result[leagueName] ? result[leagueName].concat(entries) : entries;
+            if (entries.length > 0) {
+                result[leagueName] = result[leagueName] ? result[leagueName].concat(entries) : entries;
+            }
         }
     };
     pushAllEntries(masterForm.attack ? masterForm : masterPokemon);

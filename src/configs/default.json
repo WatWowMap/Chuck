@@ -40,7 +40,8 @@
             "leagues": {
                 "little": 500,
                 "great": 1500,
-                "ultra": 2500
+                "ultra": 2500,
+                "master": null
             }
         }
     },
