@@ -30,7 +30,6 @@
         "pvp": {
             "rankCacheAge": 86400000,
             "levelCaps": [
-                40,
                 50,
                 51
             ],
