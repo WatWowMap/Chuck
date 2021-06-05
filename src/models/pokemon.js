@@ -56,6 +56,7 @@ class Pokemon extends Model {
             this.displayPokemonId = null;
             this.pvpRankingsGreatLeague = null;
             this.pvpRankingsUltraLeague = null;
+            this.pvp = null;
         }
         if (this.isNewRecord || !this.isDitto) {
             this.pokemonId = pokemonId;
@@ -81,6 +82,7 @@ class Pokemon extends Model {
                 this.level = null;
                 this.pvpRankingsGreatLeague = null;
                 this.pvpRankingsUltraLeague = null;
+                this.pvp = null;
             }
             this.weather = display.weather_boosted_condition;
         } else {
