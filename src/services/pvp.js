@@ -65,7 +65,7 @@ const queryPvPRank = async (pokemonId, formId, costumeId, attack, defense, stami
             const entries = [];
             for (const [lvCap, combinations] of Object.entries(combinationIndex)) {
                 const ivEntry = combinations[attack][defense][stamina];
-                if (level > ivEntry.level) {
+                if (ivEntry.rank === null || level > ivEntry.level) {
                     continue;
                 }
                 const entry = { ...baseEntry, cap: parseFloat(lvCap), ...ivEntry };
