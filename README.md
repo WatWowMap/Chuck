@@ -16,13 +16,14 @@ Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDevi
 ## Installation  
 1.) Clone repository `git clone https://github.com/WatWowMap/Chuck`  
 2.) Install dependencies `npm run update`  
-3.) Copy config `cp src/configs/config.example.json src/configs/config.json`  
-4.) Fill out config `vi src/configs/config.json` (listening port, instances, db info, etc)  
-5.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
-6.) Run `npm run controller`  //not currently working! Set DCM endpoint to Chuck parser for the time being, use RDM Controller.  
-7.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
-8.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
-9.) Point `data_endpoint` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://dataparser_ip:9001`
+3.) Update protos `npm update pogo-protos`
+4.) Copy config `cp src/configs/config.example.json src/configs/config.json`  
+5.) Fill out config `vi src/configs/config.json` (listening port, instances, db info, etc)  
+6.) Run `npm run dataparser` to run dataparser (Database tables will be created if they don't exist)  
+7.) Run `npm run controller`  //not currently working! Set DCM endpoint to Chuck parser for the time being, use RDM Controller.  
+8.) Point `backend_url` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://host_ip:9002`  
+9.) Import your existing `RDM` instances to your ControllerJS/DataParser `instance` table (replace `bjsdb` with database name for Controller/DataParser) and replace `rdmdb` with your existing RDM's database name):  
+10.) Point `data_endpoint` config property in [DeviceConfigManager](https://github.com/versx/DeviceConfigManager) to `http://dataparser_ip:9001`
 ```
 INSERT INTO bjsdb.instance (name, type, data)
 SELECT name, type, data FROM rdmdb.instance;
@@ -121,7 +122,8 @@ This allows the devs to constantly add more config options in the future, withou
 ```
 ## Updating  
 1.) `git pull`  
-3.) `npm run update`  
+2.) `npm run update`  
+3.) `npm update pogo-protos`
 
 ## Current Issues  
 - Auto-Assignments might not work correctly
