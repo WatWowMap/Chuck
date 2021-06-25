@@ -70,16 +70,19 @@ class Pokemon extends Model {
             // TODO: handle ditto weather change? (we do not know whether it is currently partly cloudy)
             if (!this.isNewRecord && !this.isDitto && !this.weather !== !display.weather_boosted_condition) {
                 console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
-                    'to', display.weather_boosted_condition, 'by', username, '- clearing IVs');
-                this.atkIv = null;
-                this.defIv = null;
-                this.staIv = null;
+                    'to', display.weather_boosted_condition, 'by', username);
+                const swapField = (a, b) => {
+                    const t = this[a];
+                    this[a] = this[b];
+                    this[b] = t;
+                }
+                swapField('atkIv', 'atkInactive');
+                swapField('defIv', 'defInactive');
+                swapField('staIv', 'staInactive');
                 this.cp = null;
-                this.weight = null;
-                this.size = null;
-                this.move1 = null;
-                this.move2 = null;
-                this.level = null;
+                if (this.level !== null) {
+                    this.level += display.weather_boosted_condition ? 5 : -5;
+                }
                 this.pvpRankingsGreatLeague = null;
                 this.pvpRankingsUltraLeague = null;
                 this.pvp = null;
@@ -483,6 +486,22 @@ Pokemon.init({
         defaultValue: null,
     },
     staIv: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    /**
+     * These fields are used for storing weather-boosted IV when spawn is not boosted,
+     * or non-boosted IV when spawn is boosted.
+     */
+    atkInactive: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    defInactive: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    staInactive: {
         type: DataTypes.TINYINT(3).UNSIGNED,
         defaultValue: null,
     },
