@@ -61,39 +61,30 @@ class Pokemon extends Model {
         if (this.isNewRecord || !this.isDitto) {
             this.pokemonId = pokemonId;
         }
-        if (display !== null) {
-            if (this.isNewRecord || !this.isDitto) {
-                this.gender = display.gender;
-                this.form = display.form;
-                this.costume = display.costume;
+        this.gender = display.gender;
+        this.form = display.form;
+        this.costume = display.costume;
+        // TODO: handle ditto weather change? (we do not know whether it is currently partly cloudy)
+        if (!this.isNewRecord && !this.isDitto && !this.weather !== !display.weather_boosted_condition) {
+            console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
+                'to', display.weather_boosted_condition, 'by', username);
+            const swapField = (a, b) => {
+                const t = this[a];
+                this[a] = this[b];
+                this[b] = t;
             }
-            // TODO: handle ditto weather change? (we do not know whether it is currently partly cloudy)
-            if (!this.isNewRecord && !this.isDitto && !this.weather !== !display.weather_boosted_condition) {
-                console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
-                    'to', display.weather_boosted_condition, 'by', username);
-                const swapField = (a, b) => {
-                    const t = this[a];
-                    this[a] = this[b];
-                    this[b] = t;
-                }
-                swapField('atkIv', 'atkInactive');
-                swapField('defIv', 'defInactive');
-                swapField('staIv', 'staInactive');
-                this.cp = null;
-                if (this.level !== null) {
-                    this.level += display.weather_boosted_condition ? 5 : -5;
-                }
-                this.pvpRankingsGreatLeague = null;
-                this.pvpRankingsUltraLeague = null;
-                this.pvp = null;
+            swapField('atkIv', 'atkInactive');
+            swapField('defIv', 'defInactive');
+            swapField('staIv', 'staInactive');
+            this.cp = null;
+            if (this.level !== null) {
+                this.level += display.weather_boosted_condition ? 5 : -5;
             }
-            this.weather = display.weather_boosted_condition;
-        } else {
-            console.warn('[Pokemon] Missing display');
-            this.gender = null;
-            this.form = null;
-            this.costume = null;
+            this.pvpRankingsGreatLeague = null;
+            this.pvpRankingsUltraLeague = null;
+            this.pvp = null;
         }
+        this.weather = display.weather_boosted_condition;
     }
 
     async _addWildPokemon(wild, username, transaction) {
