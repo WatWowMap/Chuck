@@ -64,25 +64,37 @@ class Pokemon extends Model {
         this.gender = display.gender;
         this.form = display.form;
         this.costume = display.costume;
-        // TODO: handle ditto weather change? (we do not know whether it is currently partly cloudy)
-        if (!this.isNewRecord && !this.isDitto && !this.weather !== !display.weather_boosted_condition) {
+        if (!this.isNewRecord && this.weather !== display.weather_boosted_condition) {
             console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
                 'to', display.weather_boosted_condition, 'by', username);
-            const swapField = (a, b) => {
-                const t = this[a];
-                this[a] = this[b];
-                this[b] = t;
+            const changeWeather = (boosted = display.weather_boosted_condition) => {
+                const swapField = (a, b) => {
+                    const t = this[a];
+                    this[a] = this[b];
+                    this[b] = t;
+                }
+                swapField('atkIv', 'atkInactive');
+                swapField('defIv', 'defInactive');
+                swapField('staIv', 'staInactive');
+                this.cp = null;
+                if (this.level !== null) {
+                    this.level += boosted ? 5 : -5;
+                }
+                this.pvpRankingsGreatLeague = null;
+                this.pvpRankingsUltraLeague = null;
+                this.pvp = null;
             }
-            swapField('atkIv', 'atkInactive');
-            swapField('defIv', 'defInactive');
-            swapField('staIv', 'staInactive');
-            this.cp = null;
-            if (this.level !== null) {
-                this.level += display.weather_boosted_condition ? 5 : -5;
+            if (this.isDitto) {
+                if (display.weather_boosted_condition === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise are boosted and Ditto was not boosted: none -> boosted
+                    changeWeather(true);
+                } else if (this.weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise were boosted and Ditto is not boosted: boosted -> none
+                    changeWeather(false);
+                }
+            } else if (!this.weather !== !display.weather_boosted_condition) {
+                changeWeather();
             }
-            this.pvpRankingsGreatLeague = null;
-            this.pvpRankingsUltraLeague = null;
-            this.pvp = null;
         }
         this.weather = display.weather_boosted_condition;
     }
