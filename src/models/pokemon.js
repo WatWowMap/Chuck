@@ -363,7 +363,7 @@ class Pokemon extends Model {
     }
 
     async populateAuxFields(fromEncounter = false) {
-        if (!fromEncounter && (this.level === null || !(this.changed('pokemonId') || this.changed('form') ||
+        if (!fromEncounter && (this.atkIv === null || !(this.changed('pokemonId') || this.changed('form') ||
             this.changed('gender') || this.changed('costume')))) {
             return;
         }
