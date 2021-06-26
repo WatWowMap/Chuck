@@ -188,7 +188,7 @@ class Pokemon extends Model {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 if (RedisClient) {
                     await RedisClient.publish('pokemon:added', JSON.stringify(pokemon.toJSON()));
-                    if (pokemon.level !== null) {
+                    if (pokemon.atkIv !== null) {
                         await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
                     }
                 }
