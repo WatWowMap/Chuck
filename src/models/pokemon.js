@@ -367,12 +367,13 @@ class Pokemon extends Model {
             this.changed('gender') || this.changed('costume')))) {
             return;
         }
-        const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume,
-            this.atkIv, this.defIv, this.staIv, this.level, this.gender);
+        const cp = ipcWorker.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
+        const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.gender,
+            this.atkIv, this.defIv, this.staIv, this.level);
         if (!fromEncounter) {
-            this.cp = pvp.cp || null;
-        } else if (!this.isDitto && this.cp !== pvp.cp) {
-            console.warn(`[Pokemon] Found inconsistent CP: ${this.cp} vs ${pvp.cp} for`,
+            this.cp = (await cp) || null;
+        } else if (!this.isDitto && this.cp !== (await cp)) {
+            console.warn(`[Pokemon] Found inconsistent CP: ${this.cp} vs ${await cp} for`,
                 `${this.pokemonId}-${this.form}, L${this.level} - ${this.atkIv}/${this.defIv}/${this.staIv}`);
         }
         if (config.dataparser.pvp.v1) {
