@@ -24,27 +24,27 @@
   },
   "homepage": "https://github.com/WatWowMap/Chuck",
   "dependencies": {
-    "@turf/turf": "^6.2.0",
+    "@turf/turf": "^6.4.0",
     "axios": "^0.21.1",
     "better-logging": "^4.5.0",
-    "eslint": "^7.18.0",
+    "eslint": "^7.29.0",
     "express": "^4.17.1",
     "extend": "^3.0.2",
-    "google-protobuf": "^3.15.8",
-    "helmet": "^4.3.1",
-    "i18n": "^0.13.2",
+    "google-protobuf": "^3.17.3",
+    "helmet": "^4.6.0",
+    "i18n": "^0.13.3",
     "lru-cache": "^6.0.0",
-    "mustache-express": "^1.3.0",
+    "mustache-express": "^1.3.1",
     "mysql2": "^2.2.5",
     "nodes2ts": "^2.0.0",
-    "ohbem": "^1.0.1",
+    "ohbem": "^1.1.0",
     "pogo-protos": "git+https://github.com/Furtif/pogo-protos.git",
     "pogo-translations": "git+https://github.com/bschultz/pogo-translations.git",
     "redis": "^3.1.1",
     "s2-geometry": "^1.2.10",
-    "sequelize": "^6.6.2"
+    "sequelize": "^6.6.4"
   },
   "devDependencies": {
-    "mocha": "^8.3.2"
+    "mocha": "^8.4.0"
   }
 }
