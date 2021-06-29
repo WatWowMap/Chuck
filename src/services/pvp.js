@@ -11,7 +11,7 @@ const ohbem = new Ohbem({
     cachingStrategy: Ohbem.cachingStrategies.lru({
         maxAge: config.dataparser.pvp.rankCacheAge,
         updateAgeOnGet: true,
-    }),
+    }, true),
 });
 
 module.exports = {
