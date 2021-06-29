@@ -53,6 +53,11 @@ class Weather extends Model {
         return Weather.build(record);
     }
 
+    static findByLatLon(lat, lon) {
+        const cell = S2.S2CellId.fromPoint(S2.S2LatLng.fromDegrees(lat, lon).toPoint()).parentL(10);
+        return Weather.findByPk(cell.id.toString());
+    }
+
     async triggerWebhook() {
         WebhookController.instance.addWeatherEvent(this.toJson());
     }

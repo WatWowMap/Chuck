@@ -7,6 +7,7 @@ const POGOProtos = require('pogo-protos');
 const Cell = require('./cell.js');
 const Pokestop = require('./pokestop.js');
 const Spawnpoint = require('./spawnpoint.js');
+const Weather = require('./weather.js');
 const RedisClient = require('../services/redis.js');
 const WebhookController = require('../services/webhook.js');
 const ipcWorker = require('../ipc/worker.js');
@@ -43,7 +44,7 @@ class Pokemon extends Model {
             //     console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
             // } else {
             // TODO: handle A/B spawn?
-            console.warn('[Pokemon] Spawn', this.id, 'changed from Pokemon',
+            console.info('[Pokemon] Spawn', this.id, 'changed from Pokemon',
                 this.isDitto ? this.displayPokemonId : this.pokemonId, 'by', this.username,
                 'to', pokemonId, 'by', username);
             // TODO: repopulate weight/size?
@@ -61,36 +62,42 @@ class Pokemon extends Model {
         if (this.isNewRecord || !this.isDitto) {
             this.pokemonId = pokemonId;
         }
-        if (display !== null) {
-            if (this.isNewRecord || !this.isDitto) {
-                this.gender = display.gender;
-                this.form = display.form;
-                this.costume = display.costume;
-            }
-            // TODO: handle ditto weather change? (we do not know whether it is currently partly cloudy)
-            if (!this.isNewRecord && !this.isDitto && !this.weather !== !display.weather_boosted_condition) {
-                console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
-                    'to', display.weather_boosted_condition, 'by', username, '- clearing IVs');
-                this.atkIv = null;
-                this.defIv = null;
-                this.staIv = null;
+        this.gender = display.gender;
+        this.form = display.form;
+        this.costume = display.costume;
+        if (!this.isNewRecord && this.weather !== display.weather_boosted_condition) {
+            console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
+                'to', display.weather_boosted_condition, 'by', username);
+            const changeWeather = (boosted = display.weather_boosted_condition) => {
+                const swapField = (a, b) => {
+                    const t = this[a];
+                    this[a] = this[b];
+                    this[b] = t;
+                }
+                swapField('atkIv', 'atkInactive');
+                swapField('defIv', 'defInactive');
+                swapField('staIv', 'staInactive');
                 this.cp = null;
-                this.weight = null;
-                this.size = null;
-                this.move1 = null;
-                this.move2 = null;
-                this.level = null;
+                if (this.level !== null) {
+                    this.level += boosted ? 5 : -5;
+                }
                 this.pvpRankingsGreatLeague = null;
                 this.pvpRankingsUltraLeague = null;
                 this.pvp = null;
             }
-            this.weather = display.weather_boosted_condition;
-        } else {
-            console.warn('[Pokemon] Missing display');
-            this.gender = null;
-            this.form = null;
-            this.costume = null;
+            if (this.isDitto) {
+                if (display.weather_boosted_condition === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise are boosted and Ditto was not boosted: none -> boosted
+                    changeWeather(true);
+                } else if (this.weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise were boosted and Ditto is not boosted: boosted -> none
+                    changeWeather(false);
+                }
+            } else if (!this.weather !== !display.weather_boosted_condition) {
+                changeWeather();
+            }
         }
+        this.weather = display.weather_boosted_condition;
     }
 
     async _addWildPokemon(wild, username, transaction) {
@@ -181,7 +188,7 @@ class Pokemon extends Model {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 if (RedisClient) {
                     await RedisClient.publish('pokemon:added', JSON.stringify(pokemon.toJSON()));
-                    if (pokemon.level !== null) {
+                    if (pokemon.atkIv !== null) {
                         await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
                     }
                 }
@@ -278,15 +285,13 @@ class Pokemon extends Model {
     static updateFromEncounter(encounter, username) {
         return Pokemon._attemptUpdate(encounter.pokemon.encounter_id.toString(), async function (transaction) {
             this.changedTimestamp = this.updated = new Date().getTime() / 1000;
+            const oldWeather = this.weather;
             await this._addWildPokemon(encounter.pokemon, username, transaction);
             this.cp = encounter.pokemon.pokemon.cp;
             this.move1 = encounter.pokemon.pokemon.move1;
             this.move2 = encounter.pokemon.pokemon.move2;
             this.size = encounter.pokemon.pokemon.height_m;
             this.weight = encounter.pokemon.pokemon.weight_kg;
-            this.atkIv = encounter.pokemon.pokemon.individual_attack;
-            this.defIv = encounter.pokemon.pokemon.individual_defense;
-            this.staIv = encounter.pokemon.pokemon.individual_stamina;
             this.shiny = encounter.pokemon.pokemon.pokemon_display.shiny;
             let cpMultiplier = encounter.pokemon.pokemon.cp_multiplier;
             let level;
@@ -295,41 +300,80 @@ class Pokemon extends Model {
             } else {
                 level = Math.round(171.0112688 * cpMultiplier - 95.20425243);
             }
-            this.level = level;
+            if (this.isDitto) {
+                if (this.weather || !this.isNewRecord && oldWeather ===
+                        POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // when disguise is boosted, it has same IV as Ditto
+                    this.level = level;
+                    this.atkIv = encounter.pokemon.pokemon.individual_attack;
+                    this.defIv = encounter.pokemon.pokemon.individual_defense;
+                    this.staIv = encounter.pokemon.pokemon.individual_stamina;
+                } else {
+                    let weather = null;
+                    try {
+                        weather = await Weather.findByLatLon(encounter.pokemon.latitude, encounter.pokemon.longitude);
+                    } catch (e) {
+                        console.warn('[POKEMON] Failed to retrieve weather for Ditto', e);
+                    }
+                    if (weather !== null) {
+                        if (weather.gameplayCondition === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                            this.level = level - 5;
+                            this.atkInactive = encounter.pokemon.pokemon.individual_attack;
+                            this.defInactive = encounter.pokemon.pokemon.individual_defense;
+                            this.staInactive = encounter.pokemon.pokemon.individual_stamina;
+                        } else {
+                            this.level = level;
+                            this.atkIv = encounter.pokemon.pokemon.individual_attack;
+                            this.defIv = encounter.pokemon.pokemon.individual_defense;
+                            this.staIv = encounter.pokemon.pokemon.individual_stamina;
+                        }
+                    }
+                }
+            } else {
+                this.level = level;
+                if (this.weather) {
+                    this.atkIv = encounter.pokemon.pokemon.individual_attack;
+                    this.defIv = encounter.pokemon.pokemon.individual_defense;
+                    this.staIv = encounter.pokemon.pokemon.individual_stamina;
+                    if (this.level <= 5 || this.atkIv < 4 || this.defIv < 4 || this.staIv < 4) {
+                        console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
+                        this.isDitto = true;
+                        this.displayPokemonId = this.pokemonId;
+                        this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
+                    }
+                } else if (this.level > 30) {
+                    console.log('[POKEMON] Pokemon', this.id, 'weather boosted Ditto found, disguised as',
+                        this.pokemonId);
+                    this.isDitto = true;
+                    this.displayPokemonId = this.pokemonId;
+                    this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
+                    this.atkInactive = encounter.pokemon.pokemon.individual_attack;
+                    this.defInactive = encounter.pokemon.pokemon.individual_defense;
+                    this.staInactive = encounter.pokemon.pokemon.individual_stamina;
+                    this.level -= 5;
+                    return;
+                } else {
+                    this.atkIv = encounter.pokemon.pokemon.individual_attack;
+                    this.defIv = encounter.pokemon.pokemon.individual_defense;
+                    this.staIv = encounter.pokemon.pokemon.individual_stamina;
+                }
+            }
             await this.populateAuxFields(true);
         });
     }
 
     async populateAuxFields(fromEncounter = false) {
-        if (!fromEncounter && (this.level === null || !(this.changed('pokemonId') || this.changed('form') ||
+        if (!fromEncounter && (this.atkIv === null || !(this.changed('pokemonId') || this.changed('form') ||
             this.changed('gender') || this.changed('costume')))) {
             return;
         }
-        if (!this.isDitto) {
-            if (this.weather > 0) {
-                if (this.level <= 5 || this.atkIv < 4 || this.defIv < 4 || this.staIv < 4) {
-                    console.log('[POKEMON] Pokemon', this.id, 'Ditto found, disguised as', this.pokemonId);
-                    this.isDitto = true;
-                    this.displayPokemonId = this.pokemonId;
-                    this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
-                }
-            } else if (this.level > 30) {
-                console.log('[POKEMON] Pokemon', this.id, 'weather boosted Ditto found, disguised as', this.pokemonId,
-                    'IV', this.atkIv, this.defIv, this.staIv);
-                this.isDitto = true;
-                this.displayPokemonId = this.pokemonId;
-                this.pokemonId = POGOProtos.Rpc.HoloPokemonId.DITTO;
-                this.atkIv = this.defIv = this.staIv = null;    // see also: #47
-                this.level -= 5;
-                return;
-            }
-        }
-        const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume,
-            this.atkIv, this.defIv, this.staIv, this.level, this.gender);
+        const cp = ipcWorker.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
+        const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.gender,
+            this.atkIv, this.defIv, this.staIv, this.level);
         if (!fromEncounter) {
-            this.cp = pvp.cp || null;
-        } else if (!this.isDitto && this.cp !== pvp.cp) {
-            console.warn(`[Pokemon] Found inconsistent CP: ${this.cp} vs ${pvp.cp} for`,
+            this.cp = (await cp) || null;
+        } else if (!this.isDitto && this.cp !== (await cp)) {
+            console.warn(`[Pokemon] Found inconsistent CP: ${this.cp} vs ${await cp} for`,
                 `${this.pokemonId}-${this.form}, L${this.level} - ${this.atkIv}/${this.defIv}/${this.staIv}`);
         }
         if (config.dataparser.pvp.v1) {
@@ -483,6 +527,22 @@ Pokemon.init({
         defaultValue: null,
     },
     staIv: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    /**
+     * These fields are used for storing weather-boosted IV when spawn is not boosted,
+     * or non-boosted IV when spawn is boosted.
+     */
+    atkInactive: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    defInactive: {
+        type: DataTypes.TINYINT(3).UNSIGNED,
+        defaultValue: null,
+    },
+    staInactive: {
         type: DataTypes.TINYINT(3).UNSIGNED,
         defaultValue: null,
     },
