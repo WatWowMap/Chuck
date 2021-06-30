@@ -204,7 +204,7 @@ class Pokemon extends Model {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 await pokemon.redisCallback();
             } else if (['atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
-                WebhookController.instance.addPokemonEvent(pokemon.toJson());
+                if (pokemon.atkIv !== null) WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 await pokemon.redisCallback();
             }
         }
