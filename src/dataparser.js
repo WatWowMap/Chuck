@@ -33,7 +33,7 @@ require('./services/logger.js');
         }
 
         require('./services/pvp.js').initMaster(ipcMaster);
-        await require('./services/weather-cell').initMaster(ipcMaster);
+        await require('./services/weather-cell.js').initMaster(ipcMaster);
 
         // Fork workers
         for (let i = 0; i < instances; i++) {
