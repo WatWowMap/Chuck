@@ -5,6 +5,7 @@ const masterfile = require('../../static/data/masterfile.json');
 const Pokemon = require('../models/pokemon.js');
 const Weather = require('../models/weather.js');
 const pvpManager = require('./pvp.js');
+const WebhookController = require('./webhook.js');
 
 class WeatherCell {
     constructor(weather, id, username) {
@@ -59,13 +60,14 @@ class WeatherCell {
                 ['Dark', 'Ghost'],
             ][weather];
             try {
-                await Pokemon.robustTransaction(async (transaction) => {
+                const webhook = await Pokemon.robustTransaction(async (transaction) => {
                     const impacted = await Pokemon.findAll({
                         where,
                         transaction,
                         lock: transaction.LOCK,
                     });
                     let counter = 0;
+                    const webhook = [];
                     for (const pokemon in impacted) {
                         if (!s2cell.contains(S2LatLng.fromDegrees(pokemon.lat, pokemon.lon).toPoint())) continue;
                         const pokemonMaster = masterfile.pokemon[pokemon.pokemonId];
@@ -78,12 +80,18 @@ class WeatherCell {
                             }
                         }
                         if (pokemon.weather === newWeather) continue;
-                        if (pokemon.setWeather(newWeather)) await pokemon.populateAuxFields(false, pvpManager);
+                        if (pokemon.setWeather(newWeather)) {
+                            await pokemon.populateAuxFields(false, pvpManager);
+                            if (pokemon.atkIv !== null) webhook.push(pokemon);
+                        }
                         pokemon.save();
                         ++counter;
                     }
-                    console.info('[WeatherCell] Locked', impacted.length, 'and Updated', counter);
+                    console.info('[WeatherCell] Locked', impacted.length, 'Updated', counter,
+                        'Webhook', webhook.length);
+                    return webhook;
                 });
+                for (const pokemon of webhook) WebhookController.instance.addPokemonEvent(pokemon.toJson());
             } catch (e) {
                 console.warn('[WeatherCell] Failed to update Pokemon in cell', this.id, e);
             }
