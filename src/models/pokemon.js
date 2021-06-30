@@ -37,6 +37,43 @@ class Pokemon extends Model {
         return Pokemon.build({ id: encounterId });
     }
 
+    setWeather(weather) {
+        let reset = false;
+        if (!this.isNewRecord && this.weather !== weather) {
+            const changeWeather = (boosted = display.weather_boosted_condition) => {
+                const swapField = (a, b) => {
+                    const t = this[a];
+                    this[a] = this[b];
+                    this[b] = t;
+                }
+                swapField('atkIv', 'atkInactive');
+                swapField('defIv', 'defInactive');
+                swapField('staIv', 'staInactive');
+                this.cp = null;
+                if (this.level !== null) {
+                    this.level += boosted ? 5 : -5;
+                }
+                this.pvpRankingsGreatLeague = null;
+                this.pvpRankingsUltraLeague = null;
+                this.pvp = null;
+                reset = true;
+            }
+            if (this.isDitto) {
+                if (weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise are boosted and Ditto was not boosted: none -> boosted
+                    changeWeather(true);
+                } else if (this.weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise were boosted and Ditto is not boosted: boosted -> none
+                    changeWeather(false);
+                }
+            } else if (!this.weather !== !weather) {
+                changeWeather();
+            }
+        }
+        this.weather = weather;
+        return reset;
+    }
+
     _setPokemonDisplay(pokemonId, display, username) {
         if (!this.isNewRecord && ((this.isDitto ? this.displayPokemonId : this.pokemonId) !== pokemonId ||
             this.gender !== display.gender || this.form !== display.form || this.costume !== display.costume)) {
@@ -65,39 +102,7 @@ class Pokemon extends Model {
         this.gender = display.gender;
         this.form = display.form;
         this.costume = display.costume;
-        if (!this.isNewRecord && this.weather !== display.weather_boosted_condition) {
-            console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
-                'to', display.weather_boosted_condition, 'by', username);
-            const changeWeather = (boosted = display.weather_boosted_condition) => {
-                const swapField = (a, b) => {
-                    const t = this[a];
-                    this[a] = this[b];
-                    this[b] = t;
-                }
-                swapField('atkIv', 'atkInactive');
-                swapField('defIv', 'defInactive');
-                swapField('staIv', 'staInactive');
-                this.cp = null;
-                if (this.level !== null) {
-                    this.level += boosted ? 5 : -5;
-                }
-                this.pvpRankingsGreatLeague = null;
-                this.pvpRankingsUltraLeague = null;
-                this.pvp = null;
-            }
-            if (this.isDitto) {
-                if (display.weather_boosted_condition === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
-                    // both Ditto and disguise are boosted and Ditto was not boosted: none -> boosted
-                    changeWeather(true);
-                } else if (this.weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
-                    // both Ditto and disguise were boosted and Ditto is not boosted: boosted -> none
-                    changeWeather(false);
-                }
-            } else if (!this.weather !== !display.weather_boosted_condition) {
-                changeWeather();
-            }
-        }
-        this.weather = display.weather_boosted_condition;
+        this.setWeather(display.weather_boosted_condition);
     }
 
     async _addWildPokemon(wild, username, transaction) {
@@ -150,25 +155,18 @@ class Pokemon extends Model {
         }
     }
 
-    static async _attemptUpdate(id, work) {
-        let retry = 5, pokemon, changed;
+    static async robustTransaction(work) {
+        let retry = 5;
         for (; ;) {
             const transaction = await sequelize.transaction({
                 // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
-                // the lower transaction level (compared to REPEATABLE_READ) is ok since we do not perform range queries
+                // we do not perform repeated reads so the lower transaction level (compared to REPEATABLE_READ) is ok
                 isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
             });
             try {
-                pokemon = await Pokemon.getOrCreate(id, transaction);
-                if (await work.call(pokemon, transaction) === true) {
-                    await transaction.commit();
-                    return pokemon;
-                }
-                pokemon._ensureExpireTimestamp();
-                changed = pokemon.changed();
-                await pokemon.save({ transaction });
+                const result = await work(transaction);
                 await transaction.commit();
-                break;
+                return result;
             } catch (error) {
                 if (!transaction.finished) await transaction.rollback();
                 if (retry-- <= 0) {
@@ -183,6 +181,17 @@ class Pokemon extends Model {
                 }
             }
         }
+    }
+
+    static async _attemptUpdate(id, work) {
+        const [pokemon, changed] = await Pokemon.robustTransaction(async (transaction) => {
+            const pokemon = await Pokemon.getOrCreate(id, transaction);
+            if (await work.call(pokemon, transaction) === true) return [pokemon, false];
+            pokemon._ensureExpireTimestamp();
+            const changed = pokemon.changed();
+            await pokemon.save({ transaction });
+            return [pokemon, changed];
+        });
         if (changed) {
             if (['pokemonId', 'gender', 'form', 'weather', 'costume'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
@@ -362,13 +371,13 @@ class Pokemon extends Model {
         });
     }
 
-    async populateAuxFields(fromEncounter = false) {
+    async populateAuxFields(fromEncounter = false, pvpManager = ipcWorker) {
         if (!fromEncounter && (this.atkIv === null || !(this.changed('pokemonId') || this.changed('form') ||
             this.changed('gender') || this.changed('costume') || this.changed('level')))) {
             return;
         }
-        const cp = ipcWorker.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
-        const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.gender,
+        const cp = pvpManager.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
+        const pvp = await pvpManager.queryPvPRank(this.pokemonId, this.form, this.costume, this.gender,
             this.atkIv, this.defIv, this.staIv, this.level);
         if (!fromEncounter) {
             this.cp = (await cp) || null;

@@ -4,12 +4,11 @@ const S2 = require('nodes2ts');
 const POGOProtos = require('pogo-protos');
 
 const config = require('./config.js');
+const sequelize = require('./sequelize.js');
 const Account = require('../models/account.js');
 const Gym = require('../models/gym.js');
 const Pokemon = require('../models/pokemon.js');
 const Pokestop = require('../models/pokestop.js');
-
-const sequelize = require('./sequelize.js');
 const Cell = require('../models/cell');
 const Weather = require('../models/weather');
 

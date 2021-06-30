@@ -33,13 +33,14 @@ require('./services/logger.js');
         }
 
         require('./services/pvp.js').initMaster(ipcMaster);
+        await require('./services/weather-cell').initMaster(ipcMaster);
 
         // Fork workers
         for (let i = 0; i < instances; i++) {
             ipcMaster.setup(cluster.fork());
         }
 
-        // If worker gets disconnected, start new one. 
+        // If worker gets disconnected, start new one.
         cluster.on('disconnect', function (worker) {
             console.error(`[Cluster] Worker disconnected with id ${worker.id}`);
             let newWorker = cluster.fork();

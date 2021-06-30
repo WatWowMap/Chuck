@@ -3,10 +3,11 @@
 const POGOProtos = require('pogo-protos');
 
 const config = require('../services/config.js');
+const Consumer = require('../services/consumer.js');
+const ipcWorker = require('../ipc/worker.js');
 const Account = require('../models/account.js');
 const Device = require('../models/device.js');
 const { sendResponse, base64_decode } = require('../services/utils.js');
-const Consumer = require('../services/consumer.js');
 
 const RpcMethod = {
     UnSet: parseInt(POGOProtos.Rpc.Method.METHOD_UNSET), // 0
@@ -763,7 +764,9 @@ class RouteController {
         }
 
         if (clientWeathers.length > 0) {
-            jobs.push(this.consumers[username].updateWeather(clientWeathers));
+            jobs.push(this.consumers[username].updateWeather(clientWeathers, username));
+            jobs.push(ipcWorker.reportWeather(username, clientWeathers.map(
+                (conditions) => [conditions.cell.toString(), conditions.data.gameplay_weather.gameplay_condition])));
         }
 
         if (cells.length > 0) {
