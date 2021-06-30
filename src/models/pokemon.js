@@ -193,7 +193,7 @@ class Pokemon extends Model {
             return [pokemon, changed];
         });
         if (changed) {
-            if (['pokemonId', 'gender', 'form', 'weather', 'costume'].some(x => changed.includes(x))) {
+            if (['pokemonId', 'gender', 'form', 'costume'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 if (RedisClient) {
                     await RedisClient.publish('pokemon:added', JSON.stringify(pokemon.toJSON()));
@@ -201,7 +201,7 @@ class Pokemon extends Model {
                         await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
                     }
                 }
-            } else if (['level', 'atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
+            } else if (['atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
                 if (RedisClient) {
                     await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
