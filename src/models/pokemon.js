@@ -183,6 +183,13 @@ class Pokemon extends Model {
         }
     }
 
+    async redisCallback() {
+        if (RedisClient) {
+            await RedisClient.publish(this.atkIv === null ? 'pokemon:added' : 'pokemon:updated',
+                JSON.stringify(this.toJSON()));
+        }
+    }
+
     static async _attemptUpdate(id, work) {
         const [pokemon, changed] = await Pokemon.robustTransaction(async (transaction) => {
             const pokemon = await Pokemon.getOrCreate(id, transaction);
@@ -195,17 +202,10 @@ class Pokemon extends Model {
         if (changed) {
             if (['pokemonId', 'gender', 'form', 'costume'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
-                if (RedisClient) {
-                    await RedisClient.publish('pokemon:added', JSON.stringify(pokemon.toJSON()));
-                    if (pokemon.atkIv !== null) {
-                        await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
-                    }
-                }
+                await pokemon.redisCallback();
             } else if (['atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
-                if (RedisClient) {
-                    await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
-                }
+                await pokemon.redisCallback();
             }
         }
         return pokemon;
