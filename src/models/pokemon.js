@@ -40,7 +40,7 @@ class Pokemon extends Model {
     setWeather(weather) {
         let reset = false;
         if (!this.isNewRecord && this.weather !== weather) {
-            const changeWeather = (boosted = display.weather_boosted_condition) => {
+            const changeWeather = (boosted = weather) => {
                 const swapField = (a, b) => {
                     const t = this[a];
                     this[a] = this[b];

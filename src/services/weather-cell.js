@@ -5,6 +5,7 @@ const masterfile = require('../../static/data/masterfile.json');
 const Pokemon = require('../models/pokemon.js');
 const Weather = require('../models/weather.js');
 const pvpManager = require('./pvp.js');
+const RedisClient = require('./redis.js');
 const WebhookController = require('./webhook.js');
 
 class WeatherCell {
@@ -60,14 +61,14 @@ class WeatherCell {
                 ['Dark', 'Ghost'],
             ][weather];
             try {
-                const webhook = await Pokemon.robustTransaction(async (transaction) => {
+                const [redis, webhook] = await Pokemon.robustTransaction(async (transaction) => {
                     const impacted = await Pokemon.findAll({
                         where,
                         transaction,
                         lock: transaction.LOCK,
                     });
                     let counter = 0;
-                    const webhook = [];
+                    const redis = [], webhook = [];
                     for (const pokemon in impacted) {
                         if (!s2cell.contains(S2LatLng.fromDegrees(pokemon.lat, pokemon.lon).toPoint())) continue;
                         const pokemonMaster = masterfile.pokemon[pokemon.pokemonId];
@@ -82,15 +83,17 @@ class WeatherCell {
                         if (pokemon.weather === newWeather) continue;
                         if (pokemon.setWeather(newWeather)) {
                             await pokemon.populateAuxFields(false, pvpManager);
+                            redis.push(pokemon);
                             if (pokemon.atkIv !== null) webhook.push(pokemon);
                         }
                         pokemon.save();
                         ++counter;
                     }
                     console.info('[WeatherCell] Locked', impacted.length, 'Updated', counter,
-                        'Webhook', webhook.length);
-                    return webhook;
+                        'Redis', redis.length, 'Webhook', webhook.length);
+                    return [redis, webhook];
                 });
+                if (RedisClient) for (const pokemon of redis) await pokemon.redisCallback();
                 for (const pokemon of webhook) WebhookController.instance.addPokemonEvent(pokemon.toJson());
             } catch (e) {
                 console.warn('[WeatherCell] Failed to update Pokemon in cell', this.id, e);
