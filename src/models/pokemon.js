@@ -364,7 +364,7 @@ class Pokemon extends Model {
 
     async populateAuxFields(fromEncounter = false) {
         if (!fromEncounter && (this.atkIv === null || !(this.changed('pokemonId') || this.changed('form') ||
-            this.changed('gender') || this.changed('costume')))) {
+            this.changed('gender') || this.changed('costume') || this.changed('level')))) {
             return;
         }
         const cp = ipcWorker.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
