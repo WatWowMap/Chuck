@@ -96,10 +96,7 @@ class WeatherCell {
                 let counter = 0;
                 const redis = [], webhook = [];
                 for (const pokemon of impacted) {
-                    if (!s2cell.contains(S2LatLng.fromDegrees(pokemon.lat, pokemon.lon).toPoint())) {
-                        console.warn(this.id, pokemon.lat, pokemon.lon);
-                        continue;
-                    }
+                    if (!s2cell.contains(S2LatLng.fromDegrees(pokemon.lat, pokemon.lon).toPoint())) continue;
                     const pokemonMaster = masterfile.pokemon[pokemon.pokemonId];
                     if (!pokemonMaster) continue;
                     const newWeather = ((pokemonMaster.forms[pokemon.form] || {}).types || pokemonMaster.types)
