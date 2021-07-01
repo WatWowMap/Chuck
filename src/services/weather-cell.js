@@ -8,6 +8,22 @@ const pvpManager = require('./pvp.js');
 const RedisClient = require('./redis.js');
 const WebhookController = require('./webhook.js');
 
+const weatherCells = {};
+let updateWorking = false;
+
+async function requestUpdate() {
+    if (updateWorking) return;
+    updateWorking = true;
+    try {
+        let cell;
+        while ((cell = Object.values(weatherCells).find((cell) => cell.pendingWeather !== null))) {
+            await cell.performUpdate();
+        }
+    } finally {
+        updateWorking = false;
+    }
+}
+
 class WeatherCell {
     constructor(weather, id, username) {
         if (id === undefined) {
@@ -22,101 +38,107 @@ class WeatherCell {
             this.username = username;
             this.lastUpdated = Date.now();
         }
+        this.pendingWeather = null;
     }
 
-    async update(weather, username) {
-        const now = Date.now();
-        if (weather !== this.weather) {
-            console.info('[WeatherCell] Cell', this.id,
-                'changed from', this.weather, 'by', this.username, 'at', this.lastUpdated && new Date(this.lastUpdated),
-                'to', weather, 'by', username);
-            const s2cell = new S2Cell(new S2CellId(this.id));
-            const rect = s2cell.getRectBound();
-            const where = {
-                lat: rect.lat.lo < rect.lat.hi ? {
-                    [Op.between]: [new S1Angle(rect.lat.lo).degrees(), new S1Angle(rect.lat.hi).degrees()],
-                } : {
-                    [Op.or]: {
-                        [Op.lt]: new S1Angle(rect.lat.hi).degrees(),
-                        [Op.gt]: new S1Angle(rect.lat.lo).degrees(),
-                    },
-                },
-                lon: { [Op.between]: [new S1Angle(rect.lng.lo).degrees(), new S1Angle(rect.lng.hi).degrees()] },
-                // if the timer is not verified and incorrect, it will be recalculated when reseen
-                expireTimestamp: { [Op.gt]: now / 1000 },
-                // skip entries with no IVs, which includes the ones without accurate location
-                [Op.not]: {
-                    atkIv: null,
-                    atkInactive: null,
-                },
-            };
-            const boosted = [
-                [],
-                ['Grass', 'Fire', 'Ground'],
-                ['Water', 'Electric', 'Bug'],
-                ['Normal', 'Rock'],
-                ['Fairy', 'Fighting', 'Poison'],
-                ['Flying', 'Dragon', 'Psychic'],
-                ['Ice', 'Steel'],
-                ['Dark', 'Ghost'],
-            ][weather];
-            try {
-                const [redis, webhook] = await Pokemon.robustTransaction(async (transaction) => {
-                    const impacted = await Pokemon.findAll({
-                        where,
-                        transaction,
-                        lock: transaction.LOCK,
-                    });
-                    let counter = 0;
-                    const redis = [], webhook = [];
-                    for (const pokemon in impacted) {
-                        if (!s2cell.contains(S2LatLng.fromDegrees(pokemon.lat, pokemon.lon).toPoint())) continue;
-                        const pokemonMaster = masterfile.pokemon[pokemon.pokemonId];
-                        if (!pokemonMaster) continue;
-                        let newWeather = 0;
-                        for (const type of (pokemonMaster.forms[pokemon.form] || {}).types || pokemonMaster.types) {
-                            if (boosted.indexOf(type) >= 0) {
-                                newWeather = weather;
-                                break;
-                            }
-                        }
-                        if (pokemon.weather === newWeather) continue;
-                        if (pokemon.setWeather(newWeather)) {
-                            await pokemon.populateAuxFields(false, pvpManager);
-                            redis.push(pokemon);
-                            if (pokemon.atkIv !== null) webhook.push(pokemon);
-                        }
-                        pokemon.save();
-                        ++counter;
-                    }
-                    console.info('[WeatherCell] Locked', impacted.length, 'Updated', counter,
-                        'Redis', redis.length, 'Webhook', webhook.length);
-                    return [redis, webhook];
-                });
-                if (RedisClient) for (const pokemon of redis) await pokemon.redisCallback();
-                for (const pokemon of webhook) WebhookController.instance.addPokemonEvent(pokemon.toJson());
-            } catch (e) {
-                console.warn('[WeatherCell] Failed to update Pokemon in cell', this.id, e);
-            }
+    update(weather, username) {
+        if (weather !== this.weather && weather !== this.pendingWeather) {
+            console.info('[WeatherCell] Cell', this.id, 'changed from',
+                this.pendingWeather === null ? this.weather : this.pendingWeather, 'by', this.username, 'at',
+                this.lastUpdated ? new Date(this.lastUpdated) : null, 'to', weather, 'by', username);
+            this.pendingWeather = weather;
+            requestUpdate();
         }
-        this.weather = weather;
         this.username = username;
-        this.lastUpdated = now;
+        this.lastUpdated = Date.now();
+    }
+
+    async performUpdate() {
+        const weather = this.pendingWeather;
+        const s2cell = new S2Cell(new S2CellId(this.id));
+        const rect = s2cell.getRectBound();
+        const where = {
+            lat: rect.lat.lo < rect.lat.hi ? {
+                [Op.between]: [new S1Angle(rect.lat.lo).degrees(), new S1Angle(rect.lat.hi).degrees()],
+            } : {
+                [Op.or]: {
+                    [Op.lt]: new S1Angle(rect.lat.hi).degrees(),
+                    [Op.gt]: new S1Angle(rect.lat.lo).degrees(),
+                },
+            },
+            lon: { [Op.between]: [new S1Angle(rect.lng.lo).degrees(), new S1Angle(rect.lng.hi).degrees()] },
+            // if the timer is not verified and incorrect, it will be recalculated when reseen
+            expireTimestamp: { [Op.gt]: Date.now() / 1000 },
+            // skip entries with no IVs, which includes the ones without accurate location
+            [Op.not]: {
+                atkIv: null,
+                atkInactive: null,
+            },
+        };
+        const boosted = [
+            [],
+            ['Grass', 'Fire', 'Ground'],
+            ['Water', 'Electric', 'Bug'],
+            ['Normal', 'Rock'],
+            ['Fairy', 'Fighting', 'Poison'],
+            ['Flying', 'Dragon', 'Psychic'],
+            ['Ice', 'Steel'],
+            ['Dark', 'Ghost'],
+        ][weather];
+        try {
+            const [redis, webhook] = await Pokemon.robustTransaction(async (transaction) => {
+                if (this.pendingWeather !== weather) return [[], []];
+                const impacted = await Pokemon.findAll({
+                    where,
+                    transaction,
+                    lock: transaction.LOCK,
+                });
+                let counter = 0;
+                const redis = [], webhook = [];
+                for (const pokemon of impacted) {
+                    if (!s2cell.contains(S2LatLng.fromDegrees(pokemon.lat, pokemon.lon).toPoint())) {
+                        console.warn(this.id, pokemon.lat, pokemon.lon);
+                        continue;
+                    }
+                    const pokemonMaster = masterfile.pokemon[pokemon.pokemonId];
+                    if (!pokemonMaster) continue;
+                    const newWeather = ((pokemonMaster.forms[pokemon.form] || {}).types || pokemonMaster.types)
+                        .some((type) => boosted.indexOf(type) >= 0) ? weather : 0;
+                    if (pokemon.weather === newWeather) continue;
+                    if (pokemon.setWeather(newWeather)) {
+                        await pokemon.populateAuxFields(false, pvpManager);
+                        redis.push(pokemon);
+                        if (pokemon.atkIv !== null) webhook.push(pokemon);
+                    }
+                    await pokemon.save({ transaction });
+                    ++counter;
+                }
+                console.info('[WeatherCell] Locked', impacted.length, 'Updated', counter,
+                    'Redis', redis.length, 'Webhook', webhook.length);
+                return [redis, webhook];
+            });
+            if (RedisClient) for (const pokemon of redis) await pokemon.redisCallback();
+            for (const pokemon of webhook) WebhookController.instance.addPokemonEvent(pokemon.toJson());
+        } catch (e) {
+            console.warn('[WeatherCell] Failed to update Pokemon in cell', this.id, e);
+        }
+        if (weather === this.pendingWeather) {
+            this.weather = this.pendingWeather;
+            this.pendingWeather = null;
+        }
     }
 }
-
-const weatherCells = {};
 
 async function initWeather() {
     for (const weather of await Weather.findAll()) weatherCells[weather.id] = new WeatherCell(weather);
 }
 
 function reportWeather(username, update) {
-    return Promise.all(update.map(async ([id, weather]) => {
+    update.forEach(([id, weather]) => {
         const weatherCell = weatherCells[id];
         if (weatherCell === undefined) weatherCells[id] = new WeatherCell(weather, id, username);
-        else await weatherCell.update(weather, username);
-    }));
+        else weatherCell.update(weather, username);
+    });
 }
 
 module.exports = {
