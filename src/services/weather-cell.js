@@ -91,7 +91,7 @@ class WeatherCell {
                 const impacted = await Pokemon.findAll({
                     where,
                     transaction,
-                    lock: transaction.LOCK,
+                    lock: transaction.LOCK.UPDATE,
                 });
                 let counter = 0;
                 const redis = [], webhook = [];

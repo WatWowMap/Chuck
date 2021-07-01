@@ -29,7 +29,7 @@ class Pokemon extends Model {
     static async getOrCreate(encounterId, transaction = null) {
         const existing = await Pokemon.findByPk(encounterId, transaction === null ? {} : {
             transaction,
-            lock: transaction.LOCK,
+            lock: transaction.LOCK.UPDATE,
         });
         if (existing !== null) {
             return existing;
