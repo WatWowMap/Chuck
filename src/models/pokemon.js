@@ -183,9 +183,20 @@ class Pokemon extends Model {
         }
     }
 
-    async redisCallback() {
+    async redisCallback(weather = null) {
         if (RedisClient) {
-            await RedisClient.publish(this.atkIv === null ? 'pokemon:added' : 'pokemon:updated',
+            const needIv = async () => {
+                if (this.atkIv === null && this.atkInactive === null) return true;
+                if (this.atkIv !== null && this.atkInactive !== null) return false;
+                if (!this.isDitto || this.weather) return this.atkIv === null;
+                if (weather === null) try {
+                    weather = await Weather.findByLatLon(this.lat, this.lon);
+                } catch (e) {
+                    console.warn('[POKEMON] Failed to retrieve weather for Ditto for redis', e);
+                }
+                return (weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY ? this.atkInactive : this.atkIv) === null;
+            }
+            await RedisClient.publish(await needIv() ? 'pokemon:added' : 'pokemon:updated',
                 JSON.stringify(this.toJSON()));
         }
     }

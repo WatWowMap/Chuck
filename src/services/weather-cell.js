@@ -114,7 +114,7 @@ class WeatherCell {
                     'Redis', redis.length, 'Webhook', webhook.length);
                 return [redis, webhook];
             });
-            if (RedisClient) for (const pokemon of redis) await pokemon.redisCallback();
+            if (RedisClient) for (const pokemon of redis) await pokemon.redisCallback(weather);
             for (const pokemon of webhook) WebhookController.instance.addPokemonEvent(pokemon.toJson());
         } catch (e) {
             console.warn('[WeatherCell] Failed to update Pokemon in cell', this.id, e);
