@@ -38,6 +38,7 @@
     "mysql2": "^2.2.5",
     "nodes2ts": "^2.0.0",
     "ohbem": "^1.2.0",
+    "pg": "^8.6.0",
     "pogo-protos": "git+https://github.com/Furtif/pogo-protos.git",
     "pogo-translations": "git+https://github.com/bschultz/pogo-translations.git",
     "redis": "^3.1.1",

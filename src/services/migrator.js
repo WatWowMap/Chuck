@@ -20,8 +20,8 @@ class Migrator {
         let version = 0;
         const createMetadataTableSQL = `
         CREATE TABLE IF NOT EXISTS metadata (
-            \`key\` VARCHAR(50) PRIMARY KEY NOT NULL,
-            \`value\` VARCHAR(50) DEFAULT NULL
+            "key" VARCHAR(50) PRIMARY KEY NOT NULL,
+            "value" VARCHAR(50) DEFAULT NULL
         );`;
         try {
             await sequelize.query(createMetadataTableSQL);
@@ -31,9 +31,9 @@ class Migrator {
         }
 
         const getDBVersionSQL = `
-        SELECT \`value\`
+        SELECT "value"
         FROM metadata
-        WHERE \`key\` = "DB_VERSION"
+        WHERE "key" = 'DB_VERSION'
         LIMIT 1;`;
         const results = await sequelize.query(getDBVersionSQL)
             .then(x => x[0])
@@ -84,9 +84,9 @@ class Migrator {
 
             const newVersion = fromVersion + 1;
             const updateVersionSQL = `
-            INSERT INTO metadata (\`key\`, \`value\`)
+            INSERT INTO metadata ("key", "value")
             VALUES("DB_VERSION", ${newVersion})
-            ON DUPLICATE KEY UPDATE \`value\` = ${newVersion};`;
+            ON DUPLICATE KEY UPDATE "value" = ${newVersion};`;
             try {
                 await sequelize.query(updateVersionSQL);
             } catch (err) {
@@ -127,7 +127,7 @@ class Migrator {
         const sql = `
         SELECT value
         FROM metadata
-        WHERE \`key\` = ?
+        WHERE "key" = ?
         LIMIT 1;`;
         const results = await sequelize.query(sql, {
             replacements: [key],
@@ -146,7 +146,7 @@ class Migrator {
 
     static async setValueForKey(key, value) {
         const sql = `
-        INSERT INTO metadata (\`key\`, \`value\`)
+        INSERT INTO metadata ("key", "value")
         VALUES(?, ?)
         ON DUPLICATE KEY UPDATE
         value=VALUES(value);`;
