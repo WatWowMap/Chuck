@@ -180,10 +180,7 @@ class Pokemon extends Model {
                     if (error instanceof DatabaseError) {
                         error = error.parent;
                         // deadlocks are unavoidable since even the UPDATE statement would need to lock the index
-                        if (retry === 8 && error.message ===
-                            'Deadlock found when trying to get lock; try restarting transaction') {
-                            severity = console.debug;
-                        }
+                        if (retry === 8 && error.code === 'ER_LOCK_DEADLOCK') severity = console.debug;
                     }
                     severity('[Pokemon] Encountered error, retrying transaction', transaction.id,
                         retry, 'attempts left:', error);
