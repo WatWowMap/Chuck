@@ -31,10 +31,7 @@ class Pokemon extends Model {
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
-        if (existing !== null) {
-            return existing;
-        }
-        return Pokemon.build({ id: encounterId });
+        return existing || Pokemon.build({ id: encounterId });
     }
 
     setWeather(weather) {
