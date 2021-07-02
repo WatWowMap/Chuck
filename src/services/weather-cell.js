@@ -16,7 +16,6 @@ class WeatherCell {
             this.username = null;
             this.lastUpdated = 0;
         } else {
-            console.info('[WeatherCell] New cell added to monitor', id);
             this.id = id;
             this.weather = weather;
             this.username = username;
@@ -29,7 +28,8 @@ class WeatherCell {
         if (weather !== this.weather && weather !== this.pendingWeather) {
             console.info('[WeatherCell] Cell', this.id, 'changed from',
                 this.pendingWeather === null ? this.weather : this.pendingWeather, 'by', this.username, 'at',
-                this.lastUpdated ? new Date(this.lastUpdated) : null, 'to', weather, 'by', username);
+                this.lastUpdated ? new Date(this.lastUpdated).toLocaleTimeString() : null, 'to', weather,
+                'by', username);
             const shouldUpdate = this.pendingWeather === null;
             this.pendingWeather = weather;
             if (shouldUpdate) this.performUpdate();
@@ -59,7 +59,7 @@ class WeatherCell {
                 atkIv: null,
                 atkInactive: null,
             },
-            weather: { [Op.neq]: weather, }
+            weather: { [Op.neq]: weather }
         };
         const boosted = [
             [],
@@ -96,7 +96,7 @@ class WeatherCell {
                     await pokemon.save({ transaction });
                     ++counter;
                 }
-                console.info('[WeatherCell]', this.id, 'Locked', impacted.length, 'Updated', counter,
+                console.info('[WeatherCell] Cell', this.id, 'Locked', impacted.length, 'Updated', counter,
                     'Redis', redis.length, 'Webhook', webhook.length);
                 return [redis, webhook];
             });
