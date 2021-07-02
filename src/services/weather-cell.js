@@ -8,6 +8,22 @@ const pvpManager = require('./pvp.js');
 const RedisClient = require('./redis.js');
 const WebhookController = require('./webhook.js');
 
+const weatherCells = {};
+let updateWorking = false;
+
+async function requestUpdate() {
+    if (updateWorking) return;
+    updateWorking = true;
+    try {
+        let cell;
+        while ((cell = Object.values(weatherCells).find((cell) => cell.pendingWeather !== null))) {
+            await cell.performUpdate();
+        }
+    } finally {
+        updateWorking = false;
+    }
+}
+
 class WeatherCell {
     constructor(weather, id, username) {
         if (id === undefined) {
@@ -30,9 +46,8 @@ class WeatherCell {
                 this.pendingWeather === null ? this.weather : this.pendingWeather, 'by', this.username, 'at',
                 this.lastUpdated ? new Date(this.lastUpdated).toLocaleTimeString() : null, 'to', weather,
                 'by', username);
-            const shouldUpdate = this.pendingWeather === null;
             this.pendingWeather = weather;
-            if (shouldUpdate) this.performUpdate();
+            requestUpdate();
         }
         this.username = username;
         this.lastUpdated = Date.now();
@@ -108,11 +123,9 @@ class WeatherCell {
         if (weather === this.pendingWeather) {
             this.weather = this.pendingWeather;
             this.pendingWeather = null;
-        } else await this.performUpdate();
+        }
     }
 }
-
-const weatherCells = {};
 
 async function initWeather() {
     for (const weather of await Weather.findAll()) weatherCells[weather.id] = new WeatherCell(weather);
