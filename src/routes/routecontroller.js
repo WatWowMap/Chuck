@@ -805,8 +805,8 @@ class RouteController {
 
         let endTime = process.hrtime(startTime);
         let ms = (endTime[0] * 1000000000 + endTime[1]) / 1000000;
-        if (total > 0) {
-            console.log(`[Raw] [${uuid}] Update Count: ${total} parsed in ${ms} ms`);
+        if (ms >= 1000) {
+            (ms >= 5000 ? console.info : console.debug)(`[Raw] [${uuid}] Update Count: ${total} parsed in ${ms} ms`);
         }
         const responseData = {
             'nearby': nearbyPokemons.length,
