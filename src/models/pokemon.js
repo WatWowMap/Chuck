@@ -156,7 +156,7 @@ class Pokemon extends Model {
     }
 
     static async robustTransaction(work) {
-        let retry = 5;
+        let retry = 9;
         for (; ;) {
             const transaction = await sequelize.transaction({
                 // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
