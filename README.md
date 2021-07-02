@@ -10,7 +10,8 @@
 Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDeviceMap)  
 
 ## Prerequisites  
-- [MySQL 8](https://dev.mysql.com/downloads/mysql/) or [MariaDB 10](https://mariadb.org/download/) database server  
+- [MariaDB 10+](https://mariadb.org/download/) database server
+  (MySQL works too but is highly discouraged due to [the deadlock bug which MySQL team would not even acknowledge](https://bugs.mysql.com/bug.php?id=72439), leading to degraded performance)
 - [Redis Server](https://redis.io/download) 
 
 ## Installation  
