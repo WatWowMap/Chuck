@@ -1,6 +1,6 @@
 'use strict';
 
-const { DataTypes, Model, Transaction, UniqueConstraintError } = require('sequelize');
+const { DataTypes, DatabaseError, Model, Transaction, UniqueConstraintError } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 const POGOProtos = require('pogo-protos');
 
@@ -176,7 +176,16 @@ class Pokemon extends Model {
                 // In this case, one worker will succeed and the other worker will retry the transaction and
                 // succeed updating the row in the second attempt as expected.
                 if (!(error instanceof UniqueConstraintError)) {
-                    console.warn('[Pokemon] Encountered error, retrying transaction', transaction.id,
+                    let severity = console.warn;
+                    if (error instanceof DatabaseError) {
+                        error = error.parent;
+                        // deadlocks are unavoidable since even the UPDATE statement would need to lock the index
+                        if (retry === 8 && error.message ===
+                            'Deadlock found when trying to get lock; try restarting transaction') {
+                            severity = console.debug;
+                        }
+                    }
+                    severity('[Pokemon] Encountered error, retrying transaction', transaction.id,
                         retry, 'attempts left:', error);
                 }
             }
