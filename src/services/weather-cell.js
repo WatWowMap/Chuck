@@ -16,7 +16,7 @@ class WeatherCell {
             this.username = null;
             this.lastUpdated = 0;
         } else {
-            console.info('[WeatherCell] new cell added to monitor', id);
+            console.info('[WeatherCell] New cell added to monitor', id);
             this.id = id;
             this.weather = weather;
             this.username = username;
@@ -96,7 +96,7 @@ class WeatherCell {
                     await pokemon.save({ transaction });
                     ++counter;
                 }
-                console.info('[WeatherCell] Locked', impacted.length, 'Updated', counter,
+                console.info('[WeatherCell]', this.id, 'Locked', impacted.length, 'Updated', counter,
                     'Redis', redis.length, 'Webhook', webhook.length);
                 return [redis, webhook];
             });
