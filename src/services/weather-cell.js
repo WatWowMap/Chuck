@@ -59,7 +59,7 @@ class WeatherCell {
                 atkIv: null,
                 atkInactive: null,
             },
-            weather: { [Op.ne]: weather }
+            weather: { [Op.ne]: weather },
         };
         const boosted = [
             [],

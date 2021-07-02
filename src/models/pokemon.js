@@ -404,10 +404,7 @@ class Pokemon extends Model {
             this.pvpRankingsGreatLeague = pvp.great || null;
             this.pvpRankingsUltraLeague = pvp.ultra || null;
         }
-        if (config.dataparser.pvp.v2) {
-            delete pvp.cp;
-            this.pvp = pvp;
-        }
+        if (config.dataparser.pvp.v2) this.pvp = pvp;
     }
 
     /**
