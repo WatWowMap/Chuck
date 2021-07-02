@@ -158,20 +158,19 @@ class Pokemon extends Model {
     static async robustTransaction(work) {
         let retry = 9;
         for (; ;) {
-            const transaction = await sequelize.transaction({
-                // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
-                // we do not perform repeated reads so the lower transaction level (compared to REPEATABLE_READ) is ok
-                isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
-            });
+            let transaction = null;
             try {
+                transaction = await sequelize.transaction({
+                    // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
+                    // we do not perform repeated reads so the lower transaction level (compared to REPEATABLE_READ) is ok
+                    isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
+                });
                 const result = await work(transaction);
                 await transaction.commit();
                 return result;
             } catch (error) {
-                if (!transaction.finished) await transaction.rollback();
-                if (retry-- <= 0) {
-                    throw error;
-                }
+                if (transaction !== null && !transaction.finished) await transaction.rollback();
+                if (retry-- <= 0) throw error;
                 // UniqueConstraintError is expected when two workers attempt to insert the same row at the same time
                 // In this case, one worker will succeed and the other worker will retry the transaction and
                 // succeed updating the row in the second attempt as expected.
@@ -182,7 +181,7 @@ class Pokemon extends Model {
                         // deadlocks are unavoidable since even the UPDATE statement would need to lock the index
                         if (retry === 8 && error.code === 'ER_LOCK_DEADLOCK') severity = console.debug;
                     }
-                    severity('[Pokemon] Encountered error, retrying transaction', transaction.id,
+                    severity('[Pokemon] Encountered error, retrying transaction', transaction && transaction.id,
                         retry, 'attempts left:', error);
                 }
             }
