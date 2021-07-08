@@ -1,13 +1,15 @@
 'use strict';
 
 const axios = require('axios');
-const config = require('./config.js');
+const { webhooks } = require('./config.js');
+
+const { CancelToken } = axios
 
 /**
  * WebhookController relay class.
  */
 class WebhookController {
-    static instance = new WebhookController(config.webhooks.urls, config.webhooks.delay, config.webhooks.retryCount);
+    static instance = new WebhookController(webhooks.urls, webhooks.delay, webhooks.retryCount, webhooks.polling);
 
     /**
      * Initialize new WebhookController object.
@@ -15,11 +17,13 @@ class WebhookController {
      * @param {number} delay
      * @param {number} retryCount
      */
-    constructor(urls, delay = 5, retryCount) {
+    constructor(urls, delay = 5, retryCount, polling) {
         console.info('[WebhookController] Starting up...');
         this.urls = urls;
         this.delay = delay;
         this.retryCount = retryCount;
+        this.polling = polling;
+        this.online = new Set();
         this.pokemonEvents = [];
         this.pokestopEvents = [];
         this.lureEvents = [];
@@ -37,6 +41,7 @@ class WebhookController {
      */
     start() {
         this.timer = setInterval(() => this.loopEvents(), this.delay * 1000);
+        setInterval(() => this.checkOnline(), this.polling * 1000);
     }
 
     /**
@@ -52,7 +57,7 @@ class WebhookController {
      * @param {*} pokemon 
      */
     addPokemonEvent(pokemon) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.pokemonEvents.push(pokemon);
@@ -63,7 +68,7 @@ class WebhookController {
      * @param {*} pokestop 
      */
     addPokestopEvent(pokestop) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.pokestopEvents.push(pokestop);
@@ -74,7 +79,7 @@ class WebhookController {
      * @param {*} pokestop
      */
     addLureEvent(pokestop) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.lureEvents.push(pokestop);
@@ -85,7 +90,7 @@ class WebhookController {
      * @param {*} pokestop
      */
     addInvasionEvent(pokestop) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.invasionEvents.push(pokestop);
@@ -96,7 +101,7 @@ class WebhookController {
      * @param {*} pokestop
      */
     addQuestEvent(pokestop) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.questEvents.push(pokestop);
@@ -107,7 +112,7 @@ class WebhookController {
      * @param {*} gym
      */
     addGymEvent(gym) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.gymEvents.push(gym);
@@ -118,7 +123,7 @@ class WebhookController {
      * @param {*} gym
      */
     addGymInfoEvent(gym) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.gymInfoEvents.push(gym);
@@ -129,7 +134,7 @@ class WebhookController {
      * @param {*} gym
      */
     addEggEvent(gym) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.eggEvents.push(gym);
@@ -140,7 +145,7 @@ class WebhookController {
      * @param {*} gym
      */
     addRaidEvent(gym) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.raidEvents.push(gym);
@@ -151,7 +156,7 @@ class WebhookController {
      * @param {*} weather
      */
     addWeatherEvent(weather) {
-        if (!config.webhooks.enabled || this.urls.length === 0) {
+        if (!webhooks.enabled || this.urls.length === 0) {
             return;
         }
         this.weatherEvents.push(weather);
@@ -277,7 +282,7 @@ class WebhookController {
      */
     sendEvents(events, url, retryCount) {
         // If events is not set, skip..
-        if (!events) {
+        if (!events || !this.online.has(url)) {
             return;
         }
         // axios request options
@@ -298,14 +303,45 @@ class WebhookController {
             .catch(err => {
                 if (err) {
                     if (retryCount < this.retryCount) {
-                        console.error('[WebhookController] Error occurred, trying again:', err);
+                        console.error(`[WebhookController] Error occurred, trying again for ${url}`);
                         this.sendEvents(events, url, retryCount++);
                     } else {
-                        console.error('[WebhookController] Error occurred, max retry count reached:', err);
+                        console.error(`[WebhookController] Error occurred, max retry count reached for ${url}`);
                     }
                 }
-            });
+          });
     }
+
+    async checkOnline() {
+        await Promise.all(this.urls.map(url => {
+            let cancel
+            axios({
+                url: url,
+                method: 'POST',
+                data: { pokemon_id: 0 },
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                  'Cache-Control': 'no-cache',
+                  'User-Agent': 'Nodedradamus',
+                },
+                cancelToken: new CancelToken(function executor(c) {
+                  cancel = c;
+                }),              
+            })
+                .then(() => this.online.add(url))
+                .catch(err => {
+                    if (err) {
+                      this.online.delete(url);
+                      console.warn(`${url} is offline`);
+                    };
+                    cancel();
+                });
+        }));
+        if (webhooks.urls.length > 0 && this.online.size === 0) {
+          console.error('No webhooks are online');
+        };
+    };
 }
 
 module.exports = WebhookController;
