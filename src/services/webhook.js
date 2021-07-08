@@ -311,7 +311,6 @@ class WebhookController {
     }
 
     checkOnline() {
-        this.online = [];
         this.urls.forEach(url => {
             axios({
                 url: url,
@@ -327,6 +326,7 @@ class WebhookController {
                 .then(() => this.online.push(url))
                 .catch(err => {
                     if (err) {
+                      this.online = this.online.filter(x => x !== url)
                       console.error(`${url} is offline`);
                     };
                 });
