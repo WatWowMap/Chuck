@@ -3,6 +3,8 @@
 const axios = require('axios');
 const { webhooks } = require('./config.js');
 
+const { CancelToken } = axios
+
 /**
  * WebhookController relay class.
  */
@@ -307,11 +309,12 @@ class WebhookController {
                         console.error(`[WebhookController] Error occurred, max retry count reached for ${url}`);
                     }
                 }
-            });
+          });
     }
 
-    checkOnline() {
-        this.urls.forEach(url => {
+    async checkOnline() {
+        await Promise.all(this.urls.map(url => {
+            let cancel
             axios({
                 url: url,
                 method: 'POST',
@@ -322,18 +325,22 @@ class WebhookController {
                   'Cache-Control': 'no-cache',
                   'User-Agent': 'Nodedradamus',
                 },
+                cancelToken: new CancelToken(function executor(c) {
+                  cancel = c;
+                }),              
             })
                 .then(() => this.online.add(url))
                 .catch(err => {
                     if (err) {
-                      this.online.delete(url)
+                      this.online.delete(url);
                       console.warn(`${url} is offline`);
                     };
+                    cancel();
                 });
-          });
+        }));
         if (webhooks.urls.length > 0 && this.online.size === 0) {
-          console.error('No webhooks are online')
-        }
+          console.error('No webhooks are online');
+        };
     };
 }
 
