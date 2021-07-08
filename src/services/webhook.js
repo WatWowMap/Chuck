@@ -21,7 +21,7 @@ class WebhookController {
         this.delay = delay;
         this.retryCount = retryCount;
         this.polling = polling;
-        this.online = [];
+        this.online = new Set();
         this.pokemonEvents = [];
         this.pokestopEvents = [];
         this.lureEvents = [];
@@ -280,7 +280,7 @@ class WebhookController {
      */
     sendEvents(events, url, retryCount) {
         // If events is not set, skip..
-        if (!events || !this.online.includes(url)) {
+        if (!events || !this.online.has(url)) {
             return;
         }
         // axios request options
@@ -323,14 +323,17 @@ class WebhookController {
                   'User-Agent': 'Nodedradamus',
                 },
             })
-                .then(() => this.online.push(url))
+                .then(() => this.online.add(url))
                 .catch(err => {
                     if (err) {
-                      this.online = this.online.filter(x => x !== url)
-                      console.error(`${url} is offline`);
+                      this.online.delete(url)
+                      console.warn(`${url} is offline`);
                     };
                 });
           });
+        if (webhooks.urls.length > 0 && this.online.size === 0) {
+          console.error('No webhooks are online')
+        }
     };
 }
 
