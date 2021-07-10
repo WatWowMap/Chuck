@@ -1,6 +1,6 @@
 'use strict';
 
-const { DataTypes, Model, Transaction, UniqueConstraintError } = require('sequelize');
+const { DataTypes, DatabaseError, Model, Transaction, UniqueConstraintError } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 const POGOProtos = require('pogo-protos');
 
@@ -29,12 +29,46 @@ class Pokemon extends Model {
     static async getOrCreate(encounterId, transaction = null) {
         const existing = await Pokemon.findByPk(encounterId, transaction === null ? {} : {
             transaction,
-            lock: transaction.LOCK,
+            lock: transaction.LOCK.UPDATE,
         });
-        if (existing !== null) {
-            return existing;
+        return existing || Pokemon.build({ id: encounterId });
+    }
+
+    setWeather(weather) {
+        let reset = false;
+        if (!this.isNewRecord && this.weather !== weather) {
+            const changeWeather = (boosted = weather) => {
+                const swapField = (a, b) => {
+                    const t = this[a];
+                    this[a] = this[b];
+                    this[b] = t;
+                }
+                swapField('atkIv', 'atkInactive');
+                swapField('defIv', 'defInactive');
+                swapField('staIv', 'staInactive');
+                this.cp = null;
+                if (this.level !== null) {
+                    this.level += boosted ? 5 : -5;
+                }
+                this.pvpRankingsGreatLeague = null;
+                this.pvpRankingsUltraLeague = null;
+                this.pvp = null;
+                reset = true;
+            }
+            if (this.isDitto) {
+                if (weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise are boosted and Ditto was not boosted: none -> boosted
+                    changeWeather(true);
+                } else if (this.weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
+                    // both Ditto and disguise were boosted and Ditto is not boosted: boosted -> none
+                    changeWeather(false);
+                }
+            } else if (!this.weather !== !weather) {
+                changeWeather();
+            }
         }
-        return Pokemon.build({ id: encounterId });
+        this.weather = weather;
+        return reset;
     }
 
     _setPokemonDisplay(pokemonId, display, username) {
@@ -65,39 +99,7 @@ class Pokemon extends Model {
         this.gender = display.gender;
         this.form = display.form;
         this.costume = display.costume;
-        if (!this.isNewRecord && this.weather !== display.weather_boosted_condition) {
-            console.debug('[Pokemon] Spawn', this.id, 'weather changed from', this.weather, 'by', this.username,
-                'to', display.weather_boosted_condition, 'by', username);
-            const changeWeather = (boosted = display.weather_boosted_condition) => {
-                const swapField = (a, b) => {
-                    const t = this[a];
-                    this[a] = this[b];
-                    this[b] = t;
-                }
-                swapField('atkIv', 'atkInactive');
-                swapField('defIv', 'defInactive');
-                swapField('staIv', 'staInactive');
-                this.cp = null;
-                if (this.level !== null) {
-                    this.level += boosted ? 5 : -5;
-                }
-                this.pvpRankingsGreatLeague = null;
-                this.pvpRankingsUltraLeague = null;
-                this.pvp = null;
-            }
-            if (this.isDitto) {
-                if (display.weather_boosted_condition === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
-                    // both Ditto and disguise are boosted and Ditto was not boosted: none -> boosted
-                    changeWeather(true);
-                } else if (this.weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY) {
-                    // both Ditto and disguise were boosted and Ditto is not boosted: boosted -> none
-                    changeWeather(false);
-                }
-            } else if (!this.weather !== !display.weather_boosted_condition) {
-                changeWeather();
-            }
-        }
-        this.weather = display.weather_boosted_condition;
+        this.setWeather(display.weather_boosted_condition);
     }
 
     async _addWildPokemon(wild, username, transaction) {
@@ -150,53 +152,73 @@ class Pokemon extends Model {
         }
     }
 
-    static async _attemptUpdate(id, work) {
-        let retry = 5, pokemon, changed;
+    static async robustTransaction(work) {
+        let retry = 9;
         for (; ;) {
-            const transaction = await sequelize.transaction({
-                // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
-                // the lower transaction level (compared to REPEATABLE_READ) is ok since we do not perform range queries
-                isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
-            });
+            let transaction = null;
             try {
-                pokemon = await Pokemon.getOrCreate(id, transaction);
-                if (await work.call(pokemon, transaction) === true) {
-                    await transaction.commit();
-                    return pokemon;
-                }
-                pokemon._ensureExpireTimestamp();
-                changed = pokemon.changed();
-                await pokemon.save({ transaction });
+                transaction = await sequelize.transaction({
+                    // prevents MySQL from setting gap locks or next-key locks which leads to deadlocks
+                    // we do not perform repeated reads so the lower transaction level (compared to REPEATABLE_READ) is ok
+                    isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
+                });
+                const result = await work(transaction);
                 await transaction.commit();
-                break;
+                return result;
             } catch (error) {
-                if (!transaction.finished) await transaction.rollback();
-                if (retry-- <= 0) {
-                    throw error;
-                }
+                if (transaction !== null && !transaction.finished) await transaction.rollback();
+                if (retry-- <= 0) throw error;
                 // UniqueConstraintError is expected when two workers attempt to insert the same row at the same time
                 // In this case, one worker will succeed and the other worker will retry the transaction and
                 // succeed updating the row in the second attempt as expected.
                 if (!(error instanceof UniqueConstraintError)) {
-                    console.warn('[Pokemon] Encountered error, retrying transaction', transaction.id,
+                    let severity = console.warn;
+                    if (error instanceof DatabaseError) {
+                        error = error.parent;
+                        // deadlocks are unavoidable since even the UPDATE statement would need to lock the index
+                        if (retry === 8 && error.code === 'ER_LOCK_DEADLOCK') severity = console.debug;
+                    }
+                    severity('[Pokemon] Encountered error, retrying transaction', transaction && transaction.id,
                         retry, 'attempts left:', error);
                 }
             }
         }
+    }
+
+    async redisCallback(weather = null) {
+        if (RedisClient) {
+            const needIv = async () => {
+                if (this.atkIv === null && this.atkInactive === null) return true;
+                if (this.atkIv !== null && this.atkInactive !== null) return false;
+                if (!this.isDitto || this.weather) return this.atkIv === null;
+                if (weather === null) try {
+                    weather = await Weather.findByLatLon(this.lat, this.lon);
+                } catch (e) {
+                    console.warn('[POKEMON] Failed to retrieve weather for Ditto for redis', e);
+                }
+                return (weather === POGOProtos.Rpc.GameplayWeatherProto.WeatherCondition.PARTLY_CLOUDY ? this.atkInactive : this.atkIv) === null;
+            }
+            await RedisClient.publish(await needIv() ? 'pokemon:added' : 'pokemon:updated',
+                JSON.stringify(this.toJSON()));
+        }
+    }
+
+    static async _attemptUpdate(id, work) {
+        const [pokemon, changed] = await Pokemon.robustTransaction(async (transaction) => {
+            const pokemon = await Pokemon.getOrCreate(id, transaction);
+            if (await work.call(pokemon, transaction) === true) return [pokemon, false];
+            pokemon._ensureExpireTimestamp();
+            const changed = pokemon.changed();
+            await pokemon.save({ transaction });
+            return [pokemon, changed];
+        });
         if (changed) {
-            if (['pokemonId', 'gender', 'form', 'weather', 'costume'].some(x => changed.includes(x))) {
+            if (['pokemonId', 'gender', 'form', 'costume'].some(x => changed.includes(x))) {
                 WebhookController.instance.addPokemonEvent(pokemon.toJson());
-                if (RedisClient) {
-                    await RedisClient.publish('pokemon:added', JSON.stringify(pokemon.toJSON()));
-                    if (pokemon.atkIv !== null) {
-                        await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
-                    }
-                }
-            } else if (['level', 'atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
-                WebhookController.instance.addPokemonEvent(pokemon.toJson());
-                if (RedisClient) {
-                    await RedisClient.publish('pokemon:updated', JSON.stringify(pokemon.toJSON()));
-                }
+                await pokemon.redisCallback();
+            } else if (['atkIv', 'defIv', 'staIv'].some(x => changed.includes(x))) {
+                if (pokemon.atkIv !== null) WebhookController.instance.addPokemonEvent(pokemon.toJson());
+                await pokemon.redisCallback();
             }
         }
         return pokemon;
@@ -256,7 +278,7 @@ class Pokemon extends Model {
                 }
                 const pokestop = await locatePokestop();
                 if (pokestop === null) {
-                    console.warn('[Pokemon] Unable to locate its nearby Pokestop', nearby.fort_id);
+                    console.debug('[Pokemon] Unable to locate its nearby Pokestop', nearby.fort_id);
                     return true;
                 }
                 this.lat = pokestop.lat;
@@ -266,7 +288,6 @@ class Pokemon extends Model {
             } else if (this.pokestopId !== nearby.fort_id) {
                 const pokestop = await locatePokestop();
                 if (pokestop === null) {
-                    console.info('[Pokemon] Unable to locate its nearby Pokestop', nearby.fort_id);
                     return;
                 }
                 // TODO: remember previously found Pokestop too to prevent overcounting
@@ -362,13 +383,13 @@ class Pokemon extends Model {
         });
     }
 
-    async populateAuxFields(fromEncounter = false) {
+    async populateAuxFields(fromEncounter = false, pvpManager = ipcWorker) {
         if (!fromEncounter && (this.atkIv === null || !(this.changed('pokemonId') || this.changed('form') ||
             this.changed('gender') || this.changed('costume') || this.changed('level')))) {
             return;
         }
-        const cp = ipcWorker.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
-        const pvp = await ipcWorker.queryPvPRank(this.pokemonId, this.form, this.costume, this.gender,
+        const cp = pvpManager.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
+        const pvp = await pvpManager.queryPvPRank(this.pokemonId, this.form, this.costume, this.gender,
             this.atkIv, this.defIv, this.staIv, this.level);
         if (!fromEncounter) {
             this.cp = (await cp) || null;
@@ -380,10 +401,7 @@ class Pokemon extends Model {
             this.pvpRankingsGreatLeague = pvp.great || null;
             this.pvpRankingsUltraLeague = pvp.ultra || null;
         }
-        if (config.dataparser.pvp.v2) {
-            delete pvp.cp;
-            this.pvp = pvp;
-        }
+        if (config.dataparser.pvp.v2) this.pvp = pvp;
     }
 
     /**
