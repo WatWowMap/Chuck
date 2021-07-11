@@ -5,6 +5,7 @@ const sequelize = require('../services/sequelize.js');
 const POGOProtos = require('pogo-protos');
 
 const Cell = require('./cell.js');
+const PokemonDisplay = require('./pokemon-display.js');
 const Pokestop = require('./pokestop.js');
 const Spawnpoint = require('./spawnpoint.js');
 const Weather = require('./weather.js');
@@ -71,27 +72,50 @@ class Pokemon extends Model {
         return reset;
     }
 
+    _getPokemonDisplay() {
+        return new PokemonDisplay(this.isDitto ? this.displayPokemonId : this.pokemonId,
+            this.form, this.costume, this.gender);
+    }
+
+    hasAlternativeDisplays(current = this._getPokemonDisplay()) {
+        return this.alternativeDisplays !== null && (Object.keys(this.alternativeDisplays).length > 1 ||
+            this.alternativeDisplays[current.toString()] === undefined);
+    }
+
     _setPokemonDisplay(pokemonId, display, username) {
-        if (!this.isNewRecord && ((this.isDitto ? this.displayPokemonId : this.pokemonId) !== pokemonId ||
-            this.gender !== display.gender || this.form !== display.form || this.costume !== display.costume)) {
-            // if (this.username === username) {   // spawn change confirmed
-            //     console.info('[Pokemon] Spawn', this.id, 'changed confirmed from', this.pokemonId, 'to', pokemonId);
-            // } else {
-            // TODO: handle A/B spawn?
-            console.info('[Pokemon] Spawn', this.id, 'changed from Pokemon',
-                this.isDitto ? this.displayPokemonId : this.pokemonId, 'by', this.username,
-                'to', pokemonId, 'by', username);
-            // TODO: repopulate weight/size?
-            this.weight = null;
-            this.size = null;
-            this.move1 = null;
-            this.move2 = null;
-            this.cp = null;
-            this.isDitto = false;
-            this.displayPokemonId = null;
-            this.pvpRankingsGreatLeague = null;
-            this.pvpRankingsUltraLeague = null;
-            this.pvp = null;
+        if (!this.isNewRecord) {
+            const old = this._getPokemonDisplay();
+            if (this.username !== username) {
+                const oldKey = old.toString();
+                const oldTime = this.previous().updated;
+                if (this.alternativeDisplays !== null) {
+                    // more suffering: https://github.com/sequelize/sequelize/issues/11177#issuecomment-877873907
+                    this.alternativeDisplays = JSON.parse(this.alternativeDisplays);
+                    for (const [key, lookup] of Object.entries(this.alternativeDisplays)) {
+                        lookup[username] !== undefined && delete lookup[username] &&
+                            Object.keys(lookup).length === 0 && delete this.alternativeDisplays[key];
+                    }
+                    if (this.alternativeDisplays[oldKey] !== undefined) {
+                        this.alternativeDisplays[oldKey][this.username] = oldTime;
+                    } else this.alternativeDisplays[oldKey] = { [this.username]: oldTime };
+                } else this.alternativeDisplays = { [oldKey]: { [this.username]: oldTime } };
+            }
+            const current = PokemonDisplay.fromProtos(pokemonId, display);
+            if (!old.equals(current)) {
+                console.info('[Pokemon] Spawn', this.id, 'changed from', old, 'by', this.username,
+                    'to', current, 'by', username, this.hasAlternativeDisplays(current) ? 'unconfirmed' : 'confirmed');
+                // TODO: repopulate weight/size?
+                this.weight = null;
+                this.size = null;
+                this.move1 = null;
+                this.move2 = null;
+                this.cp = null;
+                this.isDitto = false;
+                this.displayPokemonId = null;
+                this.pvpRankingsGreatLeague = null;
+                this.pvpRankingsUltraLeague = null;
+                this.pvp = null;
+            }
         }
         if (this.isNewRecord || !this.isDitto) {
             this.pokemonId = pokemonId;
@@ -100,6 +124,7 @@ class Pokemon extends Model {
         this.form = display.form;
         this.costume = display.costume;
         this.setWeather(display.weather_boosted_condition);
+        this.username = username;
     }
 
     async _addWildPokemon(wild, username, transaction) {
@@ -116,7 +141,6 @@ class Pokemon extends Model {
             console.warn('Interesting pokemon', wild);
         }
         this.spawnId = parseInt(wild.spawn_point_id, 16);
-        this.username = username;
         if (this.isNewRecord) {
             this.changedTimestamp = this.firstSeenTimestamp = this.updated;
             this.expireTimestampVerified = false;
@@ -254,7 +278,6 @@ class Pokemon extends Model {
             this.updated = Math.floor(timestampMs / 1000);
             console.assert(this.id === encounterId, 'unmatched encounterId');
             this._setPokemonDisplay(nearby.pokedex_number, nearby.pokemon_display, username);
-            this.username = username;
             this.cellId = cellId.toString();
             await this.populateAuxFields();
             const locatePokestop = async () => {
@@ -627,6 +650,10 @@ Pokemon.init({
         defaultValue: null,
     },
     pvp: {
+        type: DataTypes.JSONTEXT,
+        defaultValue: null,
+    },
+    alternativeDisplays: {
         type: DataTypes.JSONTEXT,
         defaultValue: null,
     },
