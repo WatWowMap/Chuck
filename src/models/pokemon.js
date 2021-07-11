@@ -78,8 +78,13 @@ class Pokemon extends Model {
     }
 
     hasAlternativeDisplays(current = this._getPokemonDisplay()) {
-        return this.alternativeDisplays !== null && (Object.keys(this.alternativeDisplays).length > 1 ||
-            this.alternativeDisplays[current.toString()] === undefined);
+        if (this.alternativeDisplays === null) return false;
+        if (typeof this.alternativeDisplays === 'string') {
+            // more sequelize bs: https://github.com/sequelize/sequelize/issues/11177#issuecomment-877873907
+            this.alternativeDisplays = JSON.parse(this.alternativeDisplays);
+        }
+        return Object.keys(this.alternativeDisplays).length > 1 ||
+            this.alternativeDisplays[current.toString()] === undefined;
     }
 
     _setPokemonDisplay(pokemonId, display, username) {
@@ -89,7 +94,7 @@ class Pokemon extends Model {
                 const oldKey = old.toString();
                 const oldTime = this.previous().updated;
                 if (this.alternativeDisplays !== null) {
-                    // more suffering: https://github.com/sequelize/sequelize/issues/11177#issuecomment-877873907
+                    // more sequelize bs: https://github.com/sequelize/sequelize/issues/11177#issuecomment-877873907
                     this.alternativeDisplays = JSON.parse(this.alternativeDisplays);
                     for (const [key, lookup] of Object.entries(this.alternativeDisplays)) {
                         lookup[username] !== undefined && delete lookup[username] &&
