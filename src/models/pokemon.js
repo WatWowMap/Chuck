@@ -484,6 +484,7 @@ class Pokemon extends Model {
             shiny: this.shiny,
             username: this.username,
             display_pokemon_id: this.displayPokemonId,
+            has_alternative_displays: this.hasAlternativeDisplays(),
         };
         if (config.dataparser.pvp.v2Webhook) {
             message.pvp = config.dataparser.pvp.v2 ? this.pvp : {
