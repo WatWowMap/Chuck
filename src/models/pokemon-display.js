@@ -1,3 +1,5 @@
+const util = require('util');
+
 class PokemonDisplay {
     /**
      * Two PokemonProtos are considered the same spawn if they have the same PokemonDisplay.
@@ -27,6 +29,10 @@ class PokemonDisplay {
 
     toString() {
         return `${this.pokemonId},${this.form},${this.costume},${this.gender}`;
+    }
+
+    [util.inspect.custom]() {
+        return this.toString();
     }
 }
 
