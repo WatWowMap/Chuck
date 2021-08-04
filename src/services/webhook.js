@@ -313,10 +313,14 @@ class WebhookController {
     }
 
     async checkOnline() {
+        let prevReq = {}
         await Promise.all(this.urls.map(url => {
-            let cancel
+            if (prevReq[url]) {
+                prevReq[url].cancel()
+            }
+            prevReq[url] = axios.CancelToken.source()
             axios({
-                url: url,
+                url,
                 method: 'POST',
                 data: { pokemon_id: 0 },
                 headers: {
@@ -325,17 +329,16 @@ class WebhookController {
                   'Cache-Control': 'no-cache',
                   'User-Agent': 'Nodedradamus',
                 },
-                cancelToken: new CancelToken(function executor(c) {
-                  cancel = c;
-                }),              
+                cancelToken: prevReq.token,         
             })
                 .then(() => this.online.add(url))
                 .catch(err => {
-                    if (err) {
-                      this.online.delete(url);
-                      console.warn(`${url} is offline`);
+                    if (axios.isCancel(err)) {
+                        console.warn('Previous polling request cancelled.');
+                    } else if (err) {
+                        this.online.delete(url);
+                        console.warn(`${url} is offline`);
                     };
-                    cancel();
                 });
         }));
         if (webhooks.urls.length > 0 && this.online.size === 0) {
