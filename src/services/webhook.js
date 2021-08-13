@@ -54,7 +54,7 @@ class WebhookController {
 
     /**
      * Add Pokemon event json to pokemon events queue
-     * @param {*} pokemon 
+     * @param {*} pokemon
      */
     addPokemonEvent(pokemon) {
         if (!webhooks.enabled || this.urls.length === 0) {
@@ -65,7 +65,7 @@ class WebhookController {
 
     /**
      * Add Pokestop event json to pokestop events queue
-     * @param {*} pokestop 
+     * @param {*} pokestop
      */
     addPokestopEvent(pokestop) {
         if (!webhooks.enabled || this.urls.length === 0) {
@@ -186,7 +186,7 @@ class WebhookController {
                 events.push(pokestopEvent);
             }
         }
-        
+
         // Check if any queued lure events
         if (this.lureEvents.length > 0) {
             for (let i = 0; i < this.lureEvents.length; i++) {
@@ -196,7 +196,7 @@ class WebhookController {
                 events.push(lureEvent);
             }
         }
-        
+
         // Check if any queued invasion events
         if (this.invasionEvents.length > 0) {
             for (let i = 0; i < this.invasionEvents.length; i++) {
@@ -206,7 +206,7 @@ class WebhookController {
                 events.push(invasionEvent);
             }
         }
-        
+
         // Check if any queued quest events
         if (this.questEvents.length > 0) {
             for (let i = 0; i < this.questEvents.length; i++) {
@@ -216,7 +216,7 @@ class WebhookController {
                 events.push(questEvent);
             }
         }
-        
+
         // Check if any queued gym events
         if (this.gymEvents.length > 0) {
             for (let i = 0; i < this.gymEvents.length; i++) {
@@ -226,7 +226,7 @@ class WebhookController {
                 events.push(gymEvent);
             }
         }
-        
+
         // Check if any queued gym info events
         if (this.gymInfoEvents.length > 0) {
             for (let i = 0; i < this.gymInfoEvents.length; i++) {
@@ -236,7 +236,7 @@ class WebhookController {
                 events.push(gymInfoEvent);
             }
         }
-        
+
         // Check if any queued egg events
         if (this.eggEvents.length > 0) {
             for (let i = 0; i < this.eggEvents.length; i++) {
@@ -246,7 +246,7 @@ class WebhookController {
                 events.push(eggEvent);
             }
         }
-        
+
         // Check if any queued raid events
         if (this.raidEvents.length > 0) {
             for (let i = 0; i < this.raidEvent.length; i++) {
@@ -314,36 +314,37 @@ class WebhookController {
 
     async checkOnline() {
         let prevReq = {}
-        await Promise.all(this.urls.map(url => {
+        await Promise.all(this.urls.map(async url => {
             if (prevReq[url]) {
-                prevReq[url].cancel()
+                prevReq[url].cancel();
             }
             prevReq[url] = axios.CancelToken.source()
-            axios({
-                url,
-                method: 'POST',
-                data: { pokemon_id: 0 },
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json',
-                  'Cache-Control': 'no-cache',
-                  'User-Agent': 'Nodedradamus',
-                },
-                cancelToken: prevReq.token,         
-            })
-                .then(() => this.online.add(url))
-                .catch(err => {
-                    if (axios.isCancel(err)) {
-                        console.warn('Previous polling request cancelled.');
-                    } else if (err) {
-                        this.online.delete(url);
-                        console.warn(`${url} is offline`);
-                    };
+            try {
+                await axios({
+                    url,
+                    method: 'POST',
+                    data: { pokemon_id: 0 },
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache',
+                        'User-Agent': 'Nodedradamus',
+                    },
+                    cancelToken: prevReq.token,
                 });
+                this.online.add(url);
+            } catch (err) {
+                this.online.delete(url);
+                if (axios.isCancel(err)) {
+                    console.warn('Previous polling request cancelled.');
+                } else if (err) {
+                    console.warn(`${url} is offline`);
+                }
+            }
         }));
         if (webhooks.urls.length > 0 && this.online.size === 0) {
-          console.error('No webhooks are online');
-        };
+            console.error('No webhooks are online');
+        }
     };
 }
 
