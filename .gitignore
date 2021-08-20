@@ -115,4 +115,4 @@ pogo-protos
 /.vs/
 
 #Masterfile
-masterfile.json
+static/data/masterfile.json
