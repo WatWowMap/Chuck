@@ -79,6 +79,7 @@ require('./services/logger.js');
 
         if (config.webhooks.enabled && config.webhooks.urls.length > 0) {
             WebhookController.instance.start();
+            WebhookController.instance.checkOnline();
         }
     }
 })();

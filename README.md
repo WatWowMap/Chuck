@@ -90,7 +90,8 @@ SELECT name, type, data FROM rdmdb.instance;
         "enabled": false,
         "urls": ["http://127.0.0.1:9003"],
         "delay": 5,
-        "retryCount": 5
+        "retryCount": 5,
+        "polling": 5
     },
     "logs": {
         "level": 4,
