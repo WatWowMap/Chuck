@@ -113,3 +113,6 @@ static/locales/*.json
 
 pogo-protos
 /.vs/
+
+#Masterfile
+static/data/masterfile.json
