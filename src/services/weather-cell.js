@@ -76,16 +76,7 @@ class WeatherCell {
             },
             weather: { [Op.ne]: weather },
         };
-        const boosted = [
-            [],
-            ['Grass', 'Fire', 'Ground'],
-            ['Water', 'Electric', 'Bug'],
-            ['Normal', 'Rock'],
-            ['Fairy', 'Fighting', 'Poison'],
-            ['Flying', 'Dragon', 'Psychic'],
-            ['Ice', 'Steel'],
-            ['Dark', 'Ghost'],
-        ][weather];
+        const boosted = masterfile.weather[weather];
         try {
             const [redis, webhook] = await Pokemon.robustTransaction(async (transaction) => {
                 if (this.pendingWeather !== weather) return [[], []];
