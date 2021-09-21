@@ -7,7 +7,7 @@ const config = require('./config.js');
 const ohbem = new Ohbem({
     leagues: config.dataparser.pvp.leagues,
     levelCaps: config.dataparser.pvp.levelCaps,
-    pokemonData: masterfile.pokemon,
+    pokemonData: masterfile,
     cachingStrategy: Ohbem.cachingStrategies.lru({
         maxAge: config.dataparser.pvp.rankCacheAge,
         updateAgeOnGet: true,
