@@ -10,7 +10,6 @@ const Pokestop = require('./pokestop.js');
  */
 class Incident extends Model {
     static fromFortFields = [
-        'id',
         'pokestopId',
         'startMs',
         'expirationMs',
