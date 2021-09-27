@@ -14,7 +14,9 @@ module.exports = new Proxy({}, {
                     if (promise) {
                         (error ? promise.reject : promise.resolve)(result);
                     } else {
-                        console.warn('Unrecognized message received with token', token);
+                        console.error('Unrecognized message received with token', token,
+                            '. Are you running with pm2 (or other process managers using clusters API)?',
+                            'This is not supported.');
                     }
                 });
                 nextToken = 0;
