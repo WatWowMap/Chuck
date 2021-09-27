@@ -10,7 +10,8 @@ module.exports = new Proxy({}, {
                 process.on('message', function (message) {
                     const { token, error, result } = message;
                     const promise = pending[token];
-                    if (delete pending[token]) {
+                    delete pending[token];
+                    if (promise) {
                         (error ? promise.reject : promise.resolve)(result);
                     } else {
                         console.warn('Unrecognized message received with token', token);
