@@ -27,6 +27,19 @@
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
         "lureTime": 30,
+        "incident": {
+            "v1": true,
+            "v1priority": [
+                99,
+                1,
+                5,
+                6,
+                2,
+                3,
+                4
+            ],
+            "v2": true
+        },
         "pvp": {
             "rankCacheAge": 86400000,
             "levelCaps": [
