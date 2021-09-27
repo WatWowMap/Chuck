@@ -425,8 +425,6 @@ class Pokestop extends Model {
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
                         lure_id: this.lureId || 0,
-                        pokestop_display: this.pokestopDisplay || 0,
-                        incident_expire_timestamp: this.incidentExpireTimestamp || 0,
                         ar_scan_eligible: this.arScanEligible,
                         updated: this.updated || 1
                     }
