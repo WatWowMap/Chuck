@@ -9,8 +9,9 @@ const Account = require('../models/account.js');
 const Gym = require('../models/gym.js');
 const Pokemon = require('../models/pokemon.js');
 const Pokestop = require('../models/pokestop.js');
-const Cell = require('../models/cell');
-const Weather = require('../models/weather');
+const Cell = require('../models/cell.js');
+const Weather = require('../models/weather.js');
+const Incident = require('../models/incident.js');
 
 // this needs to be an arbitrary fixed order in order to prevent deadlocks
 const stringCompare = (field) => (a, b) => (a[field] > b[field]) - (a[field] < b[field]);
@@ -49,6 +50,7 @@ class Consumer {
             const updatedGyms = [];
             const updatedGymsWithUrl = [];
             const updatedPokestops = [];
+            const updatedIncidents = [];
             for (let i = 0; i < forts.length; i++) {
                 let fort = forts[i];
                 try {
@@ -70,9 +72,10 @@ class Consumer {
                             if (!config.dataparser.parse.pokestops) {
                                 continue;
                             }
-                            const pokestop = Pokestop.fromFort(fort.cell, fort.data);
-                            await pokestop.triggerWebhook(false);
+                            const [pokestop, incidents] = Pokestop.fromFort(fort.cell, fort.data);
+                            await pokestop.triggerWebhook(false, incidents);
                             updatedPokestops.push(pokestop.toJSON());
+                            for (const incident of incidents) updatedIncidents.push(incident.toJSON());
                             break;
                         }
                     }
@@ -103,6 +106,16 @@ class Consumer {
                     //console.log('[Pokestop] Result:', result.length);
                 } catch (err) {
                     console.error('[Pokestop] Error:', err);
+                }
+            }
+            if (updatedIncidents.length > 0) {
+                try {
+                    let result = await Incident.bulkCreate(updatedIncidents.sort((a, b) => a - b), {
+                        updateOnDuplicate: Incident.fromFortFields,
+                    });
+                    //console.log('[Incident] Result:', result.length);
+                } catch (err) {
+                    console.error('[Incident] Error:', err);
                 }
             }
         }

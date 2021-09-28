@@ -5,7 +5,8 @@ const POGOProtos = require('pogo-protos');
 const { DataTypes, Model, Op, Sequelize } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
-const Cell = require('./cell');
+const Cell = require('./cell.js');
+const Incident = require('./incident.js');
 const config = require('../services/config.js');
 
 /**
@@ -31,7 +32,8 @@ class Pokestop extends Model {
         'arScanEligible',
     ];
     static fromFort(cellId, fort) {
-        let ts = new Date().getTime() / 1000;
+        const now = Date.now();
+        const ts = now / 1000;
         const record = {
             id: fort.fort_id,
             lat: fort.latitude,
@@ -56,20 +58,29 @@ class Pokestop extends Model {
             }
             record.lureId = fort.active_fort_modifier[0];
         }
-        if (fort.pokestop_display) {
-            record.incidentExpireTimestamp = Math.floor(fort.pokestop_display.incident_expiration_ms / 1000);
-            if (fort.pokestop_display.character_display) {
-                record.pokestopDisplay = fort.pokestop_display.character_display.style;
-                record.gruntType = fort.pokestop_display.character_display.character;
-            }
-        } else if (fort.pokestop_displays && fort.pokestop_displays.length > 0) {
-            record.incidentExpireTimestamp = Math.floor(fort.pokestop_displays[0].incident_expiration_ms / 1000);
-            if (fort.pokestop_displays[0].character_display) {
-                record.pokestopDisplay = fort.pokestop_displays[0].character_display.style;
-                record.gruntType = fort.pokestop_displays[0].character_display.character;
+        let incidents = [];
+        if (config.dataparser.incident.v1 || config.dataparser.incident.v2) {
+            incidents = fort.pokestop_displays;
+            if (!incidents && fort.pokestop_display) incidents = [fort.pokestop_display];
+            if (incidents && incidents.length > 0) {
+                if (config.dataparser.incident.v1) {
+                    const priorities = config.dataparser.incident.v1priority;
+                    let incident, priority = priorities[0] + 1;
+                    for (const i of incidents) {
+                        const mine = priorities[i.incident_display_type] || priorities[0];
+                        if (mine >= priority) continue;
+                        priority = mine;
+                        incident = i;
+                    }
+                    record.incidentExpireTimestamp = Math.floor(incident.incident_expiration_ms / 1000);
+                    record.pokestopDisplay = incident.character_display.style;
+                    record.gruntType = incident.character_display.character;
+                }
+                incidents = config.dataparser.incident.v2 ? incidents.map(id =>
+                    Incident.fromIncidentDisplay(now, record.id, id)) : [];
             }
         }
-        return Pokestop.build(record);
+        return [Pokestop.build(record), incidents];
     }
 
     static fromQuestFields = [
@@ -260,7 +271,7 @@ class Pokestop extends Model {
     /**
      * Update Pokestop values if changed from already found Pokestop
      */
-    async triggerWebhook(updateQuest) {
+    async triggerWebhook(updateQuest, incidents) {
         let oldPokestop = null;
         try {
             oldPokestop = await Pokestop.findByPk(this.id);
@@ -283,7 +294,9 @@ class Pokestop extends Model {
             if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
                 WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
             }
-            if ((oldPokestop.incidentExpireTimestamp || 0) < (this.incidentExpireTimestamp || 0)) {
+            if (config.dataparser.incident.v2) {
+                if (incidents) await Promise.all(incidents.map(incident => incident.triggerWebhook(this, oldPokestop)));
+            } else if ((oldPokestop.incidentExpireTimestamp || 0) < (this.incidentExpireTimestamp || 0)) {
                 WebhookController.instance.addInvasionEvent(this.toJson('invasion', oldPokestop));
             }
         }
@@ -412,8 +425,6 @@ class Pokestop extends Model {
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
                         lure_id: this.lureId || 0,
-                        pokestop_display: this.pokestopDisplay || 0,
-                        incident_expire_timestamp: this.incidentExpireTimestamp || 0,
                         ar_scan_eligible: this.arScanEligible,
                         updated: this.updated || 1
                     }
@@ -559,6 +570,9 @@ Cell.Pokestops = Cell.hasMany(Pokestop, {
     foreignKey: 'cellId',
 });
 Pokestop.Cell = Pokestop.belongsTo(Cell);
+
+Incident.Pokestop = Incident.belongsTo(Pokestop, { foreignKey: 'pokestopId' });
+Pokestop.Incidents = Pokestop.hasMany(Incident, { foreignKey: 'pokestopId' });
 
 // Export the class
 module.exports = Pokestop;
