@@ -24,6 +24,7 @@ class Pokestop extends Model {
         'cellId',
         'updated',
         'deleted',
+        'lureFirstSeenTimestamp',
         'lureExpireTimestamp',
         'lureId',
         'incidentExpireTimestamp',
@@ -47,17 +48,14 @@ class Pokestop extends Model {
             deleted: false,
             arScanEligible: fort.is_ar_scan_eligible,
         };
-        if (!fort.active_fort_modifier || fort.active_fort_modifier.length <= 0 ||
-            fort.active_fort_modifier.every((mod) =>
-                mod < POGOProtos.Rpc.Item.ITEM_TROY_DISK || mod >= POGOProtos.Rpc.Item.ITEM_TROY_DISK + 99)) {
-            record.lureExpireTimestamp = 0;
-        } else if (record.lureExpireTimestamp < ts || record.lureId !== fort.active_fort_modifier[0]) {
-            record.lureExpireTimestamp = Math.floor(record.lastModifiedTimestamp + Pokestop.LureTime);
-            if (record.lureExpireTimestamp < ts) {  // event extended lure duration
-                record.lureExpireTimestamp = Math.floor(ts + Pokestop.LureTime);
-            }
+        if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0) {
+            if (fort.active_fort_modifier.length > 1) console.warn('[Lure] More than one lure?', record.id);
             record.lureId = fort.active_fort_modifier[0];
-        }
+            record.lureFirstSeenTimestamp = record.lastModifiedTimestamp;
+            if (config.dataparser.lure.v2) {
+                record.lureExpireTimestamp = null;
+            }
+        } else record.lureExpireTimestamp = 0;
         let incidents = [];
         if (config.dataparser.incident.v1 || config.dataparser.incident.v2) {
             incidents = fort.pokestop_displays;
@@ -248,6 +246,22 @@ class Pokestop extends Model {
         });
     }
 
+    static fromFortDetailsColumnsAdditional = [
+        'lureId',
+        'lureExpireTimestamp',
+    ];
+    static fromFortDetails(fortDetails, record) {
+        if (fortDetails.modifier && fortDetails.modifier.length > 0) {
+            if (fortDetails.modifier.length > 1) console.warn('[Lure] More than one lure?', fortDetails.fort_id);
+            const modifier = fortDetails.modifier[0];
+            record.lureId = modifier.modifier_type;
+            record.lureFirstSeenTimestamp = Date.now() / 1000;
+            record.lureExpireTimestamp = modifier.expiration_time_ms / 1000;
+            // modifier.deploying_player_codename
+        }
+        return record;
+    }
+
     static getAll(minLat, maxLat, minLon, maxLon) {
         return Pokestop.findAll({
             where: {
@@ -291,8 +305,23 @@ class Pokestop extends Model {
                 WebhookController.instance.addPokestopEvent(this.toJson('pokestop', oldPokestop));
                 oldPokestop = {};
             }
-            if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
-                WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
+            if (config.dataparser.lure.v2) {
+                if (this.lureExpireTimestamp !== 0) {
+                    if (oldPokestop.lureId === this.lureId && (oldPokestop.lureExpireTimestamp === null ||
+                        oldPokestop.lureExpireTimestamp >= this.updated)) {
+                        this.lureFirstSeenTimestamp = oldPokestop.firstSeenTimestamp;
+                        this.lureExpireTimestamp = oldPokestop.lureExpireTimestamp;
+                    } else {
+                        WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
+                    }
+                }
+            } else {
+                this.lureExpireTimestamp = this.estimateLureExpireLegacy(
+                    oldPokestop.lureExpireTimestamp > 0 && this.lureId === oldPokestop.lureId
+                        ? oldPokestop.lureExpireTimestamp - Pokestop.LureTime : this.lastModifiedTimestamp);
+                if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
+                    WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
+                }
             }
             if (config.dataparser.incident.v2) {
                 if (incidents) await Promise.all(incidents.map(incident => incident.triggerWebhook(this, oldPokestop)));
@@ -301,6 +330,13 @@ class Pokestop extends Model {
             }
         }
         return false;
+    }
+
+    estimateLureExpireLegacy(firstSeen) {
+        let result = Math.floor(firstSeen + Pokestop.LureTime);
+        // event extended lure duration
+        if (result < this.updated) result += Pokestop.LureTime * Math.ceil((this.updated - result) / Pokestop.LureTime);
+        return result;
     }
 
     /**
@@ -412,23 +448,32 @@ class Pokestop extends Model {
                         updated: this.updated || 1
                     }
                 };
-            default: // Pokestop
-                return {
-                    type: "pokestop",
-                    message: {
-                        pokestop_id: this.id,
-                        latitude: this.lat,
-                        longitude: this.lon,
-                        pokestop_name: this.name || old && old.name || "Unknown",
-                        url: this.url || old && old.url,
-                        lure_expiration: this.lureExpireTimestamp || 0,
-                        last_modified: this.lastModifiedTimestamp || 0,
-                        enabled: this.enabled || true,
-                        lure_id: this.lureId || 0,
-                        ar_scan_eligible: this.arScanEligible,
-                        updated: this.updated || 1
-                    }
+            default: {  // Pokestop/Lure
+                const message = {
+                    pokestop_id: this.id,
+                    latitude: this.lat,
+                    longitude: this.lon,
+                    pokestop_name: this.name || old && old.name || "Unknown",
+                    url: this.url || old && old.url,
+                    last_modified: this.lastModifiedTimestamp || 0,
+                    enabled: this.enabled || true,
+                    lure_id: this.lureId || 0,
+                    ar_scan_eligible: this.arScanEligible,
+                    updated: this.updated || 1
                 };
+                if (config.dataparser.lure.v2) {
+                    if (config.dataparser.lure.v2Webhook) {
+                        message.lure_first_seen = this.lureFirstSeenTimestamp;
+                        message.lure_expiration = this.lureExpireTimestamp;
+                    } else {
+                        message.lure_expiration = this.lureExpireTimestamp === null
+                            ? Pokestop.estimateLureExpireLegacy(this.lureFirstSeenTimestamp) : this.lureExpireTimestamp;
+                    }
+                } else {
+                    message.lure_expiration = this.lureExpireTimestamp || 0;
+                }
+                return { type: "pokestop", message };
+            }
         }
     }
 }
@@ -454,9 +499,14 @@ Pokestop.init({
         type: DataTypes.STRING(200),
         defaultValue: null,
     },
+    lureFirstSeenTimestamp: {
+        type: DataTypes.INTEGER(11).UNSIGNED,
+        defaultValue: 0,
+        allowNull: false,
+    },
     lureExpireTimestamp: {
         type: DataTypes.INTEGER(11).UNSIGNED,
-        defaultValue: null,
+        defaultValue: 0,
     },
     lastModifiedTimestamp: {
         type: DataTypes.INTEGER(11).UNSIGNED,
