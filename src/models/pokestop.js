@@ -52,9 +52,7 @@ class Pokestop extends Model {
             if (fort.active_fort_modifier.length > 1) console.warn('[Lure] More than one lure?', record.id);
             record.lureId = fort.active_fort_modifier[0];
             record.lureFirstSeenTimestamp = record.lastModifiedTimestamp;
-            if (config.dataparser.lure.v2) {
-                record.lureExpireTimestamp = null;
-            }
+            record.lureExpireTimestamp = null;
         } else record.lureExpireTimestamp = 0;
         let incidents = [];
         if (config.dataparser.incident.v1 || config.dataparser.incident.v2) {
@@ -309,13 +307,13 @@ class Pokestop extends Model {
                 if (this.lureExpireTimestamp !== 0) {
                     if (oldPokestop.lureId === this.lureId && (oldPokestop.lureExpireTimestamp === null ||
                         oldPokestop.lureExpireTimestamp >= this.updated)) {
-                        this.lureFirstSeenTimestamp = oldPokestop.firstSeenTimestamp;
+                        this.lureFirstSeenTimestamp = oldPokestop.lureFirstSeenTimestamp;
                         this.lureExpireTimestamp = oldPokestop.lureExpireTimestamp;
                     } else {
                         WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
                     }
                 }
-            } else {
+            } else if (this.lureExpireTimestamp !== 0) {
                 this.lureExpireTimestamp = this.estimateLureExpireLegacy(
                     oldPokestop.lureExpireTimestamp > 0 && this.lureId === oldPokestop.lureId
                         ? oldPokestop.lureExpireTimestamp - Pokestop.LureTime : this.lastModifiedTimestamp);

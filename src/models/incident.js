@@ -51,7 +51,6 @@ class Incident extends Model {
                 longitude: pokestop.lon,
                 pokestop_name: pokestop.name || oldPokestop && oldPokestop.name || "Unknown",
                 url: pokestop.url || oldPokestop && oldPokestop.url,
-                lure_expiration: pokestop.lureExpireTimestamp || 0,
                 last_modified: pokestop.lastModifiedTimestamp || 0,
                 enabled: pokestop.enabled || true,
                 lure_id: pokestop.lureId || 0,
