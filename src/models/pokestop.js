@@ -13,7 +13,7 @@ const config = require('../services/config.js');
  * Pokestop model class.
  */
 class Pokestop extends Model {
-    static LureTime = config.dataparser.lureTime;
+    static LureTime = config.dataparser.lureTime * 60;
 
     static fromFortFields = [
         'lat',
@@ -314,10 +314,10 @@ class Pokestop extends Model {
                     }
                 }
             } else if (this.lureExpireTimestamp !== 0) {
-                this.lureExpireTimestamp = this.estimateLureExpireLegacy(
-                    oldPokestop.lureExpireTimestamp > 0 && this.lureId === oldPokestop.lureId
-                        ? oldPokestop.lureExpireTimestamp - Pokestop.LureTime : this.lastModifiedTimestamp);
-                if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
+                if (oldPokestop.lureId === this.lureId && oldPokestop.lureExpireTimestamp !== 0) {
+                    this.lureFirstSeenTimestamp = oldPokestop.lureFirstSeenTimestamp;
+                    this.lureExpireTimestamp = this.estimateLureExpireLegacy(oldPokestop.lureFirstSeenTimestamp);
+                } else {
                     WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
                 }
             }
