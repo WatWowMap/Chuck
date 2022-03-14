@@ -367,11 +367,7 @@ class RouteController {
                 //    continue;
                 //}
 
-                let responses = [];
-                RpcMethod.forEach(function (item) {
-                    responses.push(RpcMethod[item]);
-                });
-                if (!responses.includes(parseInt(message['type']))) {
+                if (!Object.values(RpcMethod).includes(parseInt(message['type']))) {
                     continue;
                 }
 
@@ -727,7 +723,7 @@ class RouteController {
                             console.error('[Raw] Malformed GetMapObjectsOutProto');
                         }
                     } catch (err) {
-                        console.error('[Raw] Unable to decode GetMapObjectsOutProto');
+                        console.error(`[Raw] Unable to decode GetMapObjectsOutProto ${err.message}`);
                     }
                     break;
                 case RpcMethod.GymGetInfoOutProto:
