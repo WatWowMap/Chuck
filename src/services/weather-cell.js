@@ -124,6 +124,10 @@ async function initWeather() {
 
 function reportWeather(username, update) {
     update.forEach(([id, weather]) => {
+        if (!id) {
+            console.warn('Unrecognized weather cell id', id);
+            return;
+        }
         const weatherCell = weatherCells[id];
         if (weatherCell === undefined) weatherCells[id] = new WeatherCell(weather, id, username);
         else weatherCell.update(weather, username);
