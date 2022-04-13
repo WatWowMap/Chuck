@@ -49,6 +49,7 @@
             "v1": true,
             "v2": true,
             "v2Webhook": false,
+            "checkEvolvableCostume": true,
             "leagues": {
                 "little": 500,
                 "great": 1500,

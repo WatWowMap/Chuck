@@ -417,7 +417,8 @@ class Pokemon extends Model {
             return;
         }
         const cp = pvpManager.queryCp(this.pokemonId, this.form, this.atkIv, this.defIv, this.staIv, this.level);
-        const pvp = await pvpManager.queryPvPRank(this.pokemonId, this.form, this.costume, this.gender,
+        const pvp = await pvpManager.queryPvPRank(this.pokemonId, this.form,
+            config.dataparser.pvp.checkEvolvableCostume ? this.costume : 0, this.gender,
             this.atkIv, this.defIv, this.staIv, this.level);
         if (!fromEncounter) {
             this.cp = (await cp) || null;
