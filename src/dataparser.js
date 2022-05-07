@@ -32,21 +32,22 @@ require('./services/logger.js');
             await utils.snooze(1000);
         }
 
-        require('./services/pvp.js')(ipcMaster);
-        
+        require('./services/pvp.js').initMaster(ipcMaster);
+        await require('./services/weather-cell.js').initMaster(ipcMaster);
+
         // Fork workers
         for (let i = 0; i < instances; i++) {
             ipcMaster.setup(cluster.fork());
         }
 
-        // If worker gets disconnected, start new one. 
+        // If worker gets disconnected, start new one.
         cluster.on('disconnect', function (worker) {
             console.error(`[Cluster] Worker disconnected with id ${worker.id}`);
             let newWorker = cluster.fork();
             ipcMaster.setup(newWorker);
             console.log('[Cluster] New worker started with process id %s', newWorker.process.pid);
         });
-    
+
         cluster.on('online', function (worker) {
             console.log(`[Cluster] New worker online with id ${worker.id}`);
         });
@@ -78,6 +79,7 @@ require('./services/logger.js');
 
         if (config.webhooks.enabled && config.webhooks.urls.length > 0) {
             WebhookController.instance.start();
+            WebhookController.instance.checkOnline();
         }
     }
 })();

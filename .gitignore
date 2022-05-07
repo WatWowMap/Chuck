@@ -112,3 +112,7 @@ static/locales/*.json
 .DS_Store
 
 pogo-protos
+/.vs/
+
+#Masterfile
+/static/data/masterfile.json

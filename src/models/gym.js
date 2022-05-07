@@ -21,7 +21,6 @@ class Gym extends Model {
         'exRaidEligible',
         'inBattle',
         'sponsorId',
-        'url',
         'totalCp',
         'cellId',
         'deleted',
@@ -38,29 +37,32 @@ class Gym extends Model {
         'raidPokemonForm',
         'raidPokemonGender',
         'raidPokemonEvolution',
+        'raidPokemonCostume',
+        'arScanEligible',
     ];
     static fromFort(cellId, fort) {
         const ts = new Date().getTime() / 1000;
         const record = {
-            id: fort.id,
+            id: fort.fort_id,
             lat: fort.latitude,
             lon: fort.longitude,
             enabled: fort.enabled,
             guardingPokemonId: fort.guard_pokemon_id,
-            teamId: fort.owned_by_team,
+            teamId: fort.team,
             availableSlots: fort.gym_display ? fort.gym_display.slots_available : 0,    // TODO: No slots available?
-            lastModifiedTimestamp: fort.last_modified_timestamp_ms / 1000,
+            lastModifiedTimestamp: fort.last_modified_ms / 1000,
             exRaidEligible: fort.is_ex_raid_eligible,
             inBattle: fort.is_in_battle,
-            sponsorId: fort.sponsor > 0 ? fort.sponsor : 0,
-            url: fort.image_url ? fort.image_url : null,
-            totalCp: fort.owned_by_team ? fort.gym_display.total_gym_cp : 0,
+            sponsorId: fort.partner_id !== '' ? fort.partner_id : null,
+            totalCp: fort.team ? fort.gym_display.total_gym_cp : 0,
             cellId,
             deleted: false,
             firstSeenTimestamp: ts,
             updated: ts,
+            arScanEligible: fort.is_ar_scan_eligible,
         };
         if (fort.raid_info) {
+            record.url = fort.image_url;
             record.raidEndTimestamp = fort.raid_info.raid_end_ms / 1000;
             record.raidSpawnTimestamp = fort.raid_info.raid_spawn_ms / 1000;
             record.raidBattleTimestamp = fort.raid_info.raid_battle_ms / 1000;
@@ -68,14 +70,13 @@ class Gym extends Model {
             record.raidIsExclusive = fort.raid_info.is_exclusive;
             if (fort.raid_info.raid_pokemon) {
                 record.raidPokemonId = fort.raid_info.raid_pokemon.pokemon_id;
-                record.raidPokemonMove1 = fort.raid_info.raid_pokemon.move_1;
-                record.raidPokemonMove2 = fort.raid_info.raid_pokemon.move_2;
+                record.raidPokemonMove1 = fort.raid_info.raid_pokemon.move1;
+                record.raidPokemonMove2 = fort.raid_info.raid_pokemon.move2;
                 record.raidPokemonCp = fort.raid_info.raid_pokemon.cp;
                 record.raidPokemonForm = fort.raid_info.raid_pokemon.pokemon_display.form;
                 record.raidPokemonGender = fort.raid_info.raid_pokemon.pokemon_display.gender;
-                if (fort.raid_info.raid_pokemon.pokemon_display.pokemon_evolution) {
-                    record.raidPokemonEvolution = fort.raid_info.raid_pokemon.pokemon_display.pokemon_evolution;
-                }
+                record.raidPokemonEvolution = fort.raid_info.raid_pokemon.pokemon_display.current_temp_evolution;
+                record.raidPokemonCostume = fort.raid_info.raid_pokemon.pokemon_display.costume;
             }
         }
         return Gym.build(record);
@@ -96,36 +97,36 @@ class Gym extends Model {
         }
 
         if (oldGym === null) {
-            WebhookController.instance.addGymEvent(this.toJson('gym'));
-            WebhookController.instance.addGymInfoEvent(this.toJson('gym-info'));
+            WebhookController.instance.addGymEvent(this.toJson('gym', oldGym));
+            WebhookController.instance.addGymInfoEvent(this.toJson('gym-info', oldGym));
             let raidBattleTime = new Date((this.raidBattleTimestamp || 0) * 1000);
             let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
             let now = new Date().getTime() / 1000;
 
             if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
-                WebhookController.instance.addEggEvent(this.toJson('egg'));
+                WebhookController.instance.addEggEvent(this.toJson('egg', oldGym));
             } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {
-                WebhookController.instance.addRaidEvent(this.toJson('raid'));
+                WebhookController.instance.addRaidEvent(this.toJson('raid', oldGym));
             }
         } else {
             if (oldGym.availableSlots !== this.availableSlots ||
                 oldGym.teamId !== this.teamId ||
                 oldGym.inBattle !== this.inBattle) {
-                WebhookController.instance.addGymInfoEvent(this.toJson('gym-info'));
+                WebhookController.instance.addGymInfoEvent(this.toJson('gym-info', oldGym));
             }
             if (this.raidSpawnTimestamp > 0 && (
                 oldGym.raidLevel !== this.raidLevel ||
                 oldGym.raidPokemonId !== this.raidPokemonId ||
-                oldGym.raidSpawnTimestamp !== this.raidSpawnTimestamp
+                oldGym.raidSpawnTimestamp !== Math.floor(this.raidSpawnTimestamp)
             )) {
                 let raidBattleTime = new Date((this.raidBattleTimestamp || 0) * 1000);
                 let raidEndTime = new Date((this.raidEndTimestamp || 0) * 1000);
                 let now = new Date().getTime() / 1000;
 
                 if (raidBattleTime > now && (this.raidLevel || 0) > 0) {
-                    WebhookController.instance.addEggEvent(this.toJson('egg'));
+                    WebhookController.instance.addEggEvent(this.toJson('egg', oldGym));
                 } else if (raidEndTime > now && (this.raidPokemonId || 0) > 0) {
-                    WebhookController.instance.addRaidEvent(this.toJson('raid'));
+                    WebhookController.instance.addRaidEvent(this.toJson('raid', oldGym));
                 }
             }
         }
@@ -134,25 +135,26 @@ class Gym extends Model {
     /**
      * Get Gym object as JSON object with correct property keys for webhook payload
      */
-    toJson(type) {
+    toJson(type, old) {
         switch (type) {
             case 'gym':
                 return {
                     type: 'gym',
                     message: {
                         gym_id: this.id,
-                        gym_name: this.name || 'Unknown',
+                        gym_name: this.name || old && old.name || 'Unknown',
                         latitude: this.lat,
                         longitude: this.lon,
-                        url: this.url,
+                        url: this.url || old && old.url,
                         enabled: this.enabled,
                         team_id: this.teamId,
                         last_modified: this.lastModifiedTimestamp,
-                        guard_pokemon_id: this.guardPokemonId,
+                        guard_pokemon_id: this.guardingPokemonId,
                         slots_available: this.availableSlots,
                         raid_active_until: this.raidEndTimestamp,
                         ex_raid_eligible: this.exRaidEligible,
                         sponsor_id: this.sponsorId,
+                        ar_scan_eligible: this.arScanEligible,
                     }
                 };
             case 'gym-info':
@@ -160,8 +162,8 @@ class Gym extends Model {
                     type: 'gym_details',
                     message: {
                         id: this.id,
-                        name: this.name || 'Unknown',
-                        url: this.url,
+                        gym_name: this.name || old && old.name || 'Unknown',
+                        url: this.url || old && old.url,
                         latitude: this.lat,
                         longitude: this.lon,
                         team: this.teamId,
@@ -169,6 +171,7 @@ class Gym extends Model {
                         ex_raid_eligible: this.exRaidEligible,
                         in_battle: this.inBattle,
                         sponsor_id: this.sponsorId,
+                        ar_scan_eligible: this.arScanEligible,
                     }
                 };
             case 'egg':
@@ -177,14 +180,14 @@ class Gym extends Model {
                     type: 'raid',
                     message: {
                         gym_id: this.id,
-                        gym_name: this.name || 'Unknown',
-                        gym_url: this.url,
+                        gym_name: this.name || old && old.name || 'Unknown',
+                        url: this.url || old && old.url,
                         latitude: this.lat,
                         longitude: this.lon,
                         team_id: this.teamId,
-                        spawn: Math.round(this.raidSpawnTimestamp),
-                        start: Math.round(this.raidBattleTimestamp),
-                        end: Math.round(this.raidEndTimestamp),
+                        spawn: Math.floor(this.raidSpawnTimestamp),
+                        start: Math.floor(this.raidBattleTimestamp),
+                        end: Math.floor(this.raidEndTimestamp),
                         level: this.raidLevel,
                         pokemon_id: this.raidPokemonId,
                         cp: this.raidPokemonCp,
@@ -321,7 +324,7 @@ Gym.init({
         defaultValue: null,
     },
     sponsorId: {
-        type: DataTypes.SMALLINT(5).UNSIGNED,
+        type: DataTypes.STRING(25),
         defaultValue: null,
     },
     raidPokemonCostume: {
@@ -332,6 +335,7 @@ Gym.init({
         type: DataTypes.TINYINT(1).UNSIGNED,
         defaultValue: null,
     },
+    arScanEligible: DataTypes.BOOLEAN,
 }, {
     sequelize,
     timestamps: false,

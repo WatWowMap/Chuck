@@ -54,6 +54,11 @@ class Weather extends Model {
         return Weather.build(record);
     }
 
+    static findByLatLon(lat, lon) {
+        const cell = S2.S2CellId.fromPoint(S2.S2LatLng.fromDegrees(lat, lon).toPoint()).parentL(10);
+        return Weather.findByPk(cell.id.toString());
+    }
+
     async triggerWebhook() {
         if (!config.webhooks.enabled || config.urls.length === 0) {
             return;
@@ -70,7 +75,7 @@ class Weather extends Model {
         let polygon = [];
         for (let i = 0; i <= 3; i++) {
             let vertex = s2cell.getVertex(i);
-            polygon.push([ vertex.x, vertex.y ]);
+            polygon.push([vertex.x, vertex.y]);
         }
         return {
             type: 'weather',

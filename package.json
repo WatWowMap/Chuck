@@ -7,37 +7,44 @@
     "start": "node src/index.js",
     "controller": "node src/controller.js",
     "dataparser": "node src/dataparser.js",
-    "create-locales": "node src/createLocales.js",
-    "test": "npx eslint src/**/*.js",
-    "test-fix": "npx eslint src/**/*.js --fix",
-    "update": "npm install && npm update pogo-translations && npm run create-locales"
+    "create-locales": "node -e 'require(\"./src/createLocales\").locales()'",
+    "generate": "node -e 'require(\"./src/generateMasterfile\").generate()'",
+    "test": "mocha",
+    "eslint": "npx eslint src/**/*.js",
+    "eslint-fix": "npx eslint src/**/*.js --fix",
+    "update": "npm install && npm run generate && npm run create-locales"
   },
-  "author": "WWM",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WatWowMap/Chuck.git"
+  },
+  "author": "WatWowMap",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/wwm/Chuck/issues"
+    "url": "https://github.com/WatWowMap/Chuck/issues"
   },
-  "homepage": "https://github.com/wwm/Chuck",
+  "homepage": "https://github.com/WatWowMap/Chuck",
   "dependencies": {
-    "@turf/turf": "^5.1.6",
-    "axios": "^0.20.0",
-    "better-logging": "^4.4.0",
-    "eslint": "^7.8.1",
-    "express": "^4.17.1",
-    "express-status-monitor": "^1.3.3",
+    "@turf/turf": "^6.5.0",
+    "axios": "^0.21.4",
+    "better-logging": "^4.7.0",
+    "eslint": "^7.32.0",
+    "express": "^4.17.3",
     "extend": "^3.0.2",
-    "google-protobuf": "^3.13.0",
-    "helmet": "^4.1.0",
-    "i18n": "^0.9.1",
+    "google-protobuf": "^3.20.0",
+    "helmet": "^4.6.0",
+    "i18n": "^0.13.4",
     "lru-cache": "^6.0.0",
-    "mustache-express": "^1.3.0",
-    "mysql2": "^2.2.5",
+    "mustache-express": "^1.3.2",
+    "mysql2": "^2.3.3",
     "nodes2ts": "^2.0.0",
+    "ohbem": "^1.4.1",
     "pogo-protos": "git+https://github.com/Furtif/pogo-protos.git",
-    "pogo-translations": "git+https://github.com/bschultz/pogo-translations.git",
-    "purified-protos": "^0.193.2",
-    "redis": "^3.0.2",
+    "redis": "^3.1.1",
     "s2-geometry": "^1.2.10",
-    "sequelize": "^6.3.5"
+    "sequelize": "^6.19.0"
+  },
+  "devDependencies": {
+    "mocha": "^8.4.0"
   }
 }

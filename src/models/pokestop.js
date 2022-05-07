@@ -1,12 +1,12 @@
 'use strict';
 
 const POGOProtos = require('pogo-protos');
-const protos = require('purified-protos');
 
 const { DataTypes, Model, Op, Sequelize } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
 const WebhookController = require('../services/webhook.js');
-const Cell = require('./cell');
+const Cell = require('./cell.js');
+const Incident = require('./incident.js');
 const config = require('../services/config.js');
 
 /**
@@ -21,7 +21,6 @@ class Pokestop extends Model {
         'sponsorId',
         'enabled',
         'lastModifiedTimestamp',
-        'url',
         'cellId',
         'updated',
         'deleted',
@@ -30,44 +29,58 @@ class Pokestop extends Model {
         'incidentExpireTimestamp',
         'pokestopDisplay',
         'gruntType',
+        'arScanEligible',
     ];
     static fromFort(cellId, fort) {
-        let ts = new Date().getTime() / 1000;
+        const now = Date.now();
+        const ts = now / 1000;
         const record = {
-            id: fort.id,
+            id: fort.fort_id,
             lat: fort.latitude,
             lon: fort.longitude,
-            sponsorId: fort.sponsor > 0 ? fort.sponsor : null,
+            sponsorId: fort.partner_id !== '' ? fort.partner_id : null,
             enabled: fort.enabled,
-            lastModifiedTimestamp: fort.last_modified_timestamp_ms / 1000,
-            url: fort.image_url ? fort.image_url : null,
+            lastModifiedTimestamp: fort.last_modified_ms / 1000,
             cellId,
             firstSeenTimestamp: ts,
             updated: ts,
             deleted: false,
+            arScanEligible: fort.is_ar_scan_eligible,
         };
-        if (fort.active_fort_modifier && fort.active_fort_modifier.length > 0 &&
-            (fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK) ||
-                fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_GLACIAL) ||
-                fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_MAGNETIC) ||
-                fort.active_fort_modifier.includes(POGOProtos.Inventory.Item.ItemId.ITEM_TROY_DISK_MOSSY))) {
-            record.lureExpireTimestamp = record.lastModifiedTimestamp + Pokestop.LureTime;
+        if (!fort.active_fort_modifier || fort.active_fort_modifier.length <= 0 ||
+            fort.active_fort_modifier.every((mod) =>
+                mod < POGOProtos.Rpc.Item.ITEM_TROY_DISK || mod >= POGOProtos.Rpc.Item.ITEM_TROY_DISK + 99)) {
+            record.lureExpireTimestamp = 0;
+        } else if (record.lureExpireTimestamp < ts || record.lureId !== fort.active_fort_modifier[0]) {
+            record.lureExpireTimestamp = Math.floor(record.lastModifiedTimestamp + Pokestop.LureTime);
+            if (record.lureExpireTimestamp < ts) {  // event extended lure duration
+                record.lureExpireTimestamp = Math.floor(ts + Pokestop.LureTime);
+            }
             record.lureId = fort.active_fort_modifier[0];
         }
-        if (fort.pokestop_display) {
-            record.incidentExpireTimestamp = fort.pokestop_display.incident_expiration_ms / 1000;
-            if (fort.pokestop_display.character_display) {
-                record.pokestopDisplay = fort.pokestop_display.character_display.style;
-                record.gruntType = fort.pokestop_display.character_display.character;
-            }
-        } else if (fort.pokestop_displays && fort.pokestop_displays.length > 0) {
-            record.incidentExpireTimestamp = fort.pokestop_displays[0].incident_expiration_ms / 1000;
-            if (fort.pokestop_displays[0].character_display) {
-                record.pokestopDisplay = fort.pokestop_displays[0].character_display.style;
-                record.gruntType = fort.pokestop_displays[0].character_display.character;
+        let incidents = [];
+        if (config.dataparser.incident.v1 || config.dataparser.incident.v2) {
+            incidents = fort.pokestop_displays;
+            if (!incidents && fort.pokestop_display) incidents = [fort.pokestop_display];
+            if (incidents && incidents.length > 0) {
+                if (config.dataparser.incident.v1) {
+                    const priorities = config.dataparser.incident.v1priority;
+                    let incident, priority = priorities[0] + 1;
+                    for (const i of incidents) {
+                        const mine = priorities[i.incident_display_type] || priorities[0];
+                        if (mine >= priority) continue;
+                        priority = mine;
+                        incident = i;
+                    }
+                    record.incidentExpireTimestamp = Math.floor(incident.incident_expiration_ms / 1000);
+                    record.pokestopDisplay = incident.character_display.style;
+                    record.gruntType = incident.character_display.character;
+                }
+                incidents = config.dataparser.incident.v2 ? incidents.map(id =>
+                    Incident.fromIncidentDisplay(now, record.id, id)) : [];
             }
         }
-        return Pokestop.build(record);
+        return [Pokestop.build(record), incidents];
     }
 
     static fromQuestFields = [
@@ -94,31 +107,30 @@ class Pokestop extends Model {
             conditionData['type'] = condition.type;
             // TODO: Needs testing
             let info = condition;
-            const rpc = await protos();
             switch (condition.type) {
-                case rpc.QuestConditionProto.ConditionType.WITH_BADGE_TYPE:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_BADGE_TYPE:
                     infoData['amount'] = info.badge_type.amount;
                     infoData['badge_rank'] = info.badge_rank;
                     let badgeTypesById = [];
                     info.badge_type.forEach(badge => badgeTypesById.push(badge));
                     infoData['badge_types'] = badgeTypesById;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_ITEM:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_ITEM:
                     if (info.item !== 0) {
                         infoData['item_id'] = info.item;
                     }
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_RAID_LEVEL:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_RAID_LEVEL:
                     let raidLevelById = [];
                     info.with_raid_level.raid_level.forEach(raidLevel => raidLevelById.push(raidLevel));
                     infoData['raid_levels'] = raidLevelById;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_TYPE:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_POKEMON_TYPE:
                     let pokemonTypesById = [];
                     info.with_pokemon_type.pokemon_type.forEach(type => pokemonTypesById.push(type));
                     infoData['pokemon_type_ids'] = pokemonTypesById;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_CATEGORY:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_POKEMON_CATEGORY:
                     if (info.with_pokemon_category.category_name) {
                         infoData['category_name'] = info.with_pokemon_category.category_name;
                     }
@@ -126,46 +138,46 @@ class Pokestop extends Model {
                         infoData['pokemon_ids'] = info.with_pokemon_category.pokemon_ids;
                     }
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_WIN_RAID_STATUS:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_WIN_RAID_STATUS:
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_THROW_TYPE:
-                case rpc.QuestConditionProto.ConditionType.WITH_THROW_TYPE_IN_A_ROW:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_THROW_TYPE:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_THROW_TYPE_IN_A_ROW:
                     if (info.with_throw_type.throw_type > 0) {
                         infoData['throw_type_id'] = info.with_throw_type.throw_type;
                     }
-                    infoData['hit'] = info.with_throw_type.hit
+                    infoData['hit'] = info.with_throw_type.hit;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_LOCATION:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_LOCATION:
                     infoData['cell_ids'] = info.s2_cell_id;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_DISTANCE:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_DISTANCE:
                     infoData['distance'] = info.distance_km;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_POKEMON_ALIGNMENT:
-                    infoData['alignment_ids'] = info.pokemon_alignment.alignment.map(x => parseInt(x));
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_POKEMON_ALIGNMENT:
+                    infoData['alignment_ids'] = info.with_pokemon_alignment.alignment.map(x => parseInt(x));
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_INVASION_CHARACTER:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_INVASION_CHARACTER:
                     infoData['character_category_ids'] = info.with_invasion_character.category.map(x => parseInt(x));
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_NPC_COMBAT:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_NPC_COMBAT:
                     infoData['win'] = info.with_npc_combat.requires_win || false;
                     infoData['trainer_ids'] = info.with_npc_combat.combat_npc_trainer_id;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_PVP_COMBAT:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_PVP_COMBAT:
                     infoData['win'] = info.with_pvp_combat.requires_win || false;
                     infoData['template_ids'] = info.with_pvp_combat.combat_league_template_id;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_BUDDY:
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_BUDDY:
                     if (info.with_buddy) {
                         infoData['min_buddy_level'] = info.with_buddy.min_buddy_level; // TODO: with_buddy? is Condition
                         infoData['must_be_on_map'] = info.with_buddy.must_be_on_map;
                     }
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_DAILY_BUDDY_AFFECTION:
-                    infoData['min_buddy_affection_earned_today'] = info.daily_buddy_affection.min_buddy_affection_earned_today;
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_DAILY_BUDDY_AFFECTION:
+                    infoData['min_buddy_affection_earned_today'] = info.with_daily_buddy_affection.min_buddy_affection_earned_today;
                     break;
-                case rpc.QuestConditionProto.ConditionType.WITH_TEMP_EVO_POKEMON:
-                    infoData['raid_pokemon_evolutions'] = info.with_mega_evo_pokemon.pokemon_evolution.map(x => parseInt(x));
+                case POGOProtos.Rpc.QuestConditionProto.ConditionType.WITH_TEMP_EVO_POKEMON:
+                    infoData['raid_pokemon_evolutions'] = info.with_temp_evo_id.mega_form.map(x => parseInt(x));
                     break;
                 default:
                     console.warn('Unhandled quest condition', condition.type);
@@ -181,20 +193,19 @@ class Pokestop extends Model {
             let rewardData = {};
             let infoData = {};
             rewardData['type'] = reward.type;
-            const rpc = await protos();
             switch (reward.type) {
-                case rpc.QuestRewardProto.Type.CANDY:
+                case POGOProtos.Rpc.QuestRewardProto.Type.CANDY:
                     infoData['amount'] = reward.amount;
                     infoData['pokemon_id'] = reward.pokemon_id;
                     break;
-                case rpc.QuestRewardProto.Type.EXPERIENCE:
+                case POGOProtos.Rpc.QuestRewardProto.Type.EXPERIENCE:
                     infoData['amount'] = reward.exp;
                     break;
-                case rpc.QuestRewardProto.Type.ITEM:
+                case POGOProtos.Rpc.QuestRewardProto.Type.ITEM:
                     infoData['amount'] = reward.item.amount;
                     infoData['item_id'] = reward.item.item;
                     break;
-                case rpc.QuestRewardProto.Type.POKEMON_ENCOUNTER:
+                case POGOProtos.Rpc.QuestRewardProto.Type.POKEMON_ENCOUNTER:
                     if (reward.pokemon_encounter.is_hidden_ditto) {
                         infoData['pokemon_id'] = 132;
                         infoData['pokemon_id_display'] = reward.pokemon_encounter.pokemon_id;
@@ -208,10 +219,10 @@ class Pokestop extends Model {
                         infoData['shiny'] = reward.pokemon_encounter.pokemon_display.shiny || false;
                     }
                     break;
-                case rpc.QuestRewardProto.Type.STARDUST:
+                case POGOProtos.Rpc.QuestRewardProto.Type.STARDUST:
                     infoData['amount'] = reward.stardust;
                     break;
-                case rpc.QuestRewardProto.Type.MEGA_RESOURCE:
+                case POGOProtos.Rpc.QuestRewardProto.Type.MEGA_RESOURCE:
                     infoData['amount'] = reward.mega_resource.amount;
                     infoData['pokemon_id'] = reward.mega_resource.pokemon_id;
                     break;
@@ -228,7 +239,7 @@ class Pokestop extends Model {
             questType: quest.quest_type,
             questTarget: quest.goal.target,
             questTemplate: quest.template_id.toLowerCase(),
-            questTimestamp: quest.last_update_timestamp_ms / 1000,
+            questTimestamp: Math.floor(quest.last_update_timestamp_ms / 1000),
             questConditions: conditions,
             questRewards: rewards,
             firstSeenTimestamp: ts,
@@ -260,7 +271,7 @@ class Pokestop extends Model {
     /**
      * Update Pokestop values if changed from already found Pokestop
      */
-    async triggerWebhook(updateQuest) {
+    async triggerWebhook(updateQuest, incidents) {
         if (!config.webhooks.enabled || config.urls.length === 0) {
             return;
         }
@@ -270,25 +281,27 @@ class Pokestop extends Model {
             oldPokestop = await Pokestop.findByPk(this.id);
         } catch { }
 
-        if (oldPokestop === null) {
-            WebhookController.instance.addPokestopEvent(this.toJson('pokestop'));
-            oldPokestop = {};
-        }
         if (updateQuest) {
-            if (!oldPokestop) {
+            if (oldPokestop === null) {
                 return true;
             }
             this.lat = oldPokestop.lat;
             this.lon = oldPokestop.lon;
             if (updateQuest && (this.questTimestamp || 0) > (oldPokestop.questTimestamp || 0)) {
-                WebhookController.instance.addQuestEvent(this.toJson('quest'));
+                WebhookController.instance.addQuestEvent(this.toJson('quest', oldPokestop));
             }
         } else {
-            if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
-                WebhookController.instance.addLureEvent(this.toJson('lure'));
+            if (oldPokestop === null) {
+                WebhookController.instance.addPokestopEvent(this.toJson('pokestop', oldPokestop));
+                oldPokestop = {};
             }
-            if ((oldPokestop.incidentExpireTimestamp || 0) < (this.incidentExpireTimestamp || 0)) {
-                WebhookController.instance.addInvasionEvent(this.toJson('invasion'));
+            if ((oldPokestop.lureExpireTimestamp || 0) < (this.lureExpireTimestamp || 0)) {
+                WebhookController.instance.addLureEvent(this.toJson('lure', oldPokestop));
+            }
+            if (config.dataparser.incident.v2) {
+                if (incidents) await Promise.all(incidents.map(incident => incident.triggerWebhook(this, oldPokestop)));
+            } else if ((oldPokestop.incidentExpireTimestamp || 0) < (this.incidentExpireTimestamp || 0)) {
+                WebhookController.instance.addInvasionEvent(this.toJson('invasion', oldPokestop));
             }
         }
         return false;
@@ -363,9 +376,9 @@ class Pokestop extends Model {
 
     /**
      * Get Pokestop object as JSON object with correct property keys for webhook payload
-     * @param {*} type 
+     * @param {*} type
      */
-    toJson(type) {
+    toJson(type, old) {
         switch (type) {
             case "quest": // Quest
                 return {
@@ -380,8 +393,8 @@ class Pokestop extends Model {
                         conditions: this.questConditions,
                         rewards: this.questRewards,
                         updated: this.questTimestamp,
-                        pokestop_name: this.name || "Unknown",
-                        pokestop_url: this.url || ""
+                        pokestop_name: this.name || old && old.name || "Unknown",
+                        url: this.url || old && old.url,
                     }
                 };
             case "invasion": // Invasion
@@ -391,8 +404,8 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        name: this.name || "Unknown",
-                        url: this.url || "",
+                        pokestop_name: this.name || old && old.name || "Unknown",
+                        url: this.url || old && old.url,
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
@@ -410,14 +423,13 @@ class Pokestop extends Model {
                         pokestop_id: this.id,
                         latitude: this.lat,
                         longitude: this.lon,
-                        name: this.name || "Unknown",
-                        url: this.url || "",
+                        pokestop_name: this.name || old && old.name || "Unknown",
+                        url: this.url || old && old.url,
                         lure_expiration: this.lureExpireTimestamp || 0,
                         last_modified: this.lastModifiedTimestamp || 0,
                         enabled: this.enabled || true,
                         lure_id: this.lureId || 0,
-                        pokestop_display: this.pokestopDisplay || 0,
-                        incident_expire_timestamp: this.incidentExpireTimestamp || 0,
+                        ar_scan_eligible: this.arScanEligible,
                         updated: this.updated || 1
                     }
                 };
@@ -516,9 +528,10 @@ Pokestop.init({
         defaultValue: 0,
     },
     sponsorId: {
-        type: DataTypes.SMALLINT(5).UNSIGNED,
+        type: DataTypes.STRING(25),
         defaultValue: null,
     },
+    arScanEligible: DataTypes.BOOLEAN,
 }, {
     sequelize,
     timestamps: false,
@@ -561,6 +574,9 @@ Cell.Pokestops = Cell.hasMany(Pokestop, {
     foreignKey: 'cellId',
 });
 Pokestop.Cell = Pokestop.belongsTo(Cell);
+
+Incident.Pokestop = Incident.belongsTo(Pokestop, { foreignKey: 'pokestopId' });
+Pokestop.Incidents = Pokestop.hasMany(Incident, { foreignKey: 'pokestopId' });
 
 // Export the class
 module.exports = Pokestop;

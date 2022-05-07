@@ -54,6 +54,7 @@ module.exports = new Sequelize(config.db.database, config.db.username, config.db
     dialect: config.db.type,
     dialectOptions: {
         supportBigNumbers: true,
+        maxPreparedStatements: 1,
     },
     define: {
         charset: config.db.charset,

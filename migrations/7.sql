@@ -1,0 +1,2 @@
+ALTER TABLE pokemon
+    ADD COLUMN pvp TEXT DEFAULT NULL;

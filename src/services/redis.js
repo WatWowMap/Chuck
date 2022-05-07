@@ -3,34 +3,32 @@
 const config = require('./config.js');
 const redis = require('redis');
 
-const redisOptions = {
-    host: config.redis.host,
-    port: config.redis.port,
-    //string_numbers: true,
-    //socket_keepalive: true,
-    //db: null,
-    tls: false
-};
-if (config.redis.password) {
-    redisOptions.password = config.redis.password;
-}
-const client = redis.createClient(redisOptions);
-client.on('connect', () => {
-    console.log('[Redis] Connected');
-});
-client.on('error', (error) => {
-    console.error('[Redis] Error:', error);
-});
-
 class Redis {
-    static instance = new Redis();
-
-    constructor() {
+    constructor(config) {
+        const redisOptions = {
+            host: config.host,
+            port: config.port,
+            //string_numbers: true,
+            //socket_keepalive: true,
+            //db: null,
+            tls: false
+        };
+        if (config.password) {
+            redisOptions.password = config.password;
+        }
+        const client = redis.createClient(redisOptions);
+        client.on('connect', () => {
+            console.log('[Redis] Connected');
+        });
+        client.on('error', (error) => {
+            console.error('[Redis] Error:', error);
+        });
+        this.client = client;
     }
 
     async hget(key, field) {
         return new Promise(async (resolve, reject) => {
-            client.hget(key, field, (err, reply) => {
+            this.client.hget(key, field, (err, reply) => {
                 if (err) {
                     console.error('[Redis] Error:', err);
                     return reject(err);
@@ -46,7 +44,7 @@ class Redis {
 
     async hset(key, field, value) {
         return new Promise(async (resolve, reject) => {
-            client.hset(key, field, JSON.stringify(value), (err, reply) => {
+            this.client.hset(key, field, JSON.stringify(value), (err, reply) => {
                 if (err) {
                     console.error('[Redis] Error:', err);
                     return reject(err);
@@ -59,20 +57,7 @@ class Redis {
 
     async publish(channel, value) {
         return new Promise((resolve, reject) => {
-            client.publish(channel, value, (err, reply) => {
-                if (err) {
-                    console.error('[Redis] Error:', err);
-                    return reject(err);
-                }
-                console.log('[Redis] Reply:', reply);
-                resolve();
-            });
-        });
-    }
-
-    async subscribe(channel) {
-        return new Promise((resolve, reject) => {
-            client.subscribe(channel, (err, reply) => {
+            this.client.publish(channel, value, (err, reply) => {
                 if (err) {
                     console.error('[Redis] Error:', err);
                     return reject(err);
@@ -80,16 +65,29 @@ class Redis {
                 //console.log('[Redis] Reply:', reply);
                 resolve();
             });
-        })
+        });
+    }
+
+    async subscribe(channel) {
+        return new Promise((resolve, reject) => {
+            this.client.subscribe(channel, (err, reply) => {
+                if (err) {
+                    console.error('[Redis] Error:', err);
+                    return reject(err);
+                }
+                //console.log('[Redis] Reply:', reply);
+                resolve();
+            });
+        });
     }
 
     getClient() {
-        return client;
+        return this.client;
     }
 
     async onEvent(event, cb) {
-        client.on(event, cb);
+        this.client.on(event, cb);
     }
 }
 
-module.exports = Redis.instance;
+module.exports = config.redis.enabled !== false ? new Redis(config.redis) : null;

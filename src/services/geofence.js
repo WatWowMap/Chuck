@@ -8,7 +8,7 @@ class GeofenceService {
     constructor() {
     }
 
-    static inMultiPolygon (polygons, lat, lon) {
+    static inMultiPolygon(polygons, lat, lon) {
         let multiPolygon = turf.multiPolygon(polygons);
         for (let i = 0; i < multiPolygon.geometry.coordinates.length; i++) {
             try {

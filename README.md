@@ -1,6 +1,11 @@
 # Chuck
  
-![Node.js CI](https://github.com/versx/ControllerJS/workflows/Node.js%20CI/badge.svg)
+![Node.js CI](https://github.com/WatWowMap/Chuck/workflows/Node.js%20CI/badge.svg)
+![Mocha](https://github.com/WatWowMap/Chuck/workflows/Mocha/badge.svg)  
+
+[![GitHub Release](https://img.shields.io/github/release/WatWowMap/Chuck.svg)](https://github.com/WatWowMap/Chuck/releases/)
+[![GitHub Contributors](https://img.shields.io/github/contributors/WatWowMap/Chuck.svg)](https://github.com/WatWowMap/Chuck/graphs/contributors/)
+[![Discord](https://img.shields.io/discord/552003258000998401.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/zZ9h9Xa)  
 
 Backend alternative to [RealDeviceMap](https://github.com/RealDeviceMap/RealDeviceMap)  
 
@@ -54,7 +59,13 @@ SELECT name, type, data FROM rdmdb.instance;
             "pokestops": true,
             "quests": true,
             "gymDefenders": true,
-            "weather": true
+            "weather": true,
+            "inventory": true,
+            "gamemaster": true,
+            "assetdigest": true,
+            "downloadsettings": true,
+            "getforgamemaster": true,
+            "remoteconfig": true
         }
     },
     // Database Connection
@@ -66,7 +77,7 @@ SELECT name, type, data FROM rdmdb.instance;
         "password": "userPassword",
         "database": "databaseSchema",
         "charset": "utf8mb4",
-        "connectionLimit": 1000
+        "connectionLimit": 16
     },
     // Redis Connection
     "redis": {
@@ -79,7 +90,8 @@ SELECT name, type, data FROM rdmdb.instance;
         "enabled": false,
         "urls": ["http://127.0.0.1:9003"],
         "delay": 5,
-        "retryCount": 5
+        "retryCount": 5,
+        "polling": 5
     },
     "logs": {
         "level": 4,
@@ -96,7 +108,6 @@ This allows the devs to constantly add more config options in the future, withou
 ```js
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
-        "dittoDisguises": [ 46,163,165,167,187,223,293,316,322,399,590 ],
         "lureTime": 30,
         "pvp": {
             // A list of level caps that will be considered. Must be a strictly increasing sequence.

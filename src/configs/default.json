@@ -16,16 +16,42 @@
             "pokestops": true,
             "quests": true,
             "gymDefenders": true,
-            "weather": true
+            "weather": true,
+            "inventory": true,
+            "gamemaster": true,
+            "assetdigest": true,
+            "downloadsettings": true,
+            "getforgamemaster": true,
+            "remoteconfig": true
         },
         "pokemonTimeUnseen": 20,
         "pokemonTimeReseen": 10,
-        "dittoDisguises": [ 46,163,165,167,187,223,293,316,322,399,590 ],
         "lureTime": 30,
+        "incident": {
+            "v1": true,
+            "v1priority": [
+                99,
+                1,
+                5,
+                6,
+                2,
+                3,
+                4
+            ],
+            "v2": true
+        },
         "pvp": {
             "rankCacheAge": 86400000,
-            "levelCaps": [40, 41, 50, 51],
+            "levelCaps": [
+                50,
+                51
+            ],
+            "v1": true,
+            "v2": true,
+            "v2Webhook": false,
+            "checkEvolvableCostume": true,
             "leagues": {
+                "little": 500,
                 "great": 1500,
                 "ultra": 2500
             }
@@ -39,7 +65,7 @@
         "password": "userPassword",
         "database": "databaseSchema",
         "charset": "utf8mb4",
-        "connectionLimit": 1000
+        "connectionLimit": 16
     },
     "redis": {
         "host": "127.0.0.1",
@@ -48,9 +74,12 @@
     },
     "webhooks": {
         "enabled": false,
-        "urls": ["http://127.0.0.1:9002"],
+        "urls": [
+            "http://127.0.0.1:9002"
+        ],
         "delay": 5,
-        "retryCount": 5
+        "retryCount": 5,
+        "polling": 5
     },
     "logs": {
         "level": 4,

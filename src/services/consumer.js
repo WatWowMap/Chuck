@@ -4,14 +4,17 @@ const S2 = require('nodes2ts');
 const POGOProtos = require('pogo-protos');
 
 const config = require('./config.js');
+const sequelize = require('./sequelize.js');
 const Account = require('../models/account.js');
 const Gym = require('../models/gym.js');
 const Pokemon = require('../models/pokemon.js');
 const Pokestop = require('../models/pokestop.js');
+const Cell = require('../models/cell.js');
+const Weather = require('../models/weather.js');
+const Incident = require('../models/incident.js');
 
-const sequelize = require('./sequelize.js');
-const Cell = require('../models/cell');
-const Weather = require('../models/weather');
+// this needs to be an arbitrary fixed order in order to prevent deadlocks
+const stringCompare = (field) => (a, b) => (a[field] > b[field]) - (a[field] < b[field]);
 
 /**
  * Consumer database class
@@ -20,8 +23,6 @@ class Consumer {
 
     constructor(username) {
         this.username = username;
-        this.gymIdsPerCell = {};
-        this.stopsIdsPerCell = {};
     }
 
     updateWildPokemon(wildPokemon) {
@@ -29,7 +30,7 @@ class Consumer {
             try {
                 await Pokemon.updateFromWild(this.username, wild.timestampMs, wild.cell, wild.data);
             } catch (err) {
-                console.error('[Wild] Error:', err.stack);
+                console.error('[Wild] Error:', err);
             }
         });
     }
@@ -39,7 +40,7 @@ class Consumer {
             try {
                 await Pokemon.updateFromNearby(this.username, nearby.timestampMs, nearby.cell, nearby.data);
             } catch (err) {
-                console.error('[Nearby] Error:', err.stack);
+                console.error('[Nearby] Error:', err);
             }
         });
     }
@@ -47,37 +48,40 @@ class Consumer {
     async updateForts(forts) {
         if (forts.length > 0) {
             const updatedGyms = [];
+            const updatedGymsWithUrl = [];
             const updatedPokestops = [];
+            const updatedIncidents = [];
             for (let i = 0; i < forts.length; i++) {
                 let fort = forts[i];
                 try {
-                    switch (fort.data.type) {
-                        case POGOProtos.Map.Fort.FortType.GYM: {
+                    switch (fort.data.fort_type) {
+                        case POGOProtos.Rpc.FortType.GYM: {
                             if (!config.dataparser.parse.gym) {
                                 continue;
                             }
                             const gym = Gym.fromFort(fort.cell, fort.data);
-                            gym.triggerWebhook();
-                            updatedGyms.push(gym.toJSON());
+                            await gym.triggerWebhook();
+                            if (gym.url) {
+                                updatedGymsWithUrl.push(gym.toJSON());
+                            } else {
+                                updatedGyms.push(gym.toJSON());
+                            }
 
                             if (!this.gymIdsPerCell[fort.cell]) {
                                 this.gymIdsPerCell[fort.cell] = [];
                             }
-                            this.gymIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
                             break;
                         }
-                        case POGOProtos.Map.Fort.FortType.CHECKPOINT: {
+                        case POGOProtos.Rpc.FortType.CHECKPOINT: {
                             if (!config.dataparser.parse.pokestops) {
                                 continue;
                             }
-                            const pokestop = Pokestop.fromFort(fort.cell, fort.data);
-                            pokestop.triggerWebhook(false);
-                            updatedPokestops.push(pokestop.toJSON());
 
-                            if (!this.stopsIdsPerCell[fort.cell]) {
-                                this.stopsIdsPerCell[fort.cell] = [];
-                            }
-                            this.stopsIdsPerCell[fort.cell.toString()].push(fort.data.id.toString());
+                            const [pokestop, incidents] = Pokestop.fromFort(fort.cell, fort.data);
+                            await pokestop.triggerWebhook(false, incidents);
+
+                            updatedPokestops.push(pokestop.toJSON());
+                            for (const incident of incidents) updatedIncidents.push(incident.toJSON());
                             break;
                         }
                     }
@@ -85,12 +89,15 @@ class Consumer {
                     console.error('[Forts] Error:', err);
                 }
             }
-            if (updatedGyms.length > 0) {
+            if (updatedGyms.length > 0 || updatedGymsWithUrl.length > 0) {
                 try {
-                    let result = await Gym.bulkCreate(updatedGyms, {
+                    let result = await Gym.bulkCreate(updatedGyms.sort(stringCompare('id')), {
                         updateOnDuplicate: Gym.fromFortFields,
                     });
                     //console.log('[Gym] Result:', result.length);
+                    await Gym.bulkCreate(updatedGymsWithUrl.sort(stringCompare('id')), {
+                        updateOnDuplicate: ['url'].concat(Gym.fromFortFields),
+                    });
                 } catch (err) {
                     console.error('[Gym] Error:', err);
                     //console.error('sql:', sqlUpdate);
@@ -99,12 +106,22 @@ class Consumer {
             }
             if (updatedPokestops.length > 0) {
                 try {
-                    let result = await Pokestop.bulkCreate(updatedPokestops, {
+                    let result = await Pokestop.bulkCreate(updatedPokestops.sort(stringCompare('id')), {
                         updateOnDuplicate: Pokestop.fromFortFields,
                     });
                     //console.log('[Pokestop] Result:', result.length);
                 } catch (err) {
                     console.error('[Pokestop] Error:', err);
+                }
+            }
+            if (updatedIncidents.length > 0) {
+                try {
+                    let result = await Incident.bulkCreate(updatedIncidents.sort((a, b) => a - b), {
+                        updateOnDuplicate: Incident.fromFortFields,
+                    });
+                    //console.log('[Incident] Result:', result.length);
+                } catch (err) {
+                    console.error('[Incident] Error:', err);
                 }
             }
         }
@@ -132,15 +149,15 @@ class Consumer {
                     lat: details.latitude,
                     lon: details.longitude,
                     name: details.name ? details.name : '',
-                    url: details.image_urls.length > 0 ? details.image_urls[0] : '',
+                    url: details.image_url.length > 0 ? details.image_url[0] : '',
                     updated: ts,
                     firstSeenTimestamp: ts,
                 };
                 switch (details.type) {
-                    case POGOProtos.Map.Fort.FortType.GYM:
+                    case POGOProtos.Rpc.FortType.GYM:
                         updatedGyms.push(record);
                         break;
-                    case POGOProtos.Map.Fort.FortType.CHECKPOINT:
+                    case POGOProtos.Rpc.FortType.CHECKPOINT:
                         updatedPokestops.push(record);
                         break;
                 }
@@ -148,23 +165,23 @@ class Consumer {
 
             if (updatedGyms.length > 0) {
                 try {
-                    const result = await Gym.bulkCreate(updatedGyms, {
+                    const result = await Gym.bulkCreate(updatedGyms.sort(stringCompare('id')), {
                         updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
-                    console.error('[FortDetails] Error:', err.stack);
+                    console.error('[FortDetails] Error:', err);
                 }
             }
 
             if (updatedPokestops.length > 0) {
                 try {
-                    const result = await Pokestop.bulkCreate(updatedGyms, {
+                    const result = await Pokestop.bulkCreate(updatedPokestops.sort(stringCompare('id')), {
                         updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
-                    console.error('[FortDetails] Error:', err.stack);
+                    console.error('[FortDetails] Error:', err);
                 }
             }
         }
@@ -183,7 +200,7 @@ class Consumer {
                         console.error('[GymInfos] Invalid gym_status_and_defenders provided, skipping...', info);
                         continue;
                     }
-                    let id = info.gym_status_and_defenders.pokemon_fort_proto.id;
+                    let id = info.gym_status_and_defenders.pokemon_fort_proto.fort_id;
                     let gymDefenders = info.gym_status_and_defenders.gym_defender;
                     if (config.dataparser.parse.gymDefenders && gymDefenders) {
                         for (let i = 0; i < gymDefenders.length; i++) {
@@ -197,7 +214,7 @@ class Consumer {
                             (
                                 '${trainer.name}',
                                 ${trainer.level},
-                                ${trainer.team_color},
+                                ${trainer.team},
                                 ${trainer.battles_won},
                                 ${trainer.km_walked},
                                 ${trainer.caught_pokemon},
@@ -221,8 +238,8 @@ class Consumer {
                                 ${defender.pokemon.individual_attack},
                                 ${defender.pokemon.individual_defense},
                                 ${defender.pokemon.individual_stamina},
-                                ${defender.pokemon.move_1},
-                                ${defender.pokemon.move_2},
+                                ${defender.pokemon.move1},
+                                ${defender.pokemon.move2},
                                 ${defender.pokemon.battles_attacked || 0},
                                 ${defender.pokemon.battles_defended || 0},
                                 ${defender.pokemon.pokemon_display.gender},
@@ -251,8 +268,8 @@ class Consumer {
             }
             if (updatedGyms.length > 0) {
                 try {
-                    const result = await Gym.bulkCreate(updatedGyms, {
-                        updateOnDuplicate: fortColumns,
+                    const result = await Gym.bulkCreate(updatedGyms.sort(stringCompare('id')), {
+                        updateOnDuplicate: Consumer.fortColumns,
                     });
                     //console.log('[GymInfos] Result:', result.length);
                 } catch (err) {
@@ -345,23 +362,20 @@ class Consumer {
                 } catch (err) {
                     console.error('[Cell] Error:', err);
                 }
-               
-                if (!this.gymIdsPerCell[cellId]) {
-                    this.gymIdsPerCell[cellId] = [];
-                }
-                if (!this.stopsIdsPerCell[cellId]) {
-                    this.stopsIdsPerCell[cellId] = [];
-                } 
             }
-            let result = await Cell.bulkCreate(updatedCells, {
-                updateOnDuplicate: [
-                    'level',
-                    'centerLat',
-                    'centerLon',
-                    'updated',
-                ],
-            });
-            //console.log('[Cell] Result:', result.length);
+            try {
+                let result = await Cell.bulkCreate(updatedCells.sort(stringCompare('id')), {
+                    updateOnDuplicate: [
+                        'level',
+                        'centerLat',
+                        'centerLon',
+                        'updated',
+                    ],
+                });
+                //console.log('[Cell] Result:', result.length);
+            } catch (err) {
+                console.error('[Cell] Error:', err);
+            }
         }
     }
 
@@ -379,7 +393,7 @@ class Consumer {
                     console.error('[Weather] Error:', err);
                 }
             }
-            let result = await Weather.bulkCreate(updatedWeather, {
+            let result = await Weather.bulkCreate(updatedWeather.sort(stringCompare('id')), {
                 updateOnDuplicate: Weather.fromClientWeatherFields,
             });
             //console.log('[Weather] Result:', result.length);
@@ -410,41 +424,38 @@ class Consumer {
             }
             if (updatedPokestops.length > 0) {
                 try {
-                    let result = await Pokestop.bulkCreate(updatedPokestops, {
+                    let result = await Pokestop.bulkCreate(updatedPokestops.sort(stringCompare('id')), {
                         updateOnDuplicate: Pokestop.fromQuestFields,
                     });
                     //console.log('[Quest] Result:', result.length);
                 } catch (err) {
-                    console.error('[Quest] Error:', err.stack);
+                    console.error('[Quest] Error:', err);
                 }
             }
         }
     }
 
-    async updatePlayerData(playerData) {
-        if (playerData.length > 0) {
-            for (let i = 0; i < playerData.length; i++) {
-                let data = playerData[i];
-                if (!data || !data.player_data) {
-                    // Don't try and process empty data
-                    continue;
-                }
+    updatePlayerData(playerData) {
+        return playerData.map(async data => {
+            if (!data || !data.player_data) {
+                // Don't try and process empty data
+                return;
+            }
+            try {
+                let account = null;
                 try {
-                    let account = null;
-                    try {
-                        account = await Account.findByPk(this.username);
-                    } catch (err) {
-                        console.error('[Account] Error:', err);
-                    }
-                    if (account !== null) {
-                        account.parsePlayerData(data);
-                        account.save(); // todo: handle race?
-                    }
+                    account = await Account.findByPk(this.username);
                 } catch (err) {
                     console.error('[Account] Error:', err);
                 }
+                if (account !== null) {
+                    account.parsePlayerData(data);
+                    await account.save();   // todo: handle race?
+                }
+            } catch (err) {
+                console.error('[Account] Error:', err);
             }
-        }
+        });
     }
 }
 
