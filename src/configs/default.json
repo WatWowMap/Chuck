@@ -55,7 +55,8 @@
                 "great": 1500,
                 "ultra": 2500
             }
-        }
+        },
+        "addDevicesThroughParser": false
     },
     "db": {
         "type": "mysql",

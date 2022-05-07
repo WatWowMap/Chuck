@@ -7,6 +7,7 @@ const Consumer = require('../services/consumer.js');
 const ipcWorker = require('../ipc/worker.js');
 const Account = require('../models/account.js');
 const Device = require('../models/device.js');
+const Instance = require('../models/instance.js');
 const { sendResponse, base64_decode } = require('../services/utils.js');
 
 const RpcMethod = {
@@ -390,6 +391,92 @@ class RouteController {
             lonTarget = json['lon_target'];
 
             if (uuid && latTarget && lonTarget) {
+                if (config.dataparser.addDevicesThroughParser) {
+                    console.debug("Need to add Devices through Data");
+                    try {
+                        console.debug("Getting Account with username ", username);
+                        let account = await Account.getWithUsername(username);
+                        if (!account || account.username==null) {
+                            console.debug("No account with that username found");
+                            let account = Account.create({
+                                username: username,
+                                password: 'temp',
+                                firstWarningTimestamp: 0,
+                                failedTimestamp: 0,
+                                failed: null,
+                                level: trainerLevel,
+                            });
+                            console.debug("Account created");
+                        }
+                        console.debug("Getting Device that is linked with the given username");
+                        let deviceByUsername = await Device.getByAccountUsername(username);
+                        if (!deviceByUsername) {
+                            console.debug("No Device found yet for the given username");
+                        } else {
+                            if (deviceByUsername.uuid != uuid) {
+                                console.debug("Account is logged in on another device, clear accountname for this device");
+                                await Device.setAccountUsername(deviceByUsername.uuid, '');
+                            }
+                        }
+
+                        console.debug("Getting Device based on uuid", uuid);
+                        let device = await Device.getById(uuid);
+                        if (!device) {
+                            console.debug("No Device found for the given uuid, getting AutoAddedByParser instance");
+                            let instance = await Instance.getByName('AutoAddedByParser');
+                            if (!instance || instance.name==null) {
+                                console.debug("Instance not found");
+                                const data = {
+                                    area: [
+                                        {
+                                            "lat":-90,
+                                            "lon":-180
+                                        },{
+                                            "lat":-90,
+                                            "lon":180
+                                        },{
+                                            "lat":90,
+                                            "lon":180
+                                        },{
+                                            "lat":90,
+                                            "lon":-180
+                                        }
+                                    ],
+                                    timezone_offset: 7200,
+                                    min_level: 1,
+                                    max_level: 40,
+                                };
+                                let instance = Instance.create({
+                                    name: 'AutoAddedByParser',
+                                    type: InstanceType.CirclePokemon,
+                                    data: data,
+                                });
+                                console.debug("Instance created");
+                            }
+
+                            console.debug("Creating device");
+                            let device = Device.create({
+                                uuid: uuid,
+                                instanceName: instance.name,
+                                accountUsername: username,
+                                lastHost: null,
+                                lastSeen: Math.floor(Date.now() / 1000),
+                                lastLat: latTarget,
+                                lastLon: lonTarget,
+                            });
+                            console.debug("Device created");
+                        }
+                        console.debug("Checking if the device username is the current account username");
+                        if (device && device.accountUsername != account.username) {
+                            console.debug("Different account logged in, changing account");
+                            await Device.setAccountUsername(uuid, account.username);
+                            console.debug("Account username updated");
+                        }
+                    } catch (err) {
+                        console.error('[Raw] Error:', err);
+                    }
+                }
+
                 try {
                     await Device.setLastLocation(uuid, latTarget, lonTarget);
                 } catch (err) {
