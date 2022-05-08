@@ -2,6 +2,7 @@
 
 const { DataTypes, Model } = require('sequelize');
 const sequelize = require('../services/sequelize.js');
+const config = require('../services/config.js');
 const WebhookController = require('../services/webhook.js');
 const Cell = require('./cell.js');
 
@@ -85,6 +86,10 @@ class Gym extends Model {
      * trigger webhooks
      */
     async triggerWebhook() {
+        if (!config.webhooks.enabled || config.urls.length === 0) {
+            return;
+        }
+
         let oldGym = null;
         try {
             oldGym = await Gym.findByPk(this.id);

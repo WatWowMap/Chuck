@@ -66,14 +66,20 @@ class Consumer {
                             } else {
                                 updatedGyms.push(gym.toJSON());
                             }
+
+                            if (!this.gymIdsPerCell[fort.cell]) {
+                                this.gymIdsPerCell[fort.cell] = [];
+                            }
                             break;
                         }
                         case POGOProtos.Rpc.FortType.CHECKPOINT: {
                             if (!config.dataparser.parse.pokestops) {
                                 continue;
                             }
+
                             const [pokestop, incidents] = Pokestop.fromFort(fort.cell, fort.data);
                             await pokestop.triggerWebhook(false, incidents);
+
                             updatedPokestops.push(pokestop.toJSON());
                             for (const incident of incidents) updatedIncidents.push(incident.toJSON());
                             break;
