@@ -387,7 +387,7 @@ class Consumer {
                 let conditions = weather[i];
                 try {
                     const weather = Weather.fromClientWeather(conditions.cell.toString(), conditions.data, ts);
-                    weather.triggerWebhook();
+                    await weather.triggerWebhook();
                     updatedWeather.push(weather.toJSON());
                 } catch (err) {
                     console.error('[Weather] Error:', err);
