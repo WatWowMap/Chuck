@@ -229,6 +229,8 @@ const RequestMessages = {
 	DeletePostcardProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_DELETE_POSTCARD), // 1912
 	GetMementoListProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_GET_MEMENTO_LIST), // 1913
 	UploadRaidClientLogProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_UPLOAD_RAID_CLIENT_LOG), // 1914
+	CheckGiftingEligibilityProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_CHECK_GIFTING_ELIGIBILITY), // 2000
+	RedeemTicketGiftForFriendProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_REDEEM_TICKET_GIFT_FOR_FRIEND), // 2001
 	PushNotificationRegistryProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_CLIENT_ACTION_REGISTER_PUSH_NOTIFICATION), // 5000
 	UpdateNotificationProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_CLIENT_ACTION_UPDATE_NOTIFICATION_STATUS), // 5002
 	DownloadGmTemplatesRequestProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_CLIENT_ACTION_DOWNLOAD_GAME_MASTER_TEMPLATES), // 5004
@@ -328,7 +330,7 @@ const RequestMessages = {
 };
 
 const RequestResponses = {
-    UnSet: 0,
+	UnSet: 0,
 	GetPlayerOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_GET_PLAYER), // 2
 	GetHoloholoInventoryOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_GET_HOLOHOLO_INVENTORY), // 4
 	DownloadSettingsResponseProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_DOWNLOAD_SETTINGS), // 5
@@ -543,6 +545,8 @@ const RequestResponses = {
 	DeletePostcardOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_DELETE_POSTCARD), // 1912
 	GetMementoListOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_GET_MEMENTO_LIST), // 1913
 	UploadRaidClientLogOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_UPLOAD_RAID_CLIENT_LOG), // 1914
+	CheckGiftingEligibilityOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_CHECK_GIFTING_ELIGIBILITY), // 2000
+	RedeemTicketGiftForFriendOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_METHOD_REDEEM_TICKET_GIFT_FOR_FRIEND), // 2001
 	PushNotificationRegistryOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_CLIENT_ACTION_REGISTER_PUSH_NOTIFICATION), // 5000
 	UpdateNotificationOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_CLIENT_ACTION_UPDATE_NOTIFICATION_STATUS), // 5002
 	OptOutProto: parseInt(POGOProtos.Rpc.AllTypesAndMessagesResponsesProto.AllResquestTypesProto.REQUEST_TYPE_CLIENT_ACTION_OPT_OUT_PUSH_NOTIFICATION_CATEGORY), // 5003
