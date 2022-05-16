@@ -272,7 +272,7 @@ class Pokestop extends Model {
      * Update Pokestop values if changed from already found Pokestop
      */
     async triggerWebhook(updateQuest, incidents) {
-        if (!config.webhooks.enabled || config.urls.length === 0) {
+        if (!config.webhooks.enabled || config.webhooks.urls.length === 0) {
             return;
         }
 

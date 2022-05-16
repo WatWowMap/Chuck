@@ -86,7 +86,7 @@ class Gym extends Model {
      * trigger webhooks
      */
     async triggerWebhook() {
-        if (!config.webhooks.enabled || config.urls.length === 0) {
+        if (!config.webhooks.enabled || config.webhooks.urls.length === 0) {
             return;
         }
 

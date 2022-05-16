@@ -60,7 +60,7 @@ class Weather extends Model {
     }
 
     async triggerWebhook() {
-        if (!config.webhooks.enabled || config.urls.length === 0) {
+        if (!config.webhooks.enabled || config.webhooks.urls.length === 0) {
             return;
         }
 
