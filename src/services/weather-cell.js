@@ -38,6 +38,7 @@ class WeatherCell {
             this.lastUpdated = Date.now();
         }
         this.pendingWeather = null;
+        new S2Cell(new S2CellId(this.id));  // if invalid will throw
     }
 
     update(weather, username) {
@@ -119,18 +120,24 @@ class WeatherCell {
 }
 
 async function initWeather() {
-    for (const weather of await Weather.findAll()) weatherCells[weather.id] = new WeatherCell(weather);
+    for (const weather of await Weather.findAll()) {
+        try {
+            weatherCells[weather.id] = new WeatherCell(weather);
+        } catch (e) {
+            console.warn('Unrecognized weather db entry', weather, e);
+        }
+    }
 }
 
 function reportWeather(username, update) {
     update.forEach(([id, weather]) => {
-        if (!id) {
-            console.warn('Unrecognized weather cell id', id);
-            return;
+        try {
+            const weatherCell = weatherCells[id];
+            if (weatherCell === undefined) weatherCells[id] = new WeatherCell(weather, id, username);
+            else weatherCell.update(weather, username);
+        } catch (e) {
+            console.warn('Unrecognized weather cell id', id, e);
         }
-        const weatherCell = weatherCells[id];
-        if (weatherCell === undefined) weatherCells[id] = new WeatherCell(weather, id, username);
-        else weatherCell.update(weather, username);
     });
 }
 
