@@ -27,12 +27,12 @@ async function requestUpdate() {
 class WeatherCell {
     constructor(weather, id, username) {
         if (id === undefined) {
-            this.id = weather.id;
+            this.id = weather.id.toString();
             this.weather = weather.gameplayCondition;
             this.username = null;
             this.lastUpdated = 0;
         } else {
-            this.id = id;
+            this.id = id.toString();
             this.weather = weather;
             this.username = username;
             this.lastUpdated = Date.now();
@@ -122,7 +122,7 @@ class WeatherCell {
 async function initWeather() {
     for (const weather of await Weather.findAll()) {
         try {
-            weatherCells[weather.id] = new WeatherCell(weather);
+            weatherCells[weather.id.toString()] = new WeatherCell(weather);
         } catch (e) {
             console.warn('Unrecognized weather db entry', weather, e);
         }
@@ -133,7 +133,7 @@ function reportWeather(username, update) {
     update.forEach(([id, weather]) => {
         try {
             const weatherCell = weatherCells[id];
-            if (weatherCell === undefined) weatherCells[id] = new WeatherCell(weather, id, username);
+            if (weatherCell === undefined) weatherCells[id.toString()] = new WeatherCell(weather, id, username);
             else weatherCell.update(weather, username);
         } catch (e) {
             console.warn('Unrecognized weather cell id', id, e);
