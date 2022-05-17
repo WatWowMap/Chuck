@@ -23,6 +23,7 @@ class Consumer {
 
     constructor(username) {
         this.username = username;
+        this.gymIdsPerCell = {};
     }
 
     updateWildPokemon(wildPokemon) {

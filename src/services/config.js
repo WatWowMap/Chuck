@@ -14,5 +14,5 @@ const target = {};
  * objectN Object (Optional) More objects to merge into the first.
 */
 
-extend(true, target, eConfig, uConfig, envConfig);
+extend(true, target, eConfig, envConfig, uConfig);
 module.exports = target;

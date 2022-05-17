@@ -26,11 +26,11 @@ class EnvUtil {
         }
     }
 
-    parse(configJson, parent = "") {
+    parse(configJson, parent = '') {
         Object.keys(configJson).forEach(key => {
-            let newParent = "";
-            if (parent != "") {
-                newParent = parent + "_" + key.toUpperCase();
+            let newParent = '';
+            if (parent != '') {
+                newParent = parent + '_' + key.toUpperCase();
             } else {
                 newParent = key.toUpperCase();
             }
@@ -40,7 +40,7 @@ class EnvUtil {
             else {
                 this.assignValue(newParent, process.env[newParent]);
             }
-        })
+        });
 
         return this.envConfig;
     }
