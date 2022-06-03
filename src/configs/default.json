@@ -40,6 +40,10 @@
             ],
             "v2": true
         },
+        "lure": {
+            "v2": false,
+            "v2Webhook": false
+        },
         "pvp": {
             "rankCacheAge": 86400000,
             "levelCaps": [

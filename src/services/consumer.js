@@ -135,6 +135,7 @@ class Consumer {
         'url',
         'updated',
     ];
+    static fortStopColumns = Consumer.fortColumns.concat(Pokestop.fromFortDetailsColumnsAdditional);
 
     async updateFortDetails(fortDetails) {
         // Update Forts
@@ -159,7 +160,7 @@ class Consumer {
                         updatedGyms.push(record);
                         break;
                     case POGOProtos.Rpc.FortType.CHECKPOINT:
-                        updatedPokestops.push(record);
+                        updatedPokestops.push(Pokestop.fromFortDetails(record));
                         break;
                 }
             }
@@ -178,7 +179,7 @@ class Consumer {
             if (updatedPokestops.length > 0) {
                 try {
                     const result = await Pokestop.bulkCreate(updatedPokestops.sort(stringCompare('id')), {
-                        updateOnDuplicate: Consumer.fortColumns,
+                        updateOnDuplicate: Consumer.fortStopColumns,
                     });
                     //console.log('[FortDetails] Result:', result.length);
                 } catch (err) {
