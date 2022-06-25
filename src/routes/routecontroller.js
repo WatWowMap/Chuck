@@ -11,8 +11,8 @@ const Instance = require('../models/instance.js');
 const { sendResponse, base64_decode } = require('../services/utils.js');
 
 /*
-const requestMessagesResponses = {	
-    REQUEST_TYPE_METHOD_UNSET: [0, null, null],
+const requestMessagesResponses = {
+	REQUEST_TYPE_METHOD_UNSET: [0, null, null],
 	REQUEST_TYPE_METHOD_GET_PLAYER: [2, POGOProtos.Rpc.GetPlayerProto, POGOProtos.Rpc.GetPlayerOutProto],
 	REQUEST_TYPE_METHOD_GET_HOLOHOLO_INVENTORY: [4, POGOProtos.Rpc.GetHoloholoInventoryProto, POGOProtos.Rpc.GetHoloholoInventoryOutProto],
 	REQUEST_TYPE_METHOD_DOWNLOAD_SETTINGS: [5, POGOProtos.Rpc.DownloadSettingsActionProto, POGOProtos.Rpc.DownloadSettingsResponseProto],
@@ -276,7 +276,7 @@ const requestMessagesResponses = {
 	REQUEST_TYPE_CLIENT_ACTION_REDEEM_GOOGLE_RECEIPT: [5021, POGOProtos.Rpc.RedeemGoogleReceiptProto, POGOProtos.Rpc.RedeemGoogleReceiptOutProto],
 	REQUEST_TYPE_CLIENT_ACTION_REDEEM_APPLE_RECEIPT: [5022, POGOProtos.Rpc.RedeemAppleReceiptProto, POGOProtos.Rpc.RedeemAppleReceiptOutProto],
 	REQUEST_TYPE_CLIENT_ACTION_REDEEM_DESKTOP_RECEIPT: [5023, null, null],
-	REQUEST_TYPE_CLIENT_ACTION_UPDATE_FITNESS_METRICS: [5024, null, null],
+	REQUEST_TYPE_CLIENT_ACTION_UPDATE_FITNESS_METRICS: [5024, POGOProtos.Rpc.FitnessUpdateProto, POGOProtos.Rpc.FitnessUpdateOutProto],
 	REQUEST_TYPE_CLIENT_ACTION_GET_FITNESS_REPORT: [5025, POGOProtos.Rpc.GetFitnessReportProto, POGOProtos.Rpc.GetFitnessReportOutProto],
 	REQUEST_TYPE_CLIENT_ACTION_GET_CLIENT_TELEMETRY_SETTINGS: [5026, POGOProtos.Rpc.ClientTelemetrySettingsRequestProto, null],
 	REQUEST_TYPE_CLIENT_ACTION_PING_ASYNC: [5027, null, null],
@@ -377,7 +377,7 @@ const requestMessagesResponses = {
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GENERATE_GMAP_SIGNED_URL: [620300, POGOProtos.Rpc.GenerateGmapSignedUrlProto, POGOProtos.Rpc.GenerateGmapSignedUrlOutProto],
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_GMAP_SETTINGS: [620301, POGOProtos.Rpc.GetGmapSettingsProto, POGOProtos.Rpc.GetGmapSettingsOutProto],
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_SUBMIT_POI_AR_VIDEO_METADATA: [620400, POGOProtos.Rpc.PoiVideoSubmissionMetadataProto, null],
-	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_GRAPESHOT_FILE_UPLOAD_URL: [620401, null, null],
+	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_GRAPESHOT_FILE_UPLOAD_URL: [620401, POGOProtos.Rpc.GetGrapeshotUploadUrlProto, POGOProtos.Rpc.GetGrapeshotUploadUrlOutProto],
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_ASYNC_FILE_UPLOAD_COMPLETE: [620402, POGOProtos.Rpc.AsyncFileUploadCompleteProto, POGOProtos.Rpc.AsyncFileUploadCompleteOutProto],
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_AR_MAPPING_SETTINGS: [620403, POGOProtos.Rpc.GetARMappingSettingsProto, POGOProtos.Rpc.GetARMappingSettingsOutProto],
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_IMAGES_FOR_POI: [620500, POGOProtos.Rpc.GetImagesForPoiProto, POGOProtos.Rpc.GetImagesForPoiOutProto],
@@ -385,7 +385,7 @@ const requestMessagesResponses = {
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_IMAGE_GALLERY_SETTINGS: [620502, POGOProtos.Rpc.GetImageGallerySettingsProto, POGOProtos.Rpc.GetImageGallerySettingsOutProto],
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_MAP_DATA: [620600, null, null],
 	REQUEST_TYPE_PLAYER_SUBMISSION_ACTION_GET_POIS_IN_RADIUS: [620601, POGOProtos.Rpc.GetPoisInRadiusProto, POGOProtos.Rpc.GetPoisInRadiusOutProto],
-	REQUEST_TYPE_UPDATE_FITNESS_METRICS_1: [640000, null, null],
+	REQUEST_TYPE_UPDATE_FITNESS_METRICS_1: [640000, POGOProtos.Rpc.FitnessUpdateProto, POGOProtos.Rpc.FitnessUpdateOutProto],
 	REQUEST_TYPE_GET_FITNESS_REPORT_1: [640001, POGOProtos.Rpc.GetFitnessReportProto, POGOProtos.Rpc.GetFitnessReportOutProto],
 	REQUEST_TYPE_GET_ADVENTURE_SYNC_SETTINGS_1: [640002, POGOProtos.Rpc.GetAdventureSyncSettingsRequestProto, POGOProtos.Rpc.GetAdventureSyncSettingsResponseProto],
 	REQUEST_TYPE_UPDATE_ADVENTURE_SYNC_SETTINGS_1: [640003, POGOProtos.Rpc.UpdateAdventureSyncSettingsRequestProto, POGOProtos.Rpc.UpdateAdventureSyncSettingsResponseProto],
