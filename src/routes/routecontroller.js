@@ -396,12 +396,11 @@ const requestMessagesResponses = {
 
 for (let i = 0; i < Object.keys(requestMessagesResponses).length; i++) {
 	let method =  Object.values(requestMessagesResponses)[i];
-	/*
-		method = request type
-		method[0] = method as int
-		method[1] = message proto 	// need check if not null
-		method[2] = response proto	// need check if not null
-	*/
+	//description:
+	//method = request type
+	//method[0] = method as int
+	//method[1] = message proto 	// need check if not null
+	//method[2] = response proto	// need check if not null
     let my_req = method[0];
     if (my_req == 0)
     {
