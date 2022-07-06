@@ -395,13 +395,18 @@ const requestMessagesResponses = {
 
 
 for (let i = 0; i < Object.keys(requestMessagesResponses).length; i++) {
-    let my_req = Object.values(requestMessagesResponses)[i][0];
+	let method =  Object.values(requestMessagesResponses)[i];
+	/*
+		method = request type
+		method[0] = method as int
+		method[1] = message proto 	// need check if not null
+		method[2] = response proto	// need check if not null
+	*/
+    let my_req = method[0];
     if (my_req == 0)
     {
         continue;
     }
-
-	let method =  Object.values(requestMessagesResponses)[i];
 
     switch(my_req){
         case 137:    // REQUEST_TYPE_METHOD_RECYCLE_INVENTORY_ITEM
