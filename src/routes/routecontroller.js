@@ -401,17 +401,19 @@ for (let i = 0; i < Object.keys(requestMessagesResponses).length; i++) {
         continue;
     }
 
+	let method =  Object.values(requestMessagesResponses)[i];
+
     switch(my_req){
         case 137:    // REQUEST_TYPE_METHOD_RECYCLE_INVENTORY_ITEM
-            if (requestMessagesResponses.REQUEST_TYPE_METHOD_RECYCLE_INVENTORY_ITEM[1] != null)
+            if (method[1] != null)
             {
-                var myMessage = requestMessagesResponses.REQUEST_TYPE_METHOD_RECYCLE_INVENTORY_ITEM[1].fromObject({
+                var myMessage = method[1].fromObject({
                     item: POGOProtos.Rpc.Item.ITEM_POTION,
                     count: 50
                 });
   
-                var encoded = requestMessagesResponses.REQUEST_TYPE_METHOD_RECYCLE_INVENTORY_ITEM[1].encode(myMessage).finish();
-                var decodedAgain = requestMessagesResponses.REQUEST_TYPE_METHOD_RECYCLE_INVENTORY_ITEM[1].decode(encoded);
+                var encoded = method[1].encode(myMessage).finish();
+                var decodedAgain = method[1].decode(encoded);
                 console.log('Test encode/decode:\nItem: ' + decodedAgain.item + ' count: ' + decodedAgain.count);
             }
             break;
