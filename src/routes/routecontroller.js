@@ -698,9 +698,8 @@ class RouteController {
                     try {
                         let fsr = POGOProtos.Rpc.FortSearchOutProto.decode(base64_decode(data));
                         if (fsr) {
-                            if (config.dataparser.parse.quests && fsr.challenge_quest && fsr.challenge_quest.quest) {
-                                let quest = fsr.challenge_quest.quest;
-                                quests.push(quest);
+                            if (config.dataparser.parse.quests && fsr.challenge_quest) {
+                                quests.push(fsr.challenge_quest);
                             }
                             fortSearch.push(fsr);
                         } else {

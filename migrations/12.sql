@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `incident` (
+CREATE TABLE IF NOT EXISTS `quest` (
     `id` bigint(20) NOT NULL,
     `pokestop_id` varchar(128) NOT NULL,
     `start_ms` bigint(20) NOT NULL,
@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS `incident` (
     `updated_ms` bigint(20) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `ix_pokestop` (`pokestop_id`, `expiration_ms`),
-    CONSTRAINT `fk_incident_pokestop_id` FOREIGN KEY (`pokestop_id`) REFERENCES `pokestop` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT `fk_quest_pokestop_id` FOREIGN KEY (`pokestop_id`) REFERENCES `pokestop` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 );
