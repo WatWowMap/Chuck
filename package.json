@@ -42,7 +42,7 @@
     "pogo-protos": "git+https://github.com/Furtif/pogo-protos.git",
     "redis": "^3.1.1",
     "s2-geometry": "^1.2.10",
-    "sequelize": "^6.19.0"
+    "sequelize": "^6.29.0"
   },
   "devDependencies": {
     "mocha": "^8.4.0"
